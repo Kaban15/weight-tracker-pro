@@ -12,7 +12,9 @@ import {
   Trash2,
   Calendar,
   Trophy,
-  RotateCcw
+  RotateCcw,
+  Edit2,
+  AlertTriangle
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -73,6 +75,13 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   // Challenge setup state
   const [setupDurationType, setSetupDurationType] = useState<'days' | 'weeks' | 'months' | 'year'>('days');
   const [setupDurationValue, setSetupDurationValue] = useState(30);
+
+  // Edit and delete modals
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [editDurationType, setEditDurationType] = useState<'days' | 'weeks' | 'months' | 'year'>('days');
+  const [editDurationValue, setEditDurationValue] = useState(30);
+  const [editStartDate, setEditStartDate] = useState('');
 
   const storageKey = `habits_${user?.id}`;
   const completedKey = `completed_habits_${user?.id}`;
@@ -163,6 +172,42 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
       localStorage.removeItem(challengeKey);
       localStorage.removeItem(completedKey);
     }
+  };
+
+  // Delete challenge (keeps habits, removes challenge and completed data)
+  const deleteChallenge = () => {
+    setChallenge(null);
+    setCompletedHabits([]);
+    if (user) {
+      localStorage.removeItem(challengeKey);
+      localStorage.removeItem(completedKey);
+    }
+    setShowDeleteConfirm(false);
+  };
+
+  // Open edit modal with current challenge values
+  const openEditModal = () => {
+    if (challenge) {
+      setEditDurationType(challenge.durationType);
+      setEditDurationValue(challenge.durationValue);
+      setEditStartDate(challenge.startDate);
+      setShowEditModal(true);
+    }
+  };
+
+  // Save edited challenge
+  const saveEditedChallenge = () => {
+    const startDate = new Date(editStartDate);
+    const endDateObj = calculateEndDate(startDate, editDurationType, editDurationValue);
+    const endDate = `${endDateObj.getFullYear()}-${String(endDateObj.getMonth() + 1).padStart(2, '0')}-${String(endDateObj.getDate()).padStart(2, '0')}`;
+
+    setChallenge({
+      startDate: editStartDate,
+      durationType: editDurationType,
+      durationValue: editDurationValue,
+      endDate
+    });
+    setShowEditModal(false);
   };
 
   // Get challenge progress
@@ -473,11 +518,18 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={resetChallenge}
-              className="text-slate-400 hover:text-rose-400 transition-colors text-sm flex items-center gap-1"
-              title="Resetuj wyzwanie"
+              onClick={openEditModal}
+              className="text-slate-400 hover:text-amber-400 transition-colors text-sm flex items-center gap-1"
+              title="Edytuj wyzwanie"
             >
-              <RotateCcw className="w-4 h-4" />
+              <Edit2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="text-slate-400 hover:text-rose-400 transition-colors text-sm flex items-center gap-1"
+              title="Usuń wyzwanie"
+            >
+              <Trash2 className="w-4 h-4" />
             </button>
             <button
               onClick={signOut}
@@ -757,6 +809,135 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
               >
                 Dodaj nawyk
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Challenge Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-800 rounded-xl border-2 border-slate-700 p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">Edytuj wyzwanie</h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Start Date */}
+              <div>
+                <label className="block text-sm text-slate-400 mb-2">
+                  Data rozpoczęcia
+                </label>
+                <input
+                  type="date"
+                  value={editStartDate}
+                  onChange={(e) => setEditStartDate(e.target.value)}
+                  className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Duration Type */}
+              <div>
+                <label className="block text-sm text-slate-400 mb-2">Typ okresu</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { value: 'days', label: 'Dni' },
+                    { value: 'weeks', label: 'Tyg.' },
+                    { value: 'months', label: 'Mies.' },
+                    { value: 'year', label: 'Rok' },
+                  ].map(option => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        setEditDurationType(option.value as typeof editDurationType);
+                        if (option.value === 'year') setEditDurationValue(1);
+                      }}
+                      className={`py-2 px-2 rounded-lg text-sm font-medium transition-all
+                        ${editDurationType === option.value
+                          ? 'bg-amber-600 text-white'
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}
+                      `}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Duration Value */}
+              {editDurationType !== 'year' && (
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">
+                    Liczba {editDurationType === 'days' ? 'dni' : editDurationType === 'weeks' ? 'tygodni' : 'miesięcy'}
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="range"
+                      min={1}
+                      max={editDurationType === 'days' ? 90 : 12}
+                      value={editDurationValue}
+                      onChange={(e) => setEditDurationValue(Number(e.target.value))}
+                      className="flex-1 accent-amber-500"
+                    />
+                    <span className="text-2xl font-bold text-white w-12 text-center">
+                      {editDurationValue}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg transition-colors font-medium"
+                >
+                  Anuluj
+                </button>
+                <button
+                  onClick={saveEditedChallenge}
+                  className="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-2 rounded-lg transition-colors font-medium"
+                >
+                  Zapisz
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-800 rounded-xl border-2 border-slate-700 p-6 w-full max-w-sm">
+            <div className="text-center">
+              <div className="w-14 h-14 bg-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-7 h-7 text-rose-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">Usuń wyzwanie?</h3>
+              <p className="text-slate-400 text-sm mb-6">
+                Czy na pewno chcesz usunąć to wyzwanie? Wszystkie postępy zostaną utracone. Nawyki pozostaną zachowane.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg transition-colors font-medium"
+                >
+                  Anuluj
+                </button>
+                <button
+                  onClick={deleteChallenge}
+                  className="flex-1 bg-rose-600 hover:bg-rose-500 text-white py-2 rounded-lg transition-colors font-medium"
+                >
+                  Usuń
+                </button>
+              </div>
             </div>
           </div>
         </div>
