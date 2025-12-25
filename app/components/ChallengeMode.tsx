@@ -1,45 +1,21 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  X,
-  Check,
-  Flame,
-  Home,
-  Trash2,
-  Trophy,
-  Edit2,
-  AlertTriangle,
-  ArrowLeft,
-  Cloud,
-  CloudOff,
-  Loader2
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { Check, Flame, Home, Plus, Trophy, Edit2, Trash2, ArrowLeft, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
-import { supabase } from "@/lib/supabase";
-
-interface Challenge {
-  id: string;
-  name: string;
-  startDate: string; // YYYY-MM-DD
-  endDate: string; // YYYY-MM-DD
-  trackReps: boolean; // Whether to track repetitions count
-  completedDays: { [date: string]: number }; // date -> reps count (1 = done for non-rep, >0 = reps for rep tracking)
-}
-
-// Database row type (snake_case)
-interface ChallengeRow {
-  id: string;
-  user_id: string;
-  name: string;
-  start_date: string;
-  end_date: string;
-  track_reps: boolean;
-  completed_days: { [date: string]: number };
-}
+import Calendar, { isToday } from "./shared/Calendar";
+import SyncIndicator from "./shared/SyncIndicator";
+import {
+  Challenge,
+  ChallengeFormData,
+  DEFAULT_FORM_DATA,
+  useChallenges,
+  getChallengeProgress,
+  ChallengeFormModal,
+  ChallengeCard,
+  DeleteConfirmModal,
+  RepsModal
+} from "./challenge";
 
 interface ChallengeModeProps {
   onBack: () => void;
@@ -47,112 +23,35 @@ interface ChallengeModeProps {
 
 export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   const { user, signOut } = useAuth();
+  const {
+    challenges,
+    isLoading,
+    isSyncing,
+    syncError,
+    createChallenge,
+    updateChallenge,
+    deleteChallenge,
+    updateCompletedDays
+  } = useChallenges(user?.id);
 
-  // Main state
-  const [challenges, setChallenges] = useState<Challenge[]>([]);
-  const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
+  // View state
   const [view, setView] = useState<'list' | 'detail'>('list');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncError, setSyncError] = useState<string | null>(null);
-
-  // Calendar state
+  const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Modals
+  // Modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [editingChallenge, setEditingChallenge] = useState<Challenge | null>(null);
+  const [editingChallengeId, setEditingChallengeId] = useState<string | null>(null);
 
   // Form state
-  const [formName, setFormName] = useState('');
-  const [formDateMode, setFormDateMode] = useState<'duration' | 'dates'>('duration');
-  const [formDurationType, setFormDurationType] = useState<'days' | 'weeks' | 'months' | 'year'>('days');
-  const [formDurationValue, setFormDurationValue] = useState(30);
-  const [formStartDate, setFormStartDate] = useState('');
-  const [formEndDate, setFormEndDate] = useState('');
-  const [formTrackReps, setFormTrackReps] = useState(false);
+  const [formData, setFormData] = useState<ChallengeFormData>(DEFAULT_FORM_DATA);
 
-  // Reps input modal
+  // Reps modal state
   const [showRepsModal, setShowRepsModal] = useState(false);
-  const [repsDay, setRepsDay] = useState<number | null>(null);
+  const [repsDay, setRepsDay] = useState<number>(0);
   const [repsValue, setRepsValue] = useState('');
-
-  const localStorageKey = `challenges_v3_${user?.id}`;
-  const migrationKey = `challenges_migrated_${user?.id}`;
-
-  // Convert DB row to Challenge object
-  const rowToChallenge = (row: ChallengeRow): Challenge => ({
-    id: row.id,
-    name: row.name,
-    startDate: row.start_date,
-    endDate: row.end_date,
-    trackReps: row.track_reps,
-    completedDays: row.completed_days || {}
-  });
-
-  // Load challenges from Supabase
-  const loadChallenges = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      setIsLoading(true);
-      setSyncError(null);
-
-      // Check if we need to migrate from localStorage
-      const hasMigrated = localStorage.getItem(migrationKey);
-      if (!hasMigrated) {
-        const localData = localStorage.getItem(localStorageKey);
-        if (localData) {
-          const localChallenges: Challenge[] = JSON.parse(localData);
-          if (localChallenges.length > 0) {
-            // Migrate local challenges to Supabase
-            for (const challenge of localChallenges) {
-              await supabase.from('challenges').upsert({
-                id: challenge.id,
-                user_id: user.id,
-                name: challenge.name,
-                start_date: challenge.startDate,
-                end_date: challenge.endDate,
-                track_reps: challenge.trackReps,
-                completed_days: challenge.completedDays
-              });
-            }
-          }
-        }
-        localStorage.setItem(migrationKey, 'true');
-      }
-
-      // Fetch from Supabase
-      const { data, error } = await supabase
-        .from('challenges')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const loadedChallenges = (data || []).map(rowToChallenge);
-      setChallenges(loadedChallenges);
-
-    } catch (error) {
-      console.error('Error loading challenges:', error);
-      setSyncError('Błąd ładowania danych');
-      // Fallback to localStorage
-      const localData = localStorage.getItem(localStorageKey);
-      if (localData) {
-        setChallenges(JSON.parse(localData));
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, localStorageKey, migrationKey]);
-
-  // Load challenges on mount
-  useEffect(() => {
-    loadChallenges();
-  }, [loadChallenges]);
 
   // Sync activeChallenge with challenges
   useEffect(() => {
@@ -164,236 +63,79 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDayOfMonth = new Date(year, month, 1).getDay();
-  const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
 
-  const monthNames = [
-    "Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec",
-    "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień"
-  ];
-  const dayNames = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Nd"];
+  const resetForm = () => setFormData(DEFAULT_FORM_DATA);
 
-  const formatDateStr = (date: Date): string => {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  };
-
-  const calculateEndDate = (startDate: Date, durationType: string, durationValue: number): Date => {
-    const endDate = new Date(startDate);
-    switch (durationType) {
-      case 'days': endDate.setDate(endDate.getDate() + durationValue - 1); break;
-      case 'weeks': endDate.setDate(endDate.getDate() + (durationValue * 7) - 1); break;
-      case 'months': endDate.setMonth(endDate.getMonth() + durationValue); endDate.setDate(endDate.getDate() - 1); break;
-      case 'year': endDate.setFullYear(endDate.getFullYear() + 1); endDate.setDate(endDate.getDate() - 1); break;
+  const handleCreate = async () => {
+    const newChallenge = await createChallenge(formData);
+    if (newChallenge) {
+      setActiveChallenge(newChallenge);
+      setView('detail');
     }
-    return endDate;
-  };
-
-  const resetForm = () => {
-    setFormName('');
-    setFormDateMode('duration');
-    setFormDurationType('days');
-    setFormDurationValue(30);
-    setFormStartDate('');
-    setFormEndDate('');
-    setFormTrackReps(false);
-  };
-
-  const createChallenge = async () => {
-    if (!user) return;
-
-    const today = new Date();
-    let startDate: string;
-    let endDate: string;
-
-    if (formDateMode === 'dates') {
-      startDate = formStartDate || formatDateStr(today);
-      endDate = formEndDate || formatDateStr(today);
-    } else {
-      const startDateObj = formStartDate ? new Date(formStartDate) : today;
-      startDate = formatDateStr(startDateObj);
-      endDate = formatDateStr(calculateEndDate(startDateObj, formDurationType, formDurationValue));
-    }
-
-    const newChallenge: Challenge = {
-      id: crypto.randomUUID(),
-      name: formName.trim() || 'Nowe wyzwanie',
-      startDate,
-      endDate,
-      trackReps: formTrackReps,
-      completedDays: {}
-    };
-
-    // Optimistic update
-    setChallenges(prev => [newChallenge, ...prev]);
-    resetForm();
     setShowCreateModal(false);
-    setActiveChallenge(newChallenge);
-    setView('detail');
-
-    // Save to Supabase
-    try {
-      setIsSyncing(true);
-      const { error } = await supabase.from('challenges').insert({
-        id: newChallenge.id,
-        user_id: user.id,
-        name: newChallenge.name,
-        start_date: newChallenge.startDate,
-        end_date: newChallenge.endDate,
-        track_reps: newChallenge.trackReps,
-        completed_days: newChallenge.completedDays
-      });
-
-      if (error) throw error;
-      setSyncError(null);
-    } catch (error) {
-      console.error('Error creating challenge:', error);
-      setSyncError('Błąd zapisu');
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const updateChallenge = async () => {
-    if (!editingChallenge || !user) return;
-
-    let endDate: string;
-    if (formDateMode === 'dates') {
-      endDate = formEndDate;
-    } else {
-      const startDateObj = new Date(formStartDate);
-      endDate = formatDateStr(calculateEndDate(startDateObj, formDurationType, formDurationValue));
-    }
-
-    const updatedChallenge = {
-      ...editingChallenge,
-      name: formName.trim() || editingChallenge.name,
-      startDate: formStartDate,
-      endDate,
-      trackReps: formTrackReps
-    };
-
-    // Optimistic update
-    setChallenges(prev => prev.map(c =>
-      c.id === editingChallenge.id ? updatedChallenge : c
-    ));
-
-    setShowEditModal(false);
-    setEditingChallenge(null);
     resetForm();
-
-    // Save to Supabase
-    try {
-      setIsSyncing(true);
-      const { error } = await supabase.from('challenges')
-        .update({
-          name: updatedChallenge.name,
-          start_date: updatedChallenge.startDate,
-          end_date: updatedChallenge.endDate,
-          track_reps: updatedChallenge.trackReps
-        })
-        .eq('id', editingChallenge.id);
-
-      if (error) throw error;
-      setSyncError(null);
-    } catch (error) {
-      console.error('Error updating challenge:', error);
-      setSyncError('Błąd zapisu');
-    } finally {
-      setIsSyncing(false);
-    }
   };
 
-  const deleteChallenge = async (id: string) => {
-    // Optimistic update
-    setChallenges(prev => prev.filter(c => c.id !== id));
-    if (activeChallenge?.id === id) {
-      setActiveChallenge(null);
-      setView('list');
+  const handleUpdate = async () => {
+    if (editingChallengeId) {
+      await updateChallenge(editingChallengeId, formData);
+    }
+    setShowEditModal(false);
+    setEditingChallengeId(null);
+    resetForm();
+  };
+
+  const handleDelete = async () => {
+    if (editingChallengeId) {
+      await deleteChallenge(editingChallengeId);
+      if (activeChallenge?.id === editingChallengeId) {
+        setActiveChallenge(null);
+        setView('list');
+      }
     }
     setShowDeleteConfirm(false);
-    setEditingChallenge(null);
-
-    // Delete from Supabase
-    try {
-      setIsSyncing(true);
-      const { error } = await supabase.from('challenges')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      setSyncError(null);
-    } catch (error) {
-      console.error('Error deleting challenge:', error);
-      setSyncError('Błąd usuwania');
-      // Reload to restore state
-      loadChallenges();
-    } finally {
-      setIsSyncing(false);
-    }
+    setEditingChallengeId(null);
   };
 
   const openEditModal = (challenge: Challenge) => {
-    setEditingChallenge(challenge);
-    setFormName(challenge.name);
-    setFormDateMode('dates');
-    setFormStartDate(challenge.startDate);
-    setFormEndDate(challenge.endDate);
-    setFormTrackReps(challenge.trackReps);
+    setEditingChallengeId(challenge.id);
+    setFormData({
+      name: challenge.name,
+      dateMode: 'dates',
+      durationType: 'days',
+      durationValue: 30,
+      startDate: challenge.startDate,
+      endDate: challenge.endDate,
+      trackReps: challenge.trackReps
+    });
     setShowEditModal(true);
   };
 
-  // Update completedDays in Supabase
-  const syncCompletedDays = async (challengeId: string, completedDays: { [date: string]: number }) => {
-    try {
-      setIsSyncing(true);
-      const { error } = await supabase.from('challenges')
-        .update({ completed_days: completedDays })
-        .eq('id', challengeId);
-
-      if (error) throw error;
-      setSyncError(null);
-    } catch (error) {
-      console.error('Error syncing completed days:', error);
-      setSyncError('Błąd synchronizacji');
-    } finally {
-      setIsSyncing(false);
-    }
+  const openDeleteConfirm = (challengeId: string) => {
+    setEditingChallengeId(challengeId);
+    setShowDeleteConfirm(true);
   };
 
-  // Handle day click
-  const handleDayClick = (day: number) => {
+  const handleDayClick = (day: number, dateStr: string) => {
     if (!activeChallenge) return;
+    const inChallenge = dateStr >= activeChallenge.startDate && dateStr <= activeChallenge.endDate;
+    if (!inChallenge) return;
 
     if (activeChallenge.trackReps) {
-      // Show modal to enter reps
-      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const currentReps = activeChallenge.completedDays[dateStr] || 0;
       setRepsDay(day);
       setRepsValue(currentReps > 0 ? currentReps.toString() : '');
       setShowRepsModal(true);
     } else {
-      // Simple toggle
-      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const newCompletedDays = activeChallenge.completedDays[dateStr]
         ? Object.fromEntries(Object.entries(activeChallenge.completedDays).filter(([d]) => d !== dateStr))
         : { ...activeChallenge.completedDays, [dateStr]: 1 };
-
-      // Optimistic update
-      setChallenges(prev => prev.map(c =>
-        c.id === activeChallenge.id
-          ? { ...c, completedDays: newCompletedDays }
-          : c
-      ));
-
-      // Sync to Supabase
-      syncCompletedDays(activeChallenge.id, newCompletedDays);
+      updateCompletedDays(activeChallenge.id, newCompletedDays);
     }
   };
 
-  // Save reps for a day
   const saveReps = () => {
-    if (!activeChallenge || repsDay === null) return;
+    if (!activeChallenge) return;
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(repsDay).padStart(2, '0')}`;
     const reps = parseInt(repsValue) || 0;
 
@@ -401,72 +143,8 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
       ? { ...activeChallenge.completedDays, [dateStr]: reps }
       : Object.fromEntries(Object.entries(activeChallenge.completedDays).filter(([d]) => d !== dateStr));
 
-    // Optimistic update
-    setChallenges(prev => prev.map(c =>
-      c.id === activeChallenge.id
-        ? { ...c, completedDays: newCompletedDays }
-        : c
-    ));
-
+    updateCompletedDays(activeChallenge.id, newCompletedDays);
     setShowRepsModal(false);
-    setRepsDay(null);
-    setRepsValue('');
-
-    // Sync to Supabase
-    syncCompletedDays(activeChallenge.id, newCompletedDays);
-  };
-
-  const isDayCompleted = (day: number): boolean => {
-    if (!activeChallenge) return false;
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return !!activeChallenge.completedDays[dateStr];
-  };
-
-  const getDayReps = (day: number): number => {
-    if (!activeChallenge) return 0;
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return activeChallenge.completedDays[dateStr] || 0;
-  };
-
-  const isWithinChallenge = (day: number): boolean => {
-    if (!activeChallenge) return false;
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return dateStr >= activeChallenge.startDate && dateStr <= activeChallenge.endDate;
-  };
-
-  const isToday = (day: number): boolean => {
-    const today = new Date();
-    return today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
-  };
-
-  const getChallengeProgress = (challenge: Challenge) => {
-    const start = new Date(challenge.startDate);
-    const end = new Date(challenge.endDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    const completedCount = Object.keys(challenge.completedDays).length;
-    const totalReps = Object.values(challenge.completedDays).reduce((sum, r) => sum + r, 0);
-    const percentage = Math.round((completedCount / totalDays) * 100);
-    const isCompleted = today > end;
-
-    // Calculate streak
-    let streak = 0;
-    let checkDate = new Date(today);
-    while (true) {
-      const dateStr = formatDateStr(checkDate);
-      if (challenge.completedDays[dateStr]) {
-        streak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else if (streak === 0 && checkDate.toDateString() === today.toDateString()) {
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
-      }
-    }
-
-    return { totalDays, completedCount, totalReps, percentage, isCompleted, streak };
   };
 
   // Loading state
@@ -493,11 +171,11 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
             </button>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-white">Wyzwania</h1>
-              {isSyncing && <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />}
-              {!isSyncing && !syncError && <Cloud className="w-4 h-4 text-emerald-400" />}
-              {syncError && <span title={syncError}><CloudOff className="w-4 h-4 text-rose-400" /></span>}
+              <SyncIndicator isSyncing={isSyncing} syncError={syncError} />
             </div>
-            <button onClick={signOut} className="text-slate-400 hover:text-white transition-colors text-sm">Wyloguj</button>
+            <button onClick={signOut} className="text-slate-400 hover:text-white transition-colors text-sm">
+              Wyloguj
+            </button>
           </div>
         </header>
 
@@ -523,274 +201,42 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
             </div>
           ) : (
             <div className="space-y-4">
-              {challenges.map(challenge => {
-                const progress = getChallengeProgress(challenge);
-                return (
-                  <div
-                    key={challenge.id}
-                    className="bg-slate-800/50 rounded-xl border-2 border-slate-700 p-4 hover:border-amber-500/50 transition-colors cursor-pointer"
-                    onClick={() => { setActiveChallenge(challenge); setView('detail'); }}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="text-lg font-semibold text-white">{challenge.name}</h3>
-                        <p className="text-slate-400 text-sm">{challenge.startDate} - {challenge.endDate}</p>
-                      </div>
-                      <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => openEditModal(challenge)} className="text-slate-400 hover:text-amber-400 p-1">
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => { setEditingChallenge(challenge); setShowDeleteConfirm(true); }} className="text-slate-400 hover:text-rose-400 p-1">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="h-2 bg-slate-700 rounded-full overflow-hidden mb-2">
-                      <div className={`h-full transition-all ${progress.isCompleted ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${progress.percentage}%` }} />
-                    </div>
-
-                    <div className="flex justify-between text-sm">
-                      <div className="flex items-center gap-3">
-                        <span className="text-slate-400">{progress.completedCount}/{progress.totalDays} dni</span>
-                        {progress.streak > 0 && (
-                          <span className="flex items-center gap-1 text-orange-400">
-                            <Flame className="w-3 h-3" /> {progress.streak}
-                          </span>
-                        )}
-                        {challenge.trackReps && progress.totalReps > 0 && (
-                          <span className="text-emerald-400 font-medium">{progress.totalReps} pow.</span>
-                        )}
-                      </div>
-                      <span className={progress.isCompleted ? 'text-emerald-400' : 'text-amber-400'}>
-                        {progress.percentage}%
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+              {challenges.map(challenge => (
+                <ChallengeCard
+                  key={challenge.id}
+                  challenge={challenge}
+                  progress={getChallengeProgress(challenge)}
+                  onClick={() => { setActiveChallenge(challenge); setView('detail'); }}
+                  onEdit={() => openEditModal(challenge)}
+                  onDelete={() => openDeleteConfirm(challenge.id)}
+                />
+              ))}
             </div>
           )}
         </main>
 
-        {/* Create Modal */}
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-800 rounded-xl border-2 border-slate-700 p-6 w-full max-w-md">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">Nowe wyzwanie</h3>
-                <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-white">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+        <ChallengeFormModal
+          isOpen={showCreateModal}
+          formData={formData}
+          onChange={(data) => setFormData(prev => ({ ...prev, ...data }))}
+          onSubmit={handleCreate}
+          onClose={() => setShowCreateModal(false)}
+        />
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-slate-400 mb-2">Nazwa wyzwania</label>
-                  <input
-                    type="text"
-                    value={formName}
-                    onChange={(e) => setFormName(e.target.value)}
-                    placeholder="np. Pompki codziennie"
-                    className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
-                  />
-                </div>
+        <ChallengeFormModal
+          isOpen={showEditModal}
+          isEdit
+          formData={formData}
+          onChange={(data) => setFormData(prev => ({ ...prev, ...data }))}
+          onSubmit={handleUpdate}
+          onClose={() => { setShowEditModal(false); setEditingChallengeId(null); }}
+        />
 
-                <div>
-                  <label className="block text-sm text-slate-400 mb-2">Sposób ustalenia terminu</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => setFormDateMode('duration')}
-                      className={`py-2 rounded-lg text-sm font-medium transition-all ${formDateMode === 'duration' ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
-                    >
-                      Czas trwania
-                    </button>
-                    <button
-                      onClick={() => setFormDateMode('dates')}
-                      className={`py-2 rounded-lg text-sm font-medium transition-all ${formDateMode === 'dates' ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
-                    >
-                      Własne daty
-                    </button>
-                  </div>
-                </div>
-
-                {formDateMode === 'dates' ? (
-                  <>
-                    <div>
-                      <label className="block text-sm text-slate-400 mb-2">Data rozpoczęcia</label>
-                      <input type="date" value={formStartDate} onChange={(e) => setFormStartDate(e.target.value)}
-                        className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-slate-400 mb-2">Data zakończenia</label>
-                      <input type="date" value={formEndDate} onChange={(e) => setFormEndDate(e.target.value)}
-                        className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none" />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <label className="block text-sm text-slate-400 mb-2">Typ okresu</label>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[{ value: 'days', label: 'Dni' }, { value: 'weeks', label: 'Tyg.' }, { value: 'months', label: 'Mies.' }, { value: 'year', label: 'Rok' }].map(option => (
-                          <button
-                            key={option.value}
-                            onClick={() => { setFormDurationType(option.value as typeof formDurationType); if (option.value === 'year') setFormDurationValue(1); }}
-                            className={`py-2 rounded-lg text-sm font-medium transition-all ${formDurationType === option.value ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    {formDurationType !== 'year' && (
-                      <div>
-                        <label className="block text-sm text-slate-400 mb-2">
-                          Liczba {formDurationType === 'days' ? 'dni' : formDurationType === 'weeks' ? 'tygodni' : 'miesięcy'}
-                        </label>
-                        <div className="flex items-center gap-4">
-                          <input type="range" min={1} max={formDurationType === 'days' ? 90 : 12} value={formDurationValue}
-                            onChange={(e) => setFormDurationValue(Number(e.target.value))} className="flex-1 accent-amber-500" />
-                          <span className="text-2xl font-bold text-white w-12 text-center">{formDurationValue}</span>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                <div>
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <div
-                      onClick={() => setFormTrackReps(!formTrackReps)}
-                      className={`relative w-12 h-6 rounded-full transition-colors ${formTrackReps ? 'bg-amber-600' : 'bg-slate-700'}`}
-                    >
-                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${formTrackReps ? 'translate-x-7' : 'translate-x-1'}`} />
-                    </div>
-                    <span className="text-sm text-slate-300">Zapisuj liczbę powtórzeń</span>
-                  </label>
-                  <p className="text-xs text-slate-500 mt-1 ml-15">
-                    {formTrackReps ? 'Będziesz mógł wpisać ile powtórzeń zrobiłeś danego dnia' : 'Tylko zaznaczanie czy dzień został wykonany'}
-                  </p>
-                </div>
-
-                <button onClick={createChallenge} className="w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-lg font-bold">
-                  Utwórz wyzwanie
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Edit Modal */}
-        {showEditModal && editingChallenge && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-800 rounded-xl border-2 border-slate-700 p-6 w-full max-w-md">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">Edytuj wyzwanie</h3>
-                <button onClick={() => { setShowEditModal(false); setEditingChallenge(null); }} className="text-slate-400 hover:text-white">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-slate-400 mb-2">Nazwa</label>
-                  <input type="text" value={formName} onChange={(e) => setFormName(e.target.value)}
-                    className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none" />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-slate-400 mb-2">Sposób ustalenia terminu</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => setFormDateMode('duration')}
-                      className={`py-2 rounded-lg text-sm font-medium transition-all ${formDateMode === 'duration' ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
-                      Czas trwania
-                    </button>
-                    <button onClick={() => setFormDateMode('dates')}
-                      className={`py-2 rounded-lg text-sm font-medium transition-all ${formDateMode === 'dates' ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
-                      Własne daty
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm text-slate-400 mb-2">Data rozpoczęcia</label>
-                  <input type="date" value={formStartDate} onChange={(e) => setFormStartDate(e.target.value)}
-                    className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none" />
-                </div>
-
-                {formDateMode === 'dates' ? (
-                  <div>
-                    <label className="block text-sm text-slate-400 mb-2">Data zakończenia</label>
-                    <input type="date" value={formEndDate} onChange={(e) => setFormEndDate(e.target.value)}
-                      className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none" />
-                  </div>
-                ) : (
-                  <>
-                    <div>
-                      <label className="block text-sm text-slate-400 mb-2">Typ okresu</label>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[{ value: 'days', label: 'Dni' }, { value: 'weeks', label: 'Tyg.' }, { value: 'months', label: 'Mies.' }, { value: 'year', label: 'Rok' }].map(option => (
-                          <button key={option.value}
-                            onClick={() => { setFormDurationType(option.value as typeof formDurationType); if (option.value === 'year') setFormDurationValue(1); }}
-                            className={`py-2 rounded-lg text-sm font-medium transition-all ${formDurationType === option.value ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    {formDurationType !== 'year' && (
-                      <div>
-                        <label className="block text-sm text-slate-400 mb-2">
-                          Liczba {formDurationType === 'days' ? 'dni' : formDurationType === 'weeks' ? 'tygodni' : 'miesięcy'}
-                        </label>
-                        <div className="flex items-center gap-4">
-                          <input type="range" min={1} max={formDurationType === 'days' ? 90 : 12} value={formDurationValue}
-                            onChange={(e) => setFormDurationValue(Number(e.target.value))} className="flex-1 accent-amber-500" />
-                          <span className="text-2xl font-bold text-white w-12 text-center">{formDurationValue}</span>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                <div>
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <div
-                      onClick={() => setFormTrackReps(!formTrackReps)}
-                      className={`relative w-12 h-6 rounded-full transition-colors ${formTrackReps ? 'bg-amber-600' : 'bg-slate-700'}`}
-                    >
-                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${formTrackReps ? 'translate-x-7' : 'translate-x-1'}`} />
-                    </div>
-                    <span className="text-sm text-slate-300">Zapisuj liczbę powtórzeń</span>
-                  </label>
-                </div>
-
-                <div className="flex gap-3">
-                  <button onClick={() => { setShowEditModal(false); setEditingChallenge(null); }} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg">Anuluj</button>
-                  <button onClick={updateChallenge} className="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-2 rounded-lg">Zapisz</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Delete Confirmation */}
-        {showDeleteConfirm && editingChallenge && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-800 rounded-xl border-2 border-slate-700 p-6 w-full max-w-sm text-center">
-              <div className="w-14 h-14 bg-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle className="w-7 h-7 text-rose-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Usuń wyzwanie?</h3>
-              <p className="text-slate-400 text-sm mb-6">Wszystkie postępy zostaną utracone.</p>
-              <div className="flex gap-3">
-                <button onClick={() => { setShowDeleteConfirm(false); setEditingChallenge(null); }} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg">Anuluj</button>
-                <button onClick={() => deleteChallenge(editingChallenge.id)} className="flex-1 bg-rose-600 hover:bg-rose-500 text-white py-2 rounded-lg">Usuń</button>
-              </div>
-            </div>
-          </div>
-        )}
+        <DeleteConfirmModal
+          isOpen={showDeleteConfirm}
+          onConfirm={handleDelete}
+          onCancel={() => { setShowDeleteConfirm(false); setEditingChallengeId(null); }}
+        />
       </div>
     );
   }
@@ -798,6 +244,37 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   // DETAIL VIEW
   if (view === 'detail' && activeChallenge) {
     const progress = getChallengeProgress(activeChallenge);
+
+    const renderDay = (day: number, dateStr: string) => {
+      const completed = !!activeChallenge.completedDays[dateStr];
+      const inChallenge = dateStr >= activeChallenge.startDate && dateStr <= activeChallenge.endDate;
+      const reps = activeChallenge.completedDays[dateStr] || 0;
+      const today = isToday(day, month, year);
+
+      return (
+        <button
+          onClick={() => handleDayClick(day, dateStr)}
+          disabled={!inChallenge}
+          className={`aspect-square rounded-lg flex flex-col items-center justify-center transition-all relative
+            ${today ? 'ring-2 ring-emerald-500' : ''}
+            ${completed ? 'bg-emerald-500/30' : inChallenge ? 'bg-amber-500/10 hover:bg-amber-500/20' : 'bg-slate-900/30 opacity-40'}
+            ${inChallenge ? 'cursor-pointer' : 'cursor-not-allowed'}
+          `}
+        >
+          {completed && !activeChallenge.trackReps && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Check className="w-5 h-5 text-emerald-400" />
+            </div>
+          )}
+          <span className={`text-sm ${completed ? 'text-emerald-300' : today ? 'text-emerald-400 font-bold' : inChallenge ? 'text-amber-200' : 'text-slate-500'}`}>
+            {day}
+          </span>
+          {completed && activeChallenge.trackReps && reps > 0 && (
+            <span className="text-xs text-emerald-400 font-bold">{reps}</span>
+          )}
+        </button>
+      );
+    };
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950">
@@ -809,15 +286,13 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
             </button>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-white truncate max-w-[200px]">{activeChallenge.name}</h1>
-              {isSyncing && <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />}
-              {!isSyncing && !syncError && <Cloud className="w-4 h-4 text-emerald-400" />}
-              {syncError && <span title={syncError}><CloudOff className="w-4 h-4 text-rose-400" /></span>}
+              <SyncIndicator isSyncing={isSyncing} syncError={syncError} />
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => openEditModal(activeChallenge)} className="text-slate-400 hover:text-amber-400 p-1">
                 <Edit2 className="w-4 h-4" />
               </button>
-              <button onClick={() => { setEditingChallenge(activeChallenge); setShowDeleteConfirm(true); }} className="text-slate-400 hover:text-rose-400 p-1">
+              <button onClick={() => openDeleteConfirm(activeChallenge.id)} className="text-slate-400 hover:text-rose-400 p-1">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
@@ -847,8 +322,10 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
               </div>
             </div>
             <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
-              <div className={`h-full transition-all ${progress.isCompleted ? 'bg-emerald-500' : 'bg-gradient-to-r from-amber-600 to-amber-400'}`}
-                style={{ width: `${progress.percentage}%` }} />
+              <div
+                className={`h-full transition-all ${progress.isCompleted ? 'bg-emerald-500' : 'bg-gradient-to-r from-amber-600 to-amber-400'}`}
+                style={{ width: `${progress.percentage}%` }}
+              />
             </div>
             {progress.isCompleted && (
               <div className="mt-3 bg-emerald-500/20 border border-emerald-500/50 rounded-lg p-2 text-center">
@@ -858,166 +335,44 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
           </div>
 
           {/* Calendar */}
-          <div className="bg-slate-800/50 rounded-xl border-2 border-slate-700 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} className="p-2 hover:bg-slate-700 rounded-lg">
-                <ChevronLeft className="w-5 h-5 text-slate-400" />
-              </button>
-              <h2 className="text-lg font-semibold text-white">{monthNames[month]} {year}</h2>
-              <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))} className="p-2 hover:bg-slate-700 rounded-lg">
-                <ChevronRight className="w-5 h-5 text-slate-400" />
-              </button>
-            </div>
+          <Calendar
+            currentDate={currentDate}
+            onDateChange={setCurrentDate}
+            renderDay={renderDay}
+          />
 
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {dayNames.map(day => (
-                <div key={day} className="text-center text-xs text-slate-500 py-2">{day}</div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-7 gap-1">
-              {Array.from({ length: adjustedFirstDay }).map((_, i) => (
-                <div key={`empty-${i}`} className="aspect-square" />
-              ))}
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const day = i + 1;
-                const completed = isDayCompleted(day);
-                const inChallenge = isWithinChallenge(day);
-                const reps = getDayReps(day);
-
-                return (
-                  <button
-                    key={day}
-                    onClick={() => inChallenge && handleDayClick(day)}
-                    disabled={!inChallenge}
-                    className={`aspect-square rounded-lg flex flex-col items-center justify-center transition-all relative
-                      ${isToday(day) ? 'ring-2 ring-emerald-500' : ''}
-                      ${completed ? 'bg-emerald-500/30' : inChallenge ? 'bg-amber-500/10 hover:bg-amber-500/20' : 'bg-slate-900/30 opacity-40'}
-                      ${inChallenge ? 'cursor-pointer' : 'cursor-not-allowed'}
-                    `}
-                  >
-                    {completed && !activeChallenge?.trackReps && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Check className="w-5 h-5 text-emerald-400" />
-                      </div>
-                    )}
-                    <span className={`text-sm ${completed ? 'text-emerald-300' : isToday(day) ? 'text-emerald-400 font-bold' : inChallenge ? 'text-amber-200' : 'text-slate-500'}`}>
-                      {day}
-                    </span>
-                    {completed && activeChallenge?.trackReps && reps > 0 && (
-                      <span className="text-xs text-emerald-400 font-bold">{reps}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            <p className="text-slate-400 text-xs text-center mt-4">
-              {activeChallenge?.trackReps
-                ? 'Kliknij na dzień aby wpisać liczbę powtórzeń'
-                : 'Kliknij na dzień w zakresie wyzwania, aby oznaczyć jako wykonane'
-              }
-            </p>
-          </div>
+          <p className="text-slate-400 text-xs text-center">
+            {activeChallenge.trackReps
+              ? 'Kliknij na dzień aby wpisać liczbę powtórzeń'
+              : 'Kliknij na dzień w zakresie wyzwania, aby oznaczyć jako wykonane'}
+          </p>
         </main>
 
-        {/* Reps Input Modal */}
-        {showRepsModal && repsDay !== null && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-800 rounded-xl border-2 border-slate-700 p-6 w-full max-w-xs">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">
-                  {repsDay} {monthNames[month]}
-                </h3>
-                <button onClick={() => { setShowRepsModal(false); setRepsDay(null); setRepsValue(''); }} className="text-slate-400 hover:text-white">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+        <RepsModal
+          isOpen={showRepsModal}
+          day={repsDay}
+          month={month}
+          value={repsValue}
+          onChange={setRepsValue}
+          onSave={saveReps}
+          onDelete={() => { setRepsValue('0'); saveReps(); }}
+          onClose={() => setShowRepsModal(false)}
+        />
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-slate-400 mb-2">Liczba powtórzeń</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={repsValue}
-                    onChange={(e) => setRepsValue(e.target.value)}
-                    placeholder="np. 50"
-                    className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-3 text-white text-2xl text-center placeholder-slate-500 focus:border-amber-500 focus:outline-none"
-                    autoFocus
-                  />
-                </div>
+        <ChallengeFormModal
+          isOpen={showEditModal}
+          isEdit
+          formData={formData}
+          onChange={(data) => setFormData(prev => ({ ...prev, ...data }))}
+          onSubmit={handleUpdate}
+          onClose={() => { setShowEditModal(false); setEditingChallengeId(null); }}
+        />
 
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => { setRepsValue('0'); saveReps(); }}
-                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-sm"
-                  >
-                    Usuń
-                  </button>
-                  <button
-                    onClick={saveReps}
-                    className="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-2 rounded-lg font-medium"
-                  >
-                    Zapisz
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Edit Modal (reused) */}
-        {showEditModal && editingChallenge && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-800 rounded-xl border-2 border-slate-700 p-6 w-full max-w-md">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">Edytuj wyzwanie</h3>
-                <button onClick={() => { setShowEditModal(false); setEditingChallenge(null); }} className="text-slate-400 hover:text-white">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-slate-400 mb-2">Nazwa</label>
-                  <input type="text" value={formName} onChange={(e) => setFormName(e.target.value)}
-                    className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none" />
-                </div>
-                <div>
-                  <label className="block text-sm text-slate-400 mb-2">Data rozpoczęcia</label>
-                  <input type="date" value={formStartDate} onChange={(e) => setFormStartDate(e.target.value)}
-                    className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none" />
-                </div>
-                <div>
-                  <label className="block text-sm text-slate-400 mb-2">Data zakończenia</label>
-                  <input type="date" value={formEndDate} onChange={(e) => setFormEndDate(e.target.value)}
-                    className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none" />
-                </div>
-                <div className="flex gap-3">
-                  <button onClick={() => { setShowEditModal(false); setEditingChallenge(null); }} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg">Anuluj</button>
-                  <button onClick={updateChallenge} className="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-2 rounded-lg">Zapisz</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Delete Confirmation */}
-        {showDeleteConfirm && editingChallenge && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-800 rounded-xl border-2 border-slate-700 p-6 w-full max-w-sm text-center">
-              <div className="w-14 h-14 bg-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle className="w-7 h-7 text-rose-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Usuń wyzwanie?</h3>
-              <p className="text-slate-400 text-sm mb-6">Wszystkie postępy zostaną utracone.</p>
-              <div className="flex gap-3">
-                <button onClick={() => { setShowDeleteConfirm(false); setEditingChallenge(null); }} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg">Anuluj</button>
-                <button onClick={() => deleteChallenge(editingChallenge.id)} className="flex-1 bg-rose-600 hover:bg-rose-500 text-white py-2 rounded-lg">Usuń</button>
-              </div>
-            </div>
-          </div>
-        )}
+        <DeleteConfirmModal
+          isOpen={showDeleteConfirm}
+          onConfirm={handleDelete}
+          onCancel={() => { setShowDeleteConfirm(false); setEditingChallengeId(null); }}
+        />
       </div>
     );
   }
