@@ -5,7 +5,7 @@ import {
   Calendar, Target, Plus, X, Edit2, Trash2,
   ChevronLeft, ChevronRight, Activity, Flame, Footprints,
   Dumbbell, LineChart, Award, LogOut, Table, TrendingDown,
-  Scale, Clock, FileText, RotateCcw, AlertTriangle
+  Scale, Clock, FileText, RotateCcw, AlertTriangle, Home
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -56,7 +56,11 @@ interface Profile {
   activity_level?: number;
 }
 
-export default function WeightTracker() {
+interface WeightTrackerProps {
+  onBack?: () => void;
+}
+
+export default function WeightTracker({ onBack }: WeightTrackerProps) {
   const { user, signOut } = useAuth();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [goal, setGoal] = useState<Goal | null>(null);
@@ -1198,9 +1202,16 @@ export default function WeightTracker() {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-4 md:p-8">
       <div className="max-w-6xl mx-auto mb-8">
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Weight Tracker Pro</h1>
-            <p className="text-slate-400 text-sm">Kompleksowe śledzenie postępów</p>
+          <div className="flex items-center gap-4">
+            {onBack && (
+              <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors flex items-center gap-2">
+                <Home className="w-5 h-5" />
+              </button>
+            )}
+            <div>
+              <h1 className="text-3xl font-bold text-white">Progress Tracker</h1>
+              <p className="text-slate-400 text-sm">Kompleksowe śledzenie postępów</p>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <button onClick={() => setShowGoalModal(true)} className="text-emerald-400 hover:text-emerald-300 text-sm font-medium">Edytuj plan</button>
