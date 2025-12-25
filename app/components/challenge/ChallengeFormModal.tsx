@@ -161,44 +161,32 @@ export default function ChallengeFormModal({
                   formData.trackReps ? 'translate-x-7' : 'translate-x-1'
                 }`} />
               </div>
-              <span className="text-sm text-slate-300">Śledź postępy z celem dziennym</span>
+              <span className="text-sm text-slate-300">Śledź postępy z celami</span>
             </label>
             <p className="text-xs text-slate-500 mt-1 ml-15">
               {formData.trackReps
-                ? 'Ustaw cel dzienny i zapisuj ile wykonałeś'
+                ? 'Ustaw różne cele na każdy dzień w kalendarzu'
                 : 'Tylko zaznaczanie czy dzień został wykonany'}
             </p>
           </div>
 
-          {/* Daily Goal Settings */}
+          {/* Goal Unit Settings */}
           {formData.trackReps && (
             <div className="space-y-3 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
               <div>
-                <label className="block text-sm text-slate-400 mb-2">Cel dzienny</label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    value={formData.dailyGoal || ''}
-                    onChange={(e) => onChange({ dailyGoal: Number(e.target.value) })}
-                    placeholder="np. 50"
-                    className="flex-1 bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
-                  />
-                  <select
-                    value={formData.goalUnit}
-                    onChange={(e) => onChange({ goalUnit: e.target.value })}
-                    className="bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2 text-white focus:border-amber-500 focus:outline-none"
-                  >
-                    {GOAL_UNITS.map(unit => (
-                      <option key={unit.value} value={unit.value}>{unit.label}</option>
-                    ))}
-                  </select>
-                </div>
+                <label className="block text-sm text-slate-400 mb-2">Jednostka</label>
+                <select
+                  value={formData.goalUnit}
+                  onChange={(e) => onChange({ goalUnit: e.target.value })}
+                  className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2 text-white focus:border-amber-500 focus:outline-none"
+                >
+                  {GOAL_UNITS.map(unit => (
+                    <option key={unit.value} value={unit.value}>{unit.label}</option>
+                  ))}
+                </select>
               </div>
               <p className="text-xs text-slate-500">
-                {formData.dailyGoal > 0
-                  ? `Twój cel: ${formData.dailyGoal} ${formData.goalUnit} dziennie`
-                  : 'Bez celu - wpisuj dowolną liczbę powtórzeń'}
+                Cele dla każdego dnia ustawisz w kalendarzu po utworzeniu wyzwania
               </p>
             </div>
           )}

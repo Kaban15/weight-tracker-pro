@@ -31,7 +31,8 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     createChallenge,
     updateChallenge,
     deleteChallenge,
-    updateCompletedDays
+    updateCompletedDays,
+    updateDailyGoals
   } = useChallenges(user?.id);
 
   // View state
@@ -52,6 +53,8 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   const [showRepsModal, setShowRepsModal] = useState(false);
   const [repsDay, setRepsDay] = useState<number>(0);
   const [repsValue, setRepsValue] = useState('');
+  const [goalValue, setGoalValue] = useState('');
+  const [currentDateStr, setCurrentDateStr] = useState('');
 
   // Sync activeChallenge with challenges
   useEffect(() => {
@@ -107,7 +110,6 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
       startDate: challenge.startDate,
       endDate: challenge.endDate,
       trackReps: challenge.trackReps,
-      dailyGoal: challenge.dailyGoal || 0,
       goalUnit: challenge.goalUnit || 'powtórzeń'
     });
     setShowEditModal(true);
@@ -125,8 +127,11 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
 
     if (activeChallenge.trackReps) {
       const currentReps = activeChallenge.completedDays[dateStr] || 0;
+      const currentGoal = activeChallenge.dailyGoals?.[dateStr] || 0;
       setRepsDay(day);
       setRepsValue(currentReps > 0 ? currentReps.toString() : '');
+      setGoalValue(currentGoal > 0 ? currentGoal.toString() : '');
+      setCurrentDateStr(dateStr);
       setShowRepsModal(true);
     } else {
       const newCompletedDays = activeChallenge.completedDays[dateStr]
@@ -137,15 +142,23 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   };
 
   const saveReps = () => {
-    if (!activeChallenge) return;
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(repsDay).padStart(2, '0')}`;
+    if (!activeChallenge || !currentDateStr) return;
     const reps = parseInt(repsValue) || 0;
+    const goal = parseInt(goalValue) || 0;
 
+    // Zapisz wykonane powtórzenia
     const newCompletedDays = reps > 0
-      ? { ...activeChallenge.completedDays, [dateStr]: reps }
-      : Object.fromEntries(Object.entries(activeChallenge.completedDays).filter(([d]) => d !== dateStr));
+      ? { ...activeChallenge.completedDays, [currentDateStr]: reps }
+      : Object.fromEntries(Object.entries(activeChallenge.completedDays).filter(([d]) => d !== currentDateStr));
 
     updateCompletedDays(activeChallenge.id, newCompletedDays);
+
+    // Zapisz cel na ten dzień
+    const newDailyGoals = goal > 0
+      ? { ...(activeChallenge.dailyGoals || {}), [currentDateStr]: goal }
+      : Object.fromEntries(Object.entries(activeChallenge.dailyGoals || {}).filter(([d]) => d !== currentDateStr));
+
+    updateDailyGoals(activeChallenge.id, newDailyGoals);
     setShowRepsModal(false);
   };
 
@@ -251,9 +264,10 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
       const completed = !!activeChallenge.completedDays[dateStr];
       const inChallenge = dateStr >= activeChallenge.startDate && dateStr <= activeChallenge.endDate;
       const reps = activeChallenge.completedDays[dateStr] || 0;
+      const dayGoal = activeChallenge.dailyGoals?.[dateStr] || 0;
       const today = isToday(day, month, year);
-      const hasGoal = activeChallenge.dailyGoal && activeChallenge.dailyGoal > 0;
-      const goalReached = hasGoal && reps >= activeChallenge.dailyGoal!;
+      const hasGoal = dayGoal > 0;
+      const goalReached = hasGoal && reps >= dayGoal;
 
       return (
         <button
@@ -273,8 +287,13 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
           <span className={`text-sm ${goalReached ? 'text-emerald-300' : completed ? 'text-amber-300' : today ? 'text-emerald-400 font-bold' : inChallenge ? 'text-amber-200' : 'text-slate-500'}`}>
             {day}
           </span>
-          {completed && activeChallenge.trackReps && reps > 0 && (
-            <span className={`text-xs font-bold ${goalReached ? 'text-emerald-400' : 'text-amber-400'}`}>{reps}</span>
+          {activeChallenge.trackReps && hasGoal && (
+            <span className={`text-[10px] ${goalReached ? 'text-emerald-400' : reps > 0 ? 'text-amber-400' : 'text-slate-500'}`}>
+              {reps > 0 ? `${reps}/${dayGoal}` : dayGoal}
+            </span>
+          )}
+          {activeChallenge.trackReps && !hasGoal && reps > 0 && (
+            <span className="text-xs font-bold text-amber-400">{reps}</span>
           )}
           {goalReached && (
             <Check className="w-3 h-3 text-emerald-400 absolute top-1 right-1" />
@@ -312,9 +331,9 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-slate-400 text-sm">{activeChallenge.startDate} - {activeChallenge.endDate}</p>
-                {activeChallenge.dailyGoal && activeChallenge.dailyGoal > 0 && (
+                {activeChallenge.trackReps && activeChallenge.goalUnit && (
                   <p className="text-amber-400 text-sm mt-1">
-                    Cel: {activeChallenge.dailyGoal} {activeChallenge.goalUnit}/dzień
+                    Jednostka: {activeChallenge.goalUnit}
                   </p>
                 )}
                 {progress.streak > 0 && (
@@ -331,9 +350,11 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                   <p className="text-2xl font-bold text-amber-400">{progress.percentage}%</p>
                 )}
                 <p className="text-slate-400 text-xs">{progress.completedCount}/{progress.totalDays} dni</p>
-                {activeChallenge.dailyGoal && activeChallenge.dailyGoal > 0 && (
+                {activeChallenge.dailyGoals && Object.keys(activeChallenge.dailyGoals).length > 0 && (
                   <p className="text-emerald-400 text-xs">
-                    {Object.values(activeChallenge.completedDays).filter(r => r >= activeChallenge.dailyGoal!).length} dni z celem
+                    {Object.entries(activeChallenge.completedDays).filter(([date, reps]) =>
+                      activeChallenge.dailyGoals?.[date] && reps >= activeChallenge.dailyGoals[date]
+                    ).length} dni z celem
                   </p>
                 )}
               </div>
@@ -370,11 +391,12 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
           day={repsDay}
           month={month}
           value={repsValue}
-          dailyGoal={activeChallenge.dailyGoal}
+          goalValue={goalValue}
           goalUnit={activeChallenge.goalUnit}
+          onGoalChange={setGoalValue}
           onChange={setRepsValue}
           onSave={saveReps}
-          onDelete={() => { setRepsValue('0'); saveReps(); }}
+          onDelete={() => { setRepsValue('0'); setGoalValue('0'); saveReps(); }}
           onClose={() => setShowRepsModal(false)}
         />
 

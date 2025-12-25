@@ -4,7 +4,7 @@ export interface Challenge {
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   trackReps: boolean;
-  dailyGoal?: number; // cel dzienny (np. 50 pompek, 30 minut)
+  dailyGoals?: { [date: string]: number }; // cele per dzień (np. "2025-01-01": 10, "2025-01-02": 15)
   goalUnit?: string; // jednostka (np. "powtórzeń", "minut", "km")
   completedDays: { [date: string]: number };
 }
@@ -16,7 +16,7 @@ export interface ChallengeRow {
   start_date: string;
   end_date: string;
   track_reps: boolean;
-  daily_goal?: number;
+  daily_goals?: { [date: string]: number };
   goal_unit?: string;
   completed_days: { [date: string]: number };
 }
@@ -38,7 +38,6 @@ export interface ChallengeFormData {
   startDate: string;
   endDate: string;
   trackReps: boolean;
-  dailyGoal: number;
   goalUnit: string;
 }
 
@@ -59,6 +58,5 @@ export const DEFAULT_FORM_DATA: ChallengeFormData = {
   startDate: '',
   endDate: '',
   trackReps: false,
-  dailyGoal: 0,
   goalUnit: 'powtórzeń'
 };

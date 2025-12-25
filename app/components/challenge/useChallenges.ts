@@ -61,7 +61,7 @@ export function useChallenges(userId: string | undefined) {
     startDate: row.start_date,
     endDate: row.end_date,
     trackReps: row.track_reps,
-    dailyGoal: row.daily_goal,
+    dailyGoals: row.daily_goals || {},
     goalUnit: row.goal_unit,
     completedDays: row.completed_days || {}
   });
@@ -143,7 +143,7 @@ export function useChallenges(userId: string | undefined) {
       startDate,
       endDate,
       trackReps: formData.trackReps,
-      dailyGoal: formData.trackReps ? formData.dailyGoal : undefined,
+      dailyGoals: {},
       goalUnit: formData.trackReps ? formData.goalUnit : undefined,
       completedDays: {}
     };
@@ -159,7 +159,7 @@ export function useChallenges(userId: string | undefined) {
         start_date: newChallenge.startDate,
         end_date: newChallenge.endDate,
         track_reps: newChallenge.trackReps,
-        daily_goal: newChallenge.dailyGoal,
+        daily_goals: newChallenge.dailyGoals,
         goal_unit: newChallenge.goalUnit,
         completed_days: newChallenge.completedDays
       });
@@ -196,7 +196,6 @@ export function useChallenges(userId: string | undefined) {
       startDate: formData.startDate,
       endDate,
       trackReps: formData.trackReps,
-      dailyGoal: formData.trackReps ? formData.dailyGoal : undefined,
       goalUnit: formData.trackReps ? formData.goalUnit : undefined
     };
 
@@ -210,7 +209,6 @@ export function useChallenges(userId: string | undefined) {
           start_date: updatedChallenge.startDate,
           end_date: updatedChallenge.endDate,
           track_reps: updatedChallenge.trackReps,
-          daily_goal: updatedChallenge.dailyGoal,
           goal_unit: updatedChallenge.goalUnit
         })
         .eq('id', challengeId);
@@ -264,6 +262,27 @@ export function useChallenges(userId: string | undefined) {
     }
   };
 
+  const updateDailyGoals = async (challengeId: string, dailyGoals: { [date: string]: number }): Promise<void> => {
+    setChallenges(prev => prev.map(c =>
+      c.id === challengeId ? { ...c, dailyGoals } : c
+    ));
+
+    try {
+      setIsSyncing(true);
+      const { error } = await supabase.from('challenges')
+        .update({ daily_goals: dailyGoals })
+        .eq('id', challengeId);
+
+      if (error) throw error;
+      setSyncError(null);
+    } catch (error) {
+      console.error('Error syncing daily goals:', error);
+      setSyncError('Błąd synchronizacji');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return {
     challenges,
     isLoading,
@@ -272,6 +291,7 @@ export function useChallenges(userId: string | undefined) {
     createChallenge,
     updateChallenge,
     deleteChallenge,
-    updateCompletedDays
+    updateCompletedDays,
+    updateDailyGoals
   };
 }
