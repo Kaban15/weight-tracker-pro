@@ -9,7 +9,10 @@ import {
   Check,
   Flame,
   Home,
-  Trash2
+  Trash2,
+  Calendar,
+  Trophy,
+  RotateCcw
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -22,6 +25,13 @@ interface Habit {
 interface CompletedHabit {
   date: string; // YYYY-MM-DD
   habitId: string;
+}
+
+interface Challenge {
+  startDate: string; // YYYY-MM-DD
+  durationType: 'days' | 'weeks' | 'months' | 'year';
+  durationValue: number;
+  endDate: string; // YYYY-MM-DD
 }
 
 interface ChallengeModeProps {
@@ -54,19 +64,26 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completedHabits, setCompletedHabits] = useState<CompletedHabit[]>([]);
+  const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newHabitName, setNewHabitName] = useState("");
   const [selectedColor, setSelectedColor] = useState("emerald");
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
+  // Challenge setup state
+  const [setupDurationType, setSetupDurationType] = useState<'days' | 'weeks' | 'months' | 'year'>('days');
+  const [setupDurationValue, setSetupDurationValue] = useState(30);
+
   const storageKey = `habits_${user?.id}`;
   const completedKey = `completed_habits_${user?.id}`;
+  const challengeKey = `challenge_${user?.id}`;
 
   // Load data from localStorage
   useEffect(() => {
     if (user) {
       const savedHabits = localStorage.getItem(storageKey);
       const savedCompleted = localStorage.getItem(completedKey);
+      const savedChallenge = localStorage.getItem(challengeKey);
 
       if (savedHabits) {
         setHabits(JSON.parse(savedHabits));
@@ -74,8 +91,11 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
       if (savedCompleted) {
         setCompletedHabits(JSON.parse(savedCompleted));
       }
+      if (savedChallenge) {
+        setChallenge(JSON.parse(savedChallenge));
+      }
     }
-  }, [user, storageKey, completedKey]);
+  }, [user, storageKey, completedKey, challengeKey]);
 
   // Save habits to localStorage
   useEffect(() => {
@@ -90,6 +110,95 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
       localStorage.setItem(completedKey, JSON.stringify(completedHabits));
     }
   }, [completedHabits, user, completedKey]);
+
+  // Save challenge to localStorage
+  useEffect(() => {
+    if (user && challenge) {
+      localStorage.setItem(challengeKey, JSON.stringify(challenge));
+    }
+  }, [challenge, user, challengeKey]);
+
+  // Calculate end date based on duration
+  const calculateEndDate = (startDate: Date, durationType: string, durationValue: number): Date => {
+    const endDate = new Date(startDate);
+    switch (durationType) {
+      case 'days':
+        endDate.setDate(endDate.getDate() + durationValue - 1);
+        break;
+      case 'weeks':
+        endDate.setDate(endDate.getDate() + (durationValue * 7) - 1);
+        break;
+      case 'months':
+        endDate.setMonth(endDate.getMonth() + durationValue);
+        endDate.setDate(endDate.getDate() - 1);
+        break;
+      case 'year':
+        endDate.setFullYear(endDate.getFullYear() + 1);
+        endDate.setDate(endDate.getDate() - 1);
+        break;
+    }
+    return endDate;
+  };
+
+  // Start a new challenge
+  const startChallenge = () => {
+    const today = new Date();
+    const startDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const endDateObj = calculateEndDate(today, setupDurationType, setupDurationValue);
+    const endDate = `${endDateObj.getFullYear()}-${String(endDateObj.getMonth() + 1).padStart(2, '0')}-${String(endDateObj.getDate()).padStart(2, '0')}`;
+
+    setChallenge({
+      startDate,
+      durationType: setupDurationType,
+      durationValue: setupDurationValue,
+      endDate
+    });
+  };
+
+  // Reset challenge
+  const resetChallenge = () => {
+    setChallenge(null);
+    setCompletedHabits([]);
+    if (user) {
+      localStorage.removeItem(challengeKey);
+      localStorage.removeItem(completedKey);
+    }
+  };
+
+  // Get challenge progress
+  const getChallengeProgress = () => {
+    if (!challenge) return { daysCompleted: 0, totalDays: 0, percentage: 0, daysRemaining: 0 };
+
+    const start = new Date(challenge.startDate);
+    const end = new Date(challenge.endDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const daysCompleted = Math.min(
+      Math.max(Math.ceil((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1, 0),
+      totalDays
+    );
+    const daysRemaining = Math.max(totalDays - daysCompleted, 0);
+    const percentage = Math.round((daysCompleted / totalDays) * 100);
+
+    return { daysCompleted, totalDays, percentage, daysRemaining };
+  };
+
+  // Check if a date is within the challenge period
+  const isWithinChallenge = (day: number) => {
+    if (!challenge) return false;
+    const dateStr = formatDate(day);
+    return dateStr >= challenge.startDate && dateStr <= challenge.endDate;
+  };
+
+  // Check if challenge is completed
+  const isChallengeCompleted = () => {
+    if (!challenge) return false;
+    const today = new Date();
+    const endDate = new Date(challenge.endDate);
+    return today > endDate;
+  };
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -190,6 +299,163 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
            today.getFullYear() === year;
   };
 
+  // Challenge Setup Screen
+  if (!challenge) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950">
+        <header className="bg-slate-900/50 border-b border-slate-800">
+          <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+            >
+              <Home className="w-5 h-5" />
+              <span className="hidden sm:inline">Powrót</span>
+            </button>
+            <h1 className="text-xl font-bold text-white">Nowe Wyzwanie</h1>
+            <button
+              onClick={signOut}
+              className="text-slate-400 hover:text-white transition-colors text-sm"
+            >
+              Wyloguj
+            </button>
+          </div>
+        </header>
+
+        <main className="max-w-lg mx-auto px-4 py-8">
+          <div className="bg-slate-800/50 rounded-xl border-2 border-slate-700 p-6">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trophy className="w-8 h-8 text-amber-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Rozpocznij Wyzwanie</h2>
+              <p className="text-slate-400">Wybierz jak długo ma trwać Twoje wyzwanie</p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Duration Type Selection */}
+              <div>
+                <label className="block text-sm text-slate-400 mb-2">Typ okresu</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { value: 'days', label: 'Dni' },
+                    { value: 'weeks', label: 'Tygodnie' },
+                    { value: 'months', label: 'Miesiące' },
+                    { value: 'year', label: 'Rok' },
+                  ].map(option => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        setSetupDurationType(option.value as typeof setupDurationType);
+                        if (option.value === 'year') setSetupDurationValue(1);
+                        else if (option.value === 'months') setSetupDurationValue(1);
+                        else if (option.value === 'weeks') setSetupDurationValue(4);
+                        else setSetupDurationValue(30);
+                      }}
+                      className={`py-2 px-3 rounded-lg text-sm font-medium transition-all
+                        ${setupDurationType === option.value
+                          ? 'bg-amber-600 text-white'
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}
+                      `}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Duration Value */}
+              {setupDurationType !== 'year' && (
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">
+                    Liczba {setupDurationType === 'days' ? 'dni' : setupDurationType === 'weeks' ? 'tygodni' : 'miesięcy'}
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="range"
+                      min={1}
+                      max={setupDurationType === 'days' ? 90 : setupDurationType === 'weeks' ? 12 : 12}
+                      value={setupDurationValue}
+                      onChange={(e) => setSetupDurationValue(Number(e.target.value))}
+                      className="flex-1 accent-amber-500"
+                    />
+                    <span className="text-2xl font-bold text-white w-12 text-center">
+                      {setupDurationValue}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Select */}
+              <div>
+                <label className="block text-sm text-slate-400 mb-2">Szybki wybór</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { days: 7, label: '7 dni' },
+                    { days: 14, label: '2 tygodnie' },
+                    { days: 30, label: '30 dni' },
+                    { days: 60, label: '60 dni' },
+                    { days: 90, label: '90 dni' },
+                    { days: 365, label: '1 rok' },
+                  ].map(option => (
+                    <button
+                      key={option.days}
+                      onClick={() => {
+                        if (option.days === 365) {
+                          setSetupDurationType('year');
+                          setSetupDurationValue(1);
+                        } else if (option.days % 30 === 0 && option.days >= 30) {
+                          setSetupDurationType('days');
+                          setSetupDurationValue(option.days);
+                        } else if (option.days % 7 === 0) {
+                          setSetupDurationType('weeks');
+                          setSetupDurationValue(option.days / 7);
+                        } else {
+                          setSetupDurationType('days');
+                          setSetupDurationValue(option.days);
+                        }
+                      }}
+                      className="py-2 px-3 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm transition-colors"
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div className="bg-slate-900/50 rounded-lg p-4 mt-4">
+                <p className="text-slate-400 text-sm">Twoje wyzwanie będzie trwać:</p>
+                <p className="text-xl font-bold text-amber-400">
+                  {setupDurationType === 'year'
+                    ? '1 rok'
+                    : `${setupDurationValue} ${
+                        setupDurationType === 'days'
+                          ? (setupDurationValue === 1 ? 'dzień' : 'dni')
+                          : setupDurationType === 'weeks'
+                            ? (setupDurationValue === 1 ? 'tydzień' : 'tygodni')
+                            : (setupDurationValue === 1 ? 'miesiąc' : 'miesięcy')
+                      }`
+                  }
+                </p>
+              </div>
+
+              {/* Start Button */}
+              <button
+                onClick={startChallenge}
+                className="w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-lg transition-colors font-bold text-lg mt-4"
+              >
+                Rozpocznij Wyzwanie
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const progress = getChallengeProgress();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950">
       {/* Header */}
@@ -205,16 +471,69 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
 
           <h1 className="text-xl font-bold text-white">Challenge</h1>
 
-          <button
-            onClick={signOut}
-            className="text-slate-400 hover:text-white transition-colors text-sm"
-          >
-            Wyloguj
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={resetChallenge}
+              className="text-slate-400 hover:text-rose-400 transition-colors text-sm flex items-center gap-1"
+              title="Resetuj wyzwanie"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+            <button
+              onClick={signOut}
+              className="text-slate-400 hover:text-white transition-colors text-sm"
+            >
+              Wyloguj
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        {/* Challenge Progress */}
+        <div className="bg-slate-800/50 rounded-xl border-2 border-slate-700 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
+                <Trophy className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h2 className="text-white font-semibold">Twoje Wyzwanie</h2>
+                <p className="text-slate-400 text-sm">
+                  {challenge.startDate} - {challenge.endDate}
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-amber-400">{progress.percentage}%</p>
+              <p className="text-slate-400 text-xs">ukończone</p>
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="h-3 bg-slate-700 rounded-full overflow-hidden mb-3">
+            <div
+              className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-500"
+              style={{ width: `${progress.percentage}%` }}
+            />
+          </div>
+
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-400">
+              Dzień <span className="text-white font-medium">{progress.daysCompleted}</span> z {progress.totalDays}
+            </span>
+            <span className="text-slate-400">
+              Pozostało: <span className="text-amber-400 font-medium">{progress.daysRemaining} dni</span>
+            </span>
+          </div>
+
+          {isChallengeCompleted() && (
+            <div className="mt-4 bg-emerald-500/20 border border-emerald-500/50 rounded-lg p-3 text-center">
+              <p className="text-emerald-400 font-semibold">Gratulacje! Wyzwanie ukończone!</p>
+            </div>
+          )}
+        </div>
+
         {/* Habits List */}
         <div className="bg-slate-800/50 rounded-xl border-2 border-slate-700 p-4">
           <div className="flex items-center justify-between mb-4">
@@ -308,6 +627,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
               const completed = getCompletedForDay(day);
               const allCompleted = habits.length > 0 && completed.length === habits.length;
               const someCompleted = completed.length > 0;
+              const inChallenge = isWithinChallenge(day);
 
               return (
                 <button
@@ -316,10 +636,11 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                   className={`aspect-square rounded-lg flex flex-col items-center justify-center transition-all relative
                     ${isToday(day) ? 'ring-2 ring-emerald-500' : ''}
                     ${selectedDay === day ? 'bg-slate-700' : 'hover:bg-slate-700/50'}
-                    ${allCompleted ? 'bg-emerald-500/20' : someCompleted ? 'bg-amber-500/10' : 'bg-slate-900/30'}
+                    ${allCompleted ? 'bg-emerald-500/20' : someCompleted ? 'bg-amber-500/10' : inChallenge ? 'bg-amber-500/5' : 'bg-slate-900/30'}
+                    ${inChallenge && !allCompleted && !someCompleted ? 'border border-amber-500/30' : ''}
                   `}
                 >
-                  <span className={`text-sm ${isToday(day) ? 'text-emerald-400 font-bold' : 'text-slate-300'}`}>
+                  <span className={`text-sm ${isToday(day) ? 'text-emerald-400 font-bold' : inChallenge ? 'text-amber-200' : 'text-slate-300'}`}>
                     {day}
                   </span>
                   {someCompleted && (
