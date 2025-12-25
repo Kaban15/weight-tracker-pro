@@ -22,7 +22,8 @@ interface Challenge {
   name: string;
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
-  completedDays: string[]; // Array of completed dates YYYY-MM-DD
+  trackReps: boolean; // Whether to track repetitions count
+  completedDays: { [date: string]: number }; // date -> reps count (1 = done for non-rep, >0 = reps for rep tracking)
 }
 
 interface ChallengeModeProps {
@@ -53,8 +54,14 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   const [formDurationValue, setFormDurationValue] = useState(30);
   const [formStartDate, setFormStartDate] = useState('');
   const [formEndDate, setFormEndDate] = useState('');
+  const [formTrackReps, setFormTrackReps] = useState(false);
 
-  const storageKey = `challenges_v2_${user?.id}`;
+  // Reps input modal
+  const [showRepsModal, setShowRepsModal] = useState(false);
+  const [repsDay, setRepsDay] = useState<number | null>(null);
+  const [repsValue, setRepsValue] = useState('');
+
+  const storageKey = `challenges_v3_${user?.id}`;
 
   // Load from localStorage
   useEffect(() => {
@@ -115,6 +122,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     setFormDurationValue(30);
     setFormStartDate('');
     setFormEndDate('');
+    setFormTrackReps(false);
   };
 
   const createChallenge = () => {
@@ -136,7 +144,8 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
       name: formName.trim() || 'Nowe wyzwanie',
       startDate,
       endDate,
-      completedDays: []
+      trackReps: formTrackReps,
+      completedDays: {}
     };
 
     setChallenges(prev => [...prev, newChallenge]);
@@ -159,7 +168,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
 
     setChallenges(prev => prev.map(c =>
       c.id === editingChallenge.id
-        ? { ...c, name: formName.trim() || c.name, startDate: formStartDate, endDate }
+        ? { ...c, name: formName.trim() || c.name, startDate: formStartDate, endDate, trackReps: formTrackReps }
         : c
     ));
 
@@ -184,30 +193,69 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     setFormDateMode('dates');
     setFormStartDate(challenge.startDate);
     setFormEndDate(challenge.endDate);
+    setFormTrackReps(challenge.trackReps);
     setShowEditModal(true);
   };
 
-  // Toggle day completion for active challenge
-  const toggleDay = (day: number) => {
+  // Handle day click
+  const handleDayClick = (day: number) => {
     if (!activeChallenge) return;
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+    if (activeChallenge.trackReps) {
+      // Show modal to enter reps
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const currentReps = activeChallenge.completedDays[dateStr] || 0;
+      setRepsDay(day);
+      setRepsValue(currentReps > 0 ? currentReps.toString() : '');
+      setShowRepsModal(true);
+    } else {
+      // Simple toggle
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      setChallenges(prev => prev.map(c =>
+        c.id === activeChallenge.id
+          ? {
+              ...c,
+              completedDays: c.completedDays[dateStr]
+                ? Object.fromEntries(Object.entries(c.completedDays).filter(([d]) => d !== dateStr))
+                : { ...c.completedDays, [dateStr]: 1 }
+            }
+          : c
+      ));
+    }
+  };
+
+  // Save reps for a day
+  const saveReps = () => {
+    if (!activeChallenge || repsDay === null) return;
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(repsDay).padStart(2, '0')}`;
+    const reps = parseInt(repsValue) || 0;
 
     setChallenges(prev => prev.map(c =>
       c.id === activeChallenge.id
         ? {
             ...c,
-            completedDays: c.completedDays.includes(dateStr)
-              ? c.completedDays.filter(d => d !== dateStr)
-              : [...c.completedDays, dateStr]
+            completedDays: reps > 0
+              ? { ...c.completedDays, [dateStr]: reps }
+              : Object.fromEntries(Object.entries(c.completedDays).filter(([d]) => d !== dateStr))
           }
         : c
     ));
+
+    setShowRepsModal(false);
+    setRepsDay(null);
+    setRepsValue('');
   };
 
   const isDayCompleted = (day: number): boolean => {
     if (!activeChallenge) return false;
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return activeChallenge.completedDays.includes(dateStr);
+    return !!activeChallenge.completedDays[dateStr];
+  };
+
+  const getDayReps = (day: number): number => {
+    if (!activeChallenge) return 0;
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return activeChallenge.completedDays[dateStr] || 0;
   };
 
   const isWithinChallenge = (day: number): boolean => {
@@ -228,7 +276,8 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     today.setHours(0, 0, 0, 0);
 
     const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    const completedCount = challenge.completedDays.length;
+    const completedCount = Object.keys(challenge.completedDays).length;
+    const totalReps = Object.values(challenge.completedDays).reduce((sum, r) => sum + r, 0);
     const percentage = Math.round((completedCount / totalDays) * 100);
     const isCompleted = today > end;
 
@@ -237,7 +286,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     let checkDate = new Date(today);
     while (true) {
       const dateStr = formatDateStr(checkDate);
-      if (challenge.completedDays.includes(dateStr)) {
+      if (challenge.completedDays[dateStr]) {
         streak++;
         checkDate.setDate(checkDate.getDate() - 1);
       } else if (streak === 0 && checkDate.toDateString() === today.toDateString()) {
@@ -247,7 +296,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
       }
     }
 
-    return { totalDays, completedCount, percentage, isCompleted, streak };
+    return { totalDays, completedCount, totalReps, percentage, isCompleted, streak };
   };
 
   // LIST VIEW
@@ -321,6 +370,9 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                           <span className="flex items-center gap-1 text-orange-400">
                             <Flame className="w-3 h-3" /> {progress.streak}
                           </span>
+                        )}
+                        {challenge.trackReps && progress.totalReps > 0 && (
+                          <span className="text-emerald-400 font-medium">{progress.totalReps} pow.</span>
                         )}
                       </div>
                       <span className={progress.isCompleted ? 'text-emerald-400' : 'text-amber-400'}>
@@ -419,6 +471,21 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                   </>
                 )}
 
+                <div>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <div
+                      onClick={() => setFormTrackReps(!formTrackReps)}
+                      className={`relative w-12 h-6 rounded-full transition-colors ${formTrackReps ? 'bg-amber-600' : 'bg-slate-700'}`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${formTrackReps ? 'translate-x-7' : 'translate-x-1'}`} />
+                    </div>
+                    <span className="text-sm text-slate-300">Zapisuj liczbę powtórzeń</span>
+                  </label>
+                  <p className="text-xs text-slate-500 mt-1 ml-15">
+                    {formTrackReps ? 'Będziesz mógł wpisać ile powtórzeń zrobiłeś danego dnia' : 'Tylko zaznaczanie czy dzień został wykonany'}
+                  </p>
+                </div>
+
                 <button onClick={createChallenge} className="w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-lg font-bold">
                   Utwórz wyzwanie
                 </button>
@@ -500,6 +567,18 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                   </>
                 )}
 
+                <div>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <div
+                      onClick={() => setFormTrackReps(!formTrackReps)}
+                      className={`relative w-12 h-6 rounded-full transition-colors ${formTrackReps ? 'bg-amber-600' : 'bg-slate-700'}`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${formTrackReps ? 'translate-x-7' : 'translate-x-1'}`} />
+                    </div>
+                    <span className="text-sm text-slate-300">Zapisuj liczbę powtórzeń</span>
+                  </label>
+                </div>
+
                 <div className="flex gap-3">
                   <button onClick={() => { setShowEditModal(false); setEditingChallenge(null); }} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg">Anuluj</button>
                   <button onClick={updateChallenge} className="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-2 rounded-lg">Zapisz</button>
@@ -566,7 +645,12 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                 )}
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-amber-400">{progress.percentage}%</p>
+                {activeChallenge.trackReps && progress.totalReps > 0 && (
+                  <p className="text-2xl font-bold text-amber-400">{progress.totalReps}</p>
+                )}
+                {!activeChallenge.trackReps && (
+                  <p className="text-2xl font-bold text-amber-400">{progress.percentage}%</p>
+                )}
                 <p className="text-slate-400 text-xs">{progress.completedCount}/{progress.totalDays} dni</p>
               </div>
             </div>
@@ -607,19 +691,20 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                 const day = i + 1;
                 const completed = isDayCompleted(day);
                 const inChallenge = isWithinChallenge(day);
+                const reps = getDayReps(day);
 
                 return (
                   <button
                     key={day}
-                    onClick={() => inChallenge && toggleDay(day)}
+                    onClick={() => inChallenge && handleDayClick(day)}
                     disabled={!inChallenge}
-                    className={`aspect-square rounded-lg flex items-center justify-center transition-all relative
+                    className={`aspect-square rounded-lg flex flex-col items-center justify-center transition-all relative
                       ${isToday(day) ? 'ring-2 ring-emerald-500' : ''}
                       ${completed ? 'bg-emerald-500/30' : inChallenge ? 'bg-amber-500/10 hover:bg-amber-500/20' : 'bg-slate-900/30 opacity-40'}
                       ${inChallenge ? 'cursor-pointer' : 'cursor-not-allowed'}
                     `}
                   >
-                    {completed && (
+                    {completed && !activeChallenge?.trackReps && (
                       <div className="absolute inset-0 flex items-center justify-center">
                         <Check className="w-5 h-5 text-emerald-400" />
                       </div>
@@ -627,16 +712,68 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                     <span className={`text-sm ${completed ? 'text-emerald-300' : isToday(day) ? 'text-emerald-400 font-bold' : inChallenge ? 'text-amber-200' : 'text-slate-500'}`}>
                       {day}
                     </span>
+                    {completed && activeChallenge?.trackReps && reps > 0 && (
+                      <span className="text-xs text-emerald-400 font-bold">{reps}</span>
+                    )}
                   </button>
                 );
               })}
             </div>
 
             <p className="text-slate-400 text-xs text-center mt-4">
-              Kliknij na dzień w zakresie wyzwania, aby oznaczyć jako wykonane
+              {activeChallenge?.trackReps
+                ? 'Kliknij na dzień aby wpisać liczbę powtórzeń'
+                : 'Kliknij na dzień w zakresie wyzwania, aby oznaczyć jako wykonane'
+              }
             </p>
           </div>
         </main>
+
+        {/* Reps Input Modal */}
+        {showRepsModal && repsDay !== null && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-slate-800 rounded-xl border-2 border-slate-700 p-6 w-full max-w-xs">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">
+                  {repsDay} {monthNames[month]}
+                </h3>
+                <button onClick={() => { setShowRepsModal(false); setRepsDay(null); setRepsValue(''); }} className="text-slate-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">Liczba powtórzeń</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={repsValue}
+                    onChange={(e) => setRepsValue(e.target.value)}
+                    placeholder="np. 50"
+                    className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-3 text-white text-2xl text-center placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setRepsValue('0'); saveReps(); }}
+                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-sm"
+                  >
+                    Usuń
+                  </button>
+                  <button
+                    onClick={saveReps}
+                    className="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-2 rounded-lg font-medium"
+                  >
+                    Zapisz
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Edit Modal (reused) */}
         {showEditModal && editingChallenge && (
