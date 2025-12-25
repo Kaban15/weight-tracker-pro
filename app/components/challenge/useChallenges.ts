@@ -61,6 +61,8 @@ export function useChallenges(userId: string | undefined) {
     startDate: row.start_date,
     endDate: row.end_date,
     trackReps: row.track_reps,
+    dailyGoal: row.daily_goal,
+    goalUnit: row.goal_unit,
     completedDays: row.completed_days || {}
   });
 
@@ -141,6 +143,8 @@ export function useChallenges(userId: string | undefined) {
       startDate,
       endDate,
       trackReps: formData.trackReps,
+      dailyGoal: formData.trackReps ? formData.dailyGoal : undefined,
+      goalUnit: formData.trackReps ? formData.goalUnit : undefined,
       completedDays: {}
     };
 
@@ -155,6 +159,8 @@ export function useChallenges(userId: string | undefined) {
         start_date: newChallenge.startDate,
         end_date: newChallenge.endDate,
         track_reps: newChallenge.trackReps,
+        daily_goal: newChallenge.dailyGoal,
+        goal_unit: newChallenge.goalUnit,
         completed_days: newChallenge.completedDays
       });
 
@@ -189,7 +195,9 @@ export function useChallenges(userId: string | undefined) {
       name: formData.name.trim() || existingChallenge.name,
       startDate: formData.startDate,
       endDate,
-      trackReps: formData.trackReps
+      trackReps: formData.trackReps,
+      dailyGoal: formData.trackReps ? formData.dailyGoal : undefined,
+      goalUnit: formData.trackReps ? formData.goalUnit : undefined
     };
 
     setChallenges(prev => prev.map(c => c.id === challengeId ? updatedChallenge : c));
@@ -201,7 +209,9 @@ export function useChallenges(userId: string | undefined) {
           name: updatedChallenge.name,
           start_date: updatedChallenge.startDate,
           end_date: updatedChallenge.endDate,
-          track_reps: updatedChallenge.trackReps
+          track_reps: updatedChallenge.trackReps,
+          daily_goal: updatedChallenge.dailyGoal,
+          goal_unit: updatedChallenge.goalUnit
         })
         .eq('id', challengeId);
 

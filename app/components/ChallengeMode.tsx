@@ -106,7 +106,9 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
       durationValue: 30,
       startDate: challenge.startDate,
       endDate: challenge.endDate,
-      trackReps: challenge.trackReps
+      trackReps: challenge.trackReps,
+      dailyGoal: challenge.dailyGoal || 0,
+      goalUnit: challenge.goalUnit || 'powtórzeń'
     });
     setShowEditModal(true);
   };
@@ -250,6 +252,8 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
       const inChallenge = dateStr >= activeChallenge.startDate && dateStr <= activeChallenge.endDate;
       const reps = activeChallenge.completedDays[dateStr] || 0;
       const today = isToday(day, month, year);
+      const hasGoal = activeChallenge.dailyGoal && activeChallenge.dailyGoal > 0;
+      const goalReached = hasGoal && reps >= activeChallenge.dailyGoal!;
 
       return (
         <button
@@ -257,7 +261,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
           disabled={!inChallenge}
           className={`aspect-square rounded-lg flex flex-col items-center justify-center transition-all relative
             ${today ? 'ring-2 ring-emerald-500' : ''}
-            ${completed ? 'bg-emerald-500/30' : inChallenge ? 'bg-amber-500/10 hover:bg-amber-500/20' : 'bg-slate-900/30 opacity-40'}
+            ${goalReached ? 'bg-emerald-500/40' : completed ? 'bg-amber-500/30' : inChallenge ? 'bg-amber-500/10 hover:bg-amber-500/20' : 'bg-slate-900/30 opacity-40'}
             ${inChallenge ? 'cursor-pointer' : 'cursor-not-allowed'}
           `}
         >
@@ -266,11 +270,14 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
               <Check className="w-5 h-5 text-emerald-400" />
             </div>
           )}
-          <span className={`text-sm ${completed ? 'text-emerald-300' : today ? 'text-emerald-400 font-bold' : inChallenge ? 'text-amber-200' : 'text-slate-500'}`}>
+          <span className={`text-sm ${goalReached ? 'text-emerald-300' : completed ? 'text-amber-300' : today ? 'text-emerald-400 font-bold' : inChallenge ? 'text-amber-200' : 'text-slate-500'}`}>
             {day}
           </span>
           {completed && activeChallenge.trackReps && reps > 0 && (
-            <span className="text-xs text-emerald-400 font-bold">{reps}</span>
+            <span className={`text-xs font-bold ${goalReached ? 'text-emerald-400' : 'text-amber-400'}`}>{reps}</span>
+          )}
+          {goalReached && (
+            <Check className="w-3 h-3 text-emerald-400 absolute top-1 right-1" />
           )}
         </button>
       );
@@ -305,6 +312,11 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-slate-400 text-sm">{activeChallenge.startDate} - {activeChallenge.endDate}</p>
+                {activeChallenge.dailyGoal && activeChallenge.dailyGoal > 0 && (
+                  <p className="text-amber-400 text-sm mt-1">
+                    Cel: {activeChallenge.dailyGoal} {activeChallenge.goalUnit}/dzień
+                  </p>
+                )}
                 {progress.streak > 0 && (
                   <p className="flex items-center gap-1 text-orange-400 text-sm mt-1">
                     <Flame className="w-4 h-4" /> {progress.streak} dni z rzędu
@@ -319,6 +331,11 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                   <p className="text-2xl font-bold text-amber-400">{progress.percentage}%</p>
                 )}
                 <p className="text-slate-400 text-xs">{progress.completedCount}/{progress.totalDays} dni</p>
+                {activeChallenge.dailyGoal && activeChallenge.dailyGoal > 0 && (
+                  <p className="text-emerald-400 text-xs">
+                    {Object.values(activeChallenge.completedDays).filter(r => r >= activeChallenge.dailyGoal!).length} dni z celem
+                  </p>
+                )}
               </div>
             </div>
             <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
@@ -353,6 +370,8 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
           day={repsDay}
           month={month}
           value={repsValue}
+          dailyGoal={activeChallenge.dailyGoal}
+          goalUnit={activeChallenge.goalUnit}
           onChange={setRepsValue}
           onSave={saveReps}
           onDelete={() => { setRepsValue('0'); saveReps(); }}

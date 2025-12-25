@@ -29,9 +29,20 @@ export default function Auth() {
       } else {
         const { error } = await signUp(email, password);
         if (error) {
-          setError(error.message);
+          // Tłumaczenie popularnych błędów Supabase
+          if (error.message.includes('rate limit')) {
+            setError('Zbyt wiele prób. Poczekaj chwilę i spróbuj ponownie.');
+          } else if (error.message.includes('already registered')) {
+            setError('Ten email jest już zarejestrowany. Spróbuj się zalogować.');
+          } else if (error.message.includes('valid email')) {
+            setError('Podaj prawidłowy adres email.');
+          } else if (error.message.includes('password')) {
+            setError('Hasło musi mieć minimum 6 znaków.');
+          } else {
+            setError(error.message);
+          }
         } else {
-          setMessage('Check your email for confirmation link!');
+          setMessage('Sprawdź swoją skrzynkę email! Link aktywacyjny został wysłany.');
         }
       }
     } catch (err) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { ChallengeFormData } from "./types";
+import { ChallengeFormData, GOAL_UNITS } from "./types";
 
 interface ChallengeFormModalProps {
   isOpen: boolean;
@@ -161,14 +161,47 @@ export default function ChallengeFormModal({
                   formData.trackReps ? 'translate-x-7' : 'translate-x-1'
                 }`} />
               </div>
-              <span className="text-sm text-slate-300">Zapisuj liczbę powtórzeń</span>
+              <span className="text-sm text-slate-300">Śledź postępy z celem dziennym</span>
             </label>
             <p className="text-xs text-slate-500 mt-1 ml-15">
               {formData.trackReps
-                ? 'Będziesz mógł wpisać ile powtórzeń zrobiłeś danego dnia'
+                ? 'Ustaw cel dzienny i zapisuj ile wykonałeś'
                 : 'Tylko zaznaczanie czy dzień został wykonany'}
             </p>
           </div>
+
+          {/* Daily Goal Settings */}
+          {formData.trackReps && (
+            <div className="space-y-3 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
+              <div>
+                <label className="block text-sm text-slate-400 mb-2">Cel dzienny</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.dailyGoal || ''}
+                    onChange={(e) => onChange({ dailyGoal: Number(e.target.value) })}
+                    placeholder="np. 50"
+                    className="flex-1 bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                  />
+                  <select
+                    value={formData.goalUnit}
+                    onChange={(e) => onChange({ goalUnit: e.target.value })}
+                    className="bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2 text-white focus:border-amber-500 focus:outline-none"
+                  >
+                    {GOAL_UNITS.map(unit => (
+                      <option key={unit.value} value={unit.value}>{unit.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500">
+                {formData.dailyGoal > 0
+                  ? `Twój cel: ${formData.dailyGoal} ${formData.goalUnit} dziennie`
+                  : 'Bez celu - wpisuj dowolną liczbę powtórzeń'}
+              </p>
+            </div>
+          )}
 
           {/* Buttons */}
           {isEdit ? (
