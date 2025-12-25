@@ -84,9 +84,11 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
 
   // Form state
   const [formName, setFormName] = useState('');
+  const [formDateMode, setFormDateMode] = useState<'duration' | 'dates'>('duration');
   const [formDurationType, setFormDurationType] = useState<'days' | 'weeks' | 'months' | 'year'>('days');
   const [formDurationValue, setFormDurationValue] = useState(30);
   const [formStartDate, setFormStartDate] = useState('');
+  const [formEndDate, setFormEndDate] = useState('');
 
   // Add habit state
   const [showAddHabitModal, setShowAddHabitModal] = useState(false);
@@ -164,10 +166,20 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   // Create new challenge
   const createChallenge = () => {
     const today = new Date();
-    const startDateObj = formStartDate ? new Date(formStartDate) : today;
-    const startDate = formatDateStr(startDateObj);
-    const endDateObj = calculateEndDate(startDateObj, formDurationType, formDurationValue);
-    const endDate = formatDateStr(endDateObj);
+    let startDate: string;
+    let endDate: string;
+
+    if (formDateMode === 'dates') {
+      // Custom start and end dates
+      startDate = formStartDate || formatDateStr(today);
+      endDate = formEndDate || formatDateStr(today);
+    } else {
+      // Duration-based
+      const startDateObj = formStartDate ? new Date(formStartDate) : today;
+      startDate = formatDateStr(startDateObj);
+      const endDateObj = calculateEndDate(startDateObj, formDurationType, formDurationValue);
+      endDate = formatDateStr(endDateObj);
+    }
 
     const newChallenge: Challenge = {
       id: Date.now().toString(),
@@ -191,8 +203,14 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   const updateChallenge = () => {
     if (!editingChallenge) return;
 
-    const startDateObj = new Date(formStartDate);
-    const endDateObj = calculateEndDate(startDateObj, formDurationType, formDurationValue);
+    let endDate: string;
+    if (formDateMode === 'dates') {
+      endDate = formEndDate;
+    } else {
+      const startDateObj = new Date(formStartDate);
+      const endDateObj = calculateEndDate(startDateObj, formDurationType, formDurationValue);
+      endDate = formatDateStr(endDateObj);
+    }
 
     setChallenges(prev => prev.map(c =>
       c.id === editingChallenge.id
@@ -202,7 +220,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
             startDate: formStartDate,
             durationType: formDurationType,
             durationValue: formDurationValue,
-            endDate: formatDateStr(endDateObj)
+            endDate
           }
         : c
     ));
@@ -226,18 +244,22 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   // Reset form
   const resetForm = () => {
     setFormName('');
+    setFormDateMode('duration');
     setFormDurationType('days');
     setFormDurationValue(30);
     setFormStartDate('');
+    setFormEndDate('');
   };
 
   // Open edit modal
   const openEditModal = (challenge: Challenge) => {
     setEditingChallenge(challenge);
     setFormName(challenge.name);
+    setFormDateMode('dates'); // Default to dates mode for editing
     setFormDurationType(challenge.durationType);
     setFormDurationValue(challenge.durationValue);
     setFormStartDate(challenge.startDate);
+    setFormEndDate(challenge.endDate);
     setShowEditModal(true);
   };
 
@@ -483,48 +505,96 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                   />
                 </div>
 
+                {/* Date Mode Toggle */}
                 <div>
-                  <label className="block text-sm text-slate-400 mb-2">Typ okresu</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[
-                      { value: 'days', label: 'Dni' },
-                      { value: 'weeks', label: 'Tyg.' },
-                      { value: 'months', label: 'Mies.' },
-                      { value: 'year', label: 'Rok' },
-                    ].map(option => (
-                      <button
-                        key={option.value}
-                        onClick={() => {
-                          setFormDurationType(option.value as typeof formDurationType);
-                          if (option.value === 'year') setFormDurationValue(1);
-                        }}
-                        className={`py-2 rounded-lg text-sm font-medium transition-all
-                          ${formDurationType === option.value ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}
-                        `}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
+                  <label className="block text-sm text-slate-400 mb-2">Sposób ustalenia terminu</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setFormDateMode('duration')}
+                      className={`py-2 rounded-lg text-sm font-medium transition-all
+                        ${formDateMode === 'duration' ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}
+                      `}
+                    >
+                      Czas trwania
+                    </button>
+                    <button
+                      onClick={() => setFormDateMode('dates')}
+                      className={`py-2 rounded-lg text-sm font-medium transition-all
+                        ${formDateMode === 'dates' ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}
+                      `}
+                    >
+                      Własne daty
+                    </button>
                   </div>
                 </div>
 
-                {formDurationType !== 'year' && (
-                  <div>
-                    <label className="block text-sm text-slate-400 mb-2">
-                      Liczba {formDurationType === 'days' ? 'dni' : formDurationType === 'weeks' ? 'tygodni' : 'miesięcy'}
-                    </label>
-                    <div className="flex items-center gap-4">
+                {formDateMode === 'dates' ? (
+                  <>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-2">Data rozpoczęcia</label>
                       <input
-                        type="range"
-                        min={1}
-                        max={formDurationType === 'days' ? 90 : 12}
-                        value={formDurationValue}
-                        onChange={(e) => setFormDurationValue(Number(e.target.value))}
-                        className="flex-1 accent-amber-500"
+                        type="date"
+                        value={formStartDate}
+                        onChange={(e) => setFormStartDate(e.target.value)}
+                        className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none"
                       />
-                      <span className="text-2xl font-bold text-white w-12 text-center">{formDurationValue}</span>
                     </div>
-                  </div>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-2">Data zakończenia</label>
+                      <input
+                        type="date"
+                        value={formEndDate}
+                        onChange={(e) => setFormEndDate(e.target.value)}
+                        className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-2">Typ okresu</label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { value: 'days', label: 'Dni' },
+                          { value: 'weeks', label: 'Tyg.' },
+                          { value: 'months', label: 'Mies.' },
+                          { value: 'year', label: 'Rok' },
+                        ].map(option => (
+                          <button
+                            key={option.value}
+                            onClick={() => {
+                              setFormDurationType(option.value as typeof formDurationType);
+                              if (option.value === 'year') setFormDurationValue(1);
+                            }}
+                            className={`py-2 rounded-lg text-sm font-medium transition-all
+                              ${formDurationType === option.value ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}
+                            `}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {formDurationType !== 'year' && (
+                      <div>
+                        <label className="block text-sm text-slate-400 mb-2">
+                          Liczba {formDurationType === 'days' ? 'dni' : formDurationType === 'weeks' ? 'tygodni' : 'miesięcy'}
+                        </label>
+                        <div className="flex items-center gap-4">
+                          <input
+                            type="range"
+                            min={1}
+                            max={formDurationType === 'days' ? 90 : 12}
+                            value={formDurationValue}
+                            onChange={(e) => setFormDurationValue(Number(e.target.value))}
+                            className="flex-1 accent-amber-500"
+                          />
+                          <span className="text-2xl font-bold text-white w-12 text-center">{formDurationValue}</span>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <button
@@ -560,6 +630,29 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                   />
                 </div>
 
+                {/* Date Mode Toggle */}
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">Sposób ustalenia terminu</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setFormDateMode('duration')}
+                      className={`py-2 rounded-lg text-sm font-medium transition-all
+                        ${formDateMode === 'duration' ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}
+                      `}
+                    >
+                      Czas trwania
+                    </button>
+                    <button
+                      onClick={() => setFormDateMode('dates')}
+                      className={`py-2 rounded-lg text-sm font-medium transition-all
+                        ${formDateMode === 'dates' ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}
+                      `}
+                    >
+                      Własne daty
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm text-slate-400 mb-2">Data rozpoczęcia</label>
                   <input
@@ -570,48 +663,62 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm text-slate-400 mb-2">Typ okresu</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[
-                      { value: 'days', label: 'Dni' },
-                      { value: 'weeks', label: 'Tyg.' },
-                      { value: 'months', label: 'Mies.' },
-                      { value: 'year', label: 'Rok' },
-                    ].map(option => (
-                      <button
-                        key={option.value}
-                        onClick={() => {
-                          setFormDurationType(option.value as typeof formDurationType);
-                          if (option.value === 'year') setFormDurationValue(1);
-                        }}
-                        className={`py-2 rounded-lg text-sm font-medium transition-all
-                          ${formDurationType === option.value ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}
-                        `}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {formDurationType !== 'year' && (
+                {formDateMode === 'dates' ? (
                   <div>
-                    <label className="block text-sm text-slate-400 mb-2">
-                      Liczba {formDurationType === 'days' ? 'dni' : formDurationType === 'weeks' ? 'tygodni' : 'miesięcy'}
-                    </label>
-                    <div className="flex items-center gap-4">
-                      <input
-                        type="range"
-                        min={1}
-                        max={formDurationType === 'days' ? 90 : 12}
-                        value={formDurationValue}
-                        onChange={(e) => setFormDurationValue(Number(e.target.value))}
-                        className="flex-1 accent-amber-500"
-                      />
-                      <span className="text-2xl font-bold text-white w-12 text-center">{formDurationValue}</span>
-                    </div>
+                    <label className="block text-sm text-slate-400 mb-2">Data zakończenia</label>
+                    <input
+                      type="date"
+                      value={formEndDate}
+                      onChange={(e) => setFormEndDate(e.target.value)}
+                      className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none"
+                    />
                   </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm text-slate-400 mb-2">Typ okresu</label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { value: 'days', label: 'Dni' },
+                          { value: 'weeks', label: 'Tyg.' },
+                          { value: 'months', label: 'Mies.' },
+                          { value: 'year', label: 'Rok' },
+                        ].map(option => (
+                          <button
+                            key={option.value}
+                            onClick={() => {
+                              setFormDurationType(option.value as typeof formDurationType);
+                              if (option.value === 'year') setFormDurationValue(1);
+                            }}
+                            className={`py-2 rounded-lg text-sm font-medium transition-all
+                              ${formDurationType === option.value ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}
+                            `}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {formDurationType !== 'year' && (
+                      <div>
+                        <label className="block text-sm text-slate-400 mb-2">
+                          Liczba {formDurationType === 'days' ? 'dni' : formDurationType === 'weeks' ? 'tygodni' : 'miesięcy'}
+                        </label>
+                        <div className="flex items-center gap-4">
+                          <input
+                            type="range"
+                            min={1}
+                            max={formDurationType === 'days' ? 90 : 12}
+                            value={formDurationValue}
+                            onChange={(e) => setFormDurationValue(Number(e.target.value))}
+                            className="flex-1 accent-amber-500"
+                          />
+                          <span className="text-2xl font-bold text-white w-12 text-center">{formDurationValue}</span>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <div className="flex gap-3">
