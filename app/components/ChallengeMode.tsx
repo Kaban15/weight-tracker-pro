@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -13,9 +13,13 @@ import {
   Trophy,
   Edit2,
   AlertTriangle,
-  ArrowLeft
+  ArrowLeft,
+  Cloud,
+  CloudOff,
+  Loader2
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 interface Challenge {
   id: string;
@@ -24,6 +28,17 @@ interface Challenge {
   endDate: string; // YYYY-MM-DD
   trackReps: boolean; // Whether to track repetitions count
   completedDays: { [date: string]: number }; // date -> reps count (1 = done for non-rep, >0 = reps for rep tracking)
+}
+
+// Database row type (snake_case)
+interface ChallengeRow {
+  id: string;
+  user_id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  track_reps: boolean;
+  completed_days: { [date: string]: number };
 }
 
 interface ChallengeModeProps {
@@ -37,6 +52,9 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [view, setView] = useState<'list' | 'detail'>('list');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   // Calendar state
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -61,24 +79,80 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   const [repsDay, setRepsDay] = useState<number | null>(null);
   const [repsValue, setRepsValue] = useState('');
 
-  const storageKey = `challenges_v3_${user?.id}`;
+  const localStorageKey = `challenges_v3_${user?.id}`;
+  const migrationKey = `challenges_migrated_${user?.id}`;
 
-  // Load from localStorage
-  useEffect(() => {
-    if (user) {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        setChallenges(JSON.parse(saved));
+  // Convert DB row to Challenge object
+  const rowToChallenge = (row: ChallengeRow): Challenge => ({
+    id: row.id,
+    name: row.name,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    trackReps: row.track_reps,
+    completedDays: row.completed_days || {}
+  });
+
+  // Load challenges from Supabase
+  const loadChallenges = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      setIsLoading(true);
+      setSyncError(null);
+
+      // Check if we need to migrate from localStorage
+      const hasMigrated = localStorage.getItem(migrationKey);
+      if (!hasMigrated) {
+        const localData = localStorage.getItem(localStorageKey);
+        if (localData) {
+          const localChallenges: Challenge[] = JSON.parse(localData);
+          if (localChallenges.length > 0) {
+            // Migrate local challenges to Supabase
+            for (const challenge of localChallenges) {
+              await supabase.from('challenges').upsert({
+                id: challenge.id,
+                user_id: user.id,
+                name: challenge.name,
+                start_date: challenge.startDate,
+                end_date: challenge.endDate,
+                track_reps: challenge.trackReps,
+                completed_days: challenge.completedDays
+              });
+            }
+          }
+        }
+        localStorage.setItem(migrationKey, 'true');
       }
-    }
-  }, [user, storageKey]);
 
-  // Save to localStorage
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem(storageKey, JSON.stringify(challenges));
+      // Fetch from Supabase
+      const { data, error } = await supabase
+        .from('challenges')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const loadedChallenges = (data || []).map(rowToChallenge);
+      setChallenges(loadedChallenges);
+
+    } catch (error) {
+      console.error('Error loading challenges:', error);
+      setSyncError('Błąd ładowania danych');
+      // Fallback to localStorage
+      const localData = localStorage.getItem(localStorageKey);
+      if (localData) {
+        setChallenges(JSON.parse(localData));
+      }
+    } finally {
+      setIsLoading(false);
     }
-  }, [challenges, user, storageKey]);
+  }, [user, localStorageKey, migrationKey]);
+
+  // Load challenges on mount
+  useEffect(() => {
+    loadChallenges();
+  }, [loadChallenges]);
 
   // Sync activeChallenge with challenges
   useEffect(() => {
@@ -125,7 +199,9 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     setFormTrackReps(false);
   };
 
-  const createChallenge = () => {
+  const createChallenge = async () => {
+    if (!user) return;
+
     const today = new Date();
     let startDate: string;
     let endDate: string;
@@ -140,7 +216,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     }
 
     const newChallenge: Challenge = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       name: formName.trim() || 'Nowe wyzwanie',
       startDate,
       endDate,
@@ -148,15 +224,38 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
       completedDays: {}
     };
 
-    setChallenges(prev => [...prev, newChallenge]);
+    // Optimistic update
+    setChallenges(prev => [newChallenge, ...prev]);
     resetForm();
     setShowCreateModal(false);
     setActiveChallenge(newChallenge);
     setView('detail');
+
+    // Save to Supabase
+    try {
+      setIsSyncing(true);
+      const { error } = await supabase.from('challenges').insert({
+        id: newChallenge.id,
+        user_id: user.id,
+        name: newChallenge.name,
+        start_date: newChallenge.startDate,
+        end_date: newChallenge.endDate,
+        track_reps: newChallenge.trackReps,
+        completed_days: newChallenge.completedDays
+      });
+
+      if (error) throw error;
+      setSyncError(null);
+    } catch (error) {
+      console.error('Error creating challenge:', error);
+      setSyncError('Błąd zapisu');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
-  const updateChallenge = () => {
-    if (!editingChallenge) return;
+  const updateChallenge = async () => {
+    if (!editingChallenge || !user) return;
 
     let endDate: string;
     if (formDateMode === 'dates') {
@@ -166,18 +265,47 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
       endDate = formatDateStr(calculateEndDate(startDateObj, formDurationType, formDurationValue));
     }
 
+    const updatedChallenge = {
+      ...editingChallenge,
+      name: formName.trim() || editingChallenge.name,
+      startDate: formStartDate,
+      endDate,
+      trackReps: formTrackReps
+    };
+
+    // Optimistic update
     setChallenges(prev => prev.map(c =>
-      c.id === editingChallenge.id
-        ? { ...c, name: formName.trim() || c.name, startDate: formStartDate, endDate, trackReps: formTrackReps }
-        : c
+      c.id === editingChallenge.id ? updatedChallenge : c
     ));
 
     setShowEditModal(false);
     setEditingChallenge(null);
     resetForm();
+
+    // Save to Supabase
+    try {
+      setIsSyncing(true);
+      const { error } = await supabase.from('challenges')
+        .update({
+          name: updatedChallenge.name,
+          start_date: updatedChallenge.startDate,
+          end_date: updatedChallenge.endDate,
+          track_reps: updatedChallenge.trackReps
+        })
+        .eq('id', editingChallenge.id);
+
+      if (error) throw error;
+      setSyncError(null);
+    } catch (error) {
+      console.error('Error updating challenge:', error);
+      setSyncError('Błąd zapisu');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
-  const deleteChallenge = (id: string) => {
+  const deleteChallenge = async (id: string) => {
+    // Optimistic update
     setChallenges(prev => prev.filter(c => c.id !== id));
     if (activeChallenge?.id === id) {
       setActiveChallenge(null);
@@ -185,6 +313,24 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     }
     setShowDeleteConfirm(false);
     setEditingChallenge(null);
+
+    // Delete from Supabase
+    try {
+      setIsSyncing(true);
+      const { error } = await supabase.from('challenges')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      setSyncError(null);
+    } catch (error) {
+      console.error('Error deleting challenge:', error);
+      setSyncError('Błąd usuwania');
+      // Reload to restore state
+      loadChallenges();
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const openEditModal = (challenge: Challenge) => {
@@ -195,6 +341,24 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     setFormEndDate(challenge.endDate);
     setFormTrackReps(challenge.trackReps);
     setShowEditModal(true);
+  };
+
+  // Update completedDays in Supabase
+  const syncCompletedDays = async (challengeId: string, completedDays: { [date: string]: number }) => {
+    try {
+      setIsSyncing(true);
+      const { error } = await supabase.from('challenges')
+        .update({ completed_days: completedDays })
+        .eq('id', challengeId);
+
+      if (error) throw error;
+      setSyncError(null);
+    } catch (error) {
+      console.error('Error syncing completed days:', error);
+      setSyncError('Błąd synchronizacji');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   // Handle day click
@@ -211,16 +375,19 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     } else {
       // Simple toggle
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const newCompletedDays = activeChallenge.completedDays[dateStr]
+        ? Object.fromEntries(Object.entries(activeChallenge.completedDays).filter(([d]) => d !== dateStr))
+        : { ...activeChallenge.completedDays, [dateStr]: 1 };
+
+      // Optimistic update
       setChallenges(prev => prev.map(c =>
         c.id === activeChallenge.id
-          ? {
-              ...c,
-              completedDays: c.completedDays[dateStr]
-                ? Object.fromEntries(Object.entries(c.completedDays).filter(([d]) => d !== dateStr))
-                : { ...c.completedDays, [dateStr]: 1 }
-            }
+          ? { ...c, completedDays: newCompletedDays }
           : c
       ));
+
+      // Sync to Supabase
+      syncCompletedDays(activeChallenge.id, newCompletedDays);
     }
   };
 
@@ -230,20 +397,23 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(repsDay).padStart(2, '0')}`;
     const reps = parseInt(repsValue) || 0;
 
+    const newCompletedDays = reps > 0
+      ? { ...activeChallenge.completedDays, [dateStr]: reps }
+      : Object.fromEntries(Object.entries(activeChallenge.completedDays).filter(([d]) => d !== dateStr));
+
+    // Optimistic update
     setChallenges(prev => prev.map(c =>
       c.id === activeChallenge.id
-        ? {
-            ...c,
-            completedDays: reps > 0
-              ? { ...c.completedDays, [dateStr]: reps }
-              : Object.fromEntries(Object.entries(c.completedDays).filter(([d]) => d !== dateStr))
-          }
+        ? { ...c, completedDays: newCompletedDays }
         : c
     ));
 
     setShowRepsModal(false);
     setRepsDay(null);
     setRepsValue('');
+
+    // Sync to Supabase
+    syncCompletedDays(activeChallenge.id, newCompletedDays);
   };
 
   const isDayCompleted = (day: number): boolean => {
@@ -299,6 +469,18 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     return { totalDays, completedCount, totalReps, percentage, isCompleted, streak };
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-amber-500 animate-spin mx-auto mb-4" />
+          <p className="text-slate-400">Ładowanie wyzwań...</p>
+        </div>
+      </div>
+    );
+  }
+
   // LIST VIEW
   if (view === 'list') {
     return (
@@ -309,7 +491,12 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
               <Home className="w-5 h-5" />
               <span className="hidden sm:inline">Powrót</span>
             </button>
-            <h1 className="text-xl font-bold text-white">Wyzwania</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-white">Wyzwania</h1>
+              {isSyncing && <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />}
+              {!isSyncing && !syncError && <Cloud className="w-4 h-4 text-emerald-400" />}
+              {syncError && <span title={syncError}><CloudOff className="w-4 h-4 text-rose-400" /></span>}
+            </div>
             <button onClick={signOut} className="text-slate-400 hover:text-white transition-colors text-sm">Wyloguj</button>
           </div>
         </header>
@@ -620,7 +807,12 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
               <ArrowLeft className="w-5 h-5" />
               <span className="hidden sm:inline">Wyzwania</span>
             </button>
-            <h1 className="text-xl font-bold text-white truncate max-w-[200px]">{activeChallenge.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-white truncate max-w-[200px]">{activeChallenge.name}</h1>
+              {isSyncing && <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />}
+              {!isSyncing && !syncError && <Cloud className="w-4 h-4 text-emerald-400" />}
+              {syncError && <span title={syncError}><CloudOff className="w-4 h-4 text-rose-400" /></span>}
+            </div>
             <div className="flex items-center gap-2">
               <button onClick={() => openEditModal(activeChallenge)} className="text-slate-400 hover:text-amber-400 p-1">
                 <Edit2 className="w-4 h-4" />
