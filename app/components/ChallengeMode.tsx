@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Flame, Home, Plus, Trophy, Edit2, Trash2, ArrowLeft, Loader2, Calendar as CalendarIcon, List, Grid3X3, LayoutList, BarChart3, ChevronLeft, ChevronRight, Info } from "lucide-react";
+import { Check, Flame, Home, Plus, Trophy, Edit2, Trash2, ArrowLeft, Loader2, Grid3X3, BarChart3, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
-import Calendar, { isToday } from "./shared/Calendar";
+import { isToday } from "./shared/Calendar";
 import SyncIndicator from "./shared/SyncIndicator";
 import {
   Challenge,
@@ -37,7 +37,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
 
   // View state
   const [view, setView] = useState<'list' | 'detail'>('list');
-  const [detailView, setDetailView] = useState<'calendar' | 'grid' | 'checklist' | 'table'>('calendar');
+  const [detailView, setDetailView] = useState<'grid' | 'table'>('grid');
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [weekOffset, setWeekOffset] = useState(0);
@@ -473,71 +473,6 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   if (view === 'detail' && activeChallenge) {
     const progress = getChallengeProgress(activeChallenge);
 
-    const renderDay = (day: number, dateStr: string) => {
-      const completed = !!activeChallenge.completedDays[dateStr];
-      const inChallenge = dateStr >= activeChallenge.startDate && dateStr <= activeChallenge.endDate;
-      const reps = activeChallenge.completedDays[dateStr] || 0;
-      const dayGoal = activeChallenge.dailyGoals?.[dateStr] || 0;
-      const today = isToday(day, month, year);
-      const hasGoal = dayGoal > 0;
-      const goalReached = hasGoal && reps >= dayGoal;
-
-      // Określ styl tła
-      let bgClass = 'bg-slate-900/30 opacity-40'; // poza wyzwaniem
-      if (inChallenge) {
-        if (goalReached) {
-          bgClass = 'bg-emerald-600/40 border-2 border-emerald-500';
-        } else if (reps > 0 && hasGoal) {
-          bgClass = 'bg-amber-600/30 border-2 border-amber-500/50';
-        } else if (reps > 0) {
-          bgClass = 'bg-amber-500/30';
-        } else if (hasGoal) {
-          bgClass = 'bg-slate-700/50 border border-dashed border-amber-500/30 hover:bg-slate-700';
-        } else {
-          bgClass = 'bg-slate-800/50 hover:bg-slate-700';
-        }
-      }
-
-      return (
-        <button
-          onClick={() => handleDayClick(day, dateStr)}
-          disabled={!inChallenge}
-          className={`aspect-square rounded-xl flex flex-col items-center justify-center transition-all relative p-1
-            ${today ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-slate-900' : ''}
-            ${bgClass}
-            ${inChallenge ? 'cursor-pointer' : 'cursor-not-allowed'}
-          `}
-        >
-          {completed && !activeChallenge.trackReps && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Check className="w-6 h-6 text-emerald-400" />
-            </div>
-          )}
-          <span className={`text-base font-medium ${goalReached ? 'text-emerald-300' : completed ? 'text-amber-300' : today ? 'text-emerald-400 font-bold' : inChallenge ? 'text-slate-200' : 'text-slate-600'}`}>
-            {day}
-          </span>
-          {activeChallenge.trackReps && (
-            <>
-              {hasGoal && reps > 0 && (
-                <span className={`text-xs font-bold ${goalReached ? 'text-emerald-400' : 'text-amber-400'}`}>
-                  {reps}/{dayGoal}
-                </span>
-              )}
-              {hasGoal && reps === 0 && (
-                <span className="text-xs text-slate-500">cel: {dayGoal}</span>
-              )}
-              {!hasGoal && reps > 0 && (
-                <span className="text-xs font-bold text-amber-400">{reps}</span>
-              )}
-            </>
-          )}
-          {goalReached && (
-            <Check className="w-4 h-4 text-emerald-400 absolute top-0.5 right-0.5" />
-          )}
-        </button>
-      );
-    };
-
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950">
         <header className="bg-slate-900/50 border-b border-slate-800">
@@ -609,19 +544,10 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
           </div>
 
           {/* View Toggle */}
-          <div className="flex gap-1 bg-slate-800/50 p-1 rounded-lg overflow-x-auto">
-            <button
-              onClick={() => setDetailView('calendar')}
-              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all whitespace-nowrap ${
-                detailView === 'calendar' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-              }`}
-            >
-              <CalendarIcon className="w-4 h-4" />
-              <span className="text-sm font-medium">Miesiąc</span>
-            </button>
+          <div className="flex gap-1 bg-slate-800/50 p-1 rounded-lg">
             <button
               onClick={() => setDetailView('grid')}
-              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all whitespace-nowrap ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all ${
                 detailView === 'grid' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
               }`}
             >
@@ -629,42 +555,15 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
               <span className="text-sm font-medium">Siatka</span>
             </button>
             <button
-              onClick={() => setDetailView('checklist')}
-              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all whitespace-nowrap ${
-                detailView === 'checklist' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+              onClick={() => setDetailView('table')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all ${
+                detailView === 'table' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
               }`}
             >
-              <LayoutList className="w-4 h-4" />
-              <span className="text-sm font-medium">Lista</span>
+              <BarChart3 className="w-4 h-4" />
+              <span className="text-sm font-medium">Analiza</span>
             </button>
-            {activeChallenge.trackReps && (
-              <button
-                onClick={() => setDetailView('table')}
-                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all whitespace-nowrap ${
-                  detailView === 'table' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-                }`}
-              >
-                <BarChart3 className="w-4 h-4" />
-                <span className="text-sm font-medium">Analiza</span>
-              </button>
-            )}
           </div>
-
-          {/* Calendar View */}
-          {detailView === 'calendar' && (
-            <>
-              <Calendar
-                currentDate={currentDate}
-                onDateChange={setCurrentDate}
-                renderDay={renderDay}
-              />
-              <p className="text-slate-400 text-xs text-center">
-                {activeChallenge.trackReps
-                  ? 'Kliknij na dzień aby wpisać liczbę powtórzeń'
-                  : 'Kliknij na dzień w zakresie wyzwania, aby oznaczyć jako wykonane'}
-              </p>
-            </>
-          )}
 
           {/* Weekly Grid View */}
           {detailView === 'grid' && (
@@ -765,91 +664,8 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
             </div>
           )}
 
-          {/* Checklist View */}
-          {detailView === 'checklist' && (
-            <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
-              <div className="divide-y divide-slate-700/50 max-h-[500px] overflow-y-auto">
-                {(() => {
-                  const start = new Date(activeChallenge.startDate);
-                  const end = new Date(activeChallenge.endDate);
-                  const days = [];
-                  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                    days.push(new Date(d));
-                  }
-                  const dayLabels = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
-
-                  return days.map((day) => {
-                    const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
-                    const completed = !!activeChallenge.completedDays[dateStr];
-                    const reps = activeChallenge.completedDays[dateStr] || 0;
-                    const dayGoal = activeChallenge.dailyGoals?.[dateStr] || 0;
-                    const goalReached = dayGoal > 0 && reps >= dayGoal;
-                    const todayCheck = isToday(day.getDate(), day.getMonth(), day.getFullYear());
-
-                    return (
-                      <button
-                        key={dateStr}
-                        onClick={() => handleDayClick(day.getDate(), dateStr)}
-                        className={`w-full px-4 py-3 flex items-center gap-4 hover:bg-slate-700/50 transition-colors ${
-                          todayCheck ? 'bg-emerald-500/10' : ''
-                        }`}
-                      >
-                        {/* Checkbox */}
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${
-                          goalReached ? 'bg-emerald-600 text-white' :
-                          completed ? 'bg-amber-600 text-white' :
-                          dayGoal > 0 ? 'border-2 border-dashed border-amber-500/50' :
-                          'border-2 border-slate-600'
-                        }`}>
-                          {(goalReached || (completed && !activeChallenge.trackReps)) && (
-                            <Check className="w-4 h-4" />
-                          )}
-                          {activeChallenge.trackReps && reps > 0 && !goalReached && (
-                            <span className="text-xs font-bold">{reps > 99 ? '99+' : reps}</span>
-                          )}
-                        </div>
-
-                        {/* Day info */}
-                        <div className="flex-1 text-left">
-                          <div className={`font-medium ${todayCheck ? 'text-emerald-400' : goalReached ? 'text-emerald-300' : completed ? 'text-amber-300' : 'text-slate-200'}`}>
-                            {day.getDate()} {day.toLocaleDateString('pl-PL', { month: 'long' })}
-                          </div>
-                          <div className="text-xs text-slate-500">
-                            {dayLabels[day.getDay()]}
-                          </div>
-                        </div>
-
-                        {/* Progress info */}
-                        {activeChallenge.trackReps && (
-                          <div className="text-right flex-shrink-0">
-                            {dayGoal > 0 ? (
-                              <>
-                                <div className={`text-sm font-bold ${goalReached ? 'text-emerald-400' : reps > 0 ? 'text-amber-400' : 'text-slate-500'}`}>
-                                  {reps}/{dayGoal}
-                                </div>
-                                <div className="text-xs text-slate-500">{activeChallenge.goalUnit}</div>
-                              </>
-                            ) : reps > 0 ? (
-                              <div className="text-sm font-bold text-amber-400">{reps}</div>
-                            ) : null}
-                          </div>
-                        )}
-
-                        {todayCheck && (
-                          <div className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs rounded-full flex-shrink-0">
-                            dziś
-                          </div>
-                        )}
-                      </button>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-          )}
-
           {/* Table/Analysis View */}
-          {detailView === 'table' && activeChallenge.trackReps && (
+          {detailView === 'table' && (
             <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
               <div className="bg-slate-700/50 px-4 py-3 border-b border-slate-600">
                 <h3 className="text-white font-semibold text-center">Analiza postępów</h3>
@@ -862,25 +678,35 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
                     days.push(new Date(d));
                   }
-                  return days.map((day, idx) => {
+                  return days.map((day) => {
                     const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
                     const dayGoal = activeChallenge.dailyGoals?.[dateStr] || 0;
                     const reps = activeChallenge.completedDays[dateStr] || 0;
-                    const progress = dayGoal > 0 ? Math.min(100, Math.round((reps / dayGoal) * 100)) : 0;
+                    const completed = reps > 0;
+                    const progress = dayGoal > 0 ? Math.min(100, Math.round((reps / dayGoal) * 100)) : (completed ? 100 : 0);
                     const isCurrentDay = isToday(day.getDate(), day.getMonth(), day.getFullYear());
-                    const isPast = day < new Date(new Date().setHours(0,0,0,0));
+
+                    const handleClick = () => {
+                      if (activeChallenge.trackReps) {
+                        setRepsDay(day.getDate());
+                        setRepsValue(reps > 0 ? reps.toString() : '');
+                        setGoalValue(dayGoal > 0 ? dayGoal.toString() : '');
+                        setCurrentDateStr(dateStr);
+                        setCurrentDate(day);
+                        setShowRepsModal(true);
+                      } else {
+                        // Toggle completion for simple challenges
+                        const newCompletedDays = completed
+                          ? Object.fromEntries(Object.entries(activeChallenge.completedDays).filter(([d]) => d !== dateStr))
+                          : { ...activeChallenge.completedDays, [dateStr]: 1 };
+                        updateCompletedDays(activeChallenge.id, newCompletedDays);
+                      }
+                    };
 
                     return (
                       <button
                         key={dateStr}
-                        onClick={() => {
-                          setRepsDay(day.getDate());
-                          setRepsValue(reps > 0 ? reps.toString() : '');
-                          setGoalValue(dayGoal > 0 ? dayGoal.toString() : '');
-                          setCurrentDateStr(dateStr);
-                          setCurrentDate(day);
-                          setShowRepsModal(true);
-                        }}
+                        onClick={handleClick}
                         className={`w-full px-4 py-3 flex items-center gap-4 hover:bg-slate-700/50 transition-colors ${
                           isCurrentDay ? 'bg-emerald-500/10' : ''
                         }`}
@@ -896,12 +722,15 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-sm text-slate-400">
-                              {dayGoal > 0 ? `Cel: ${dayGoal}` : 'Brak celu'}
+                              {activeChallenge.trackReps
+                                ? (dayGoal > 0 ? `Cel: ${dayGoal}` : 'Brak celu')
+                                : (completed ? 'Wykonane' : 'Nie wykonane')
+                              }
                             </span>
                             <span className={`text-sm font-bold ${
-                              reps >= dayGoal && dayGoal > 0 ? 'text-emerald-400' : reps > 0 ? 'text-amber-400' : 'text-slate-500'
+                              completed ? (progress >= 100 ? 'text-emerald-400' : 'text-amber-400') : 'text-slate-500'
                             }`}>
-                              {reps > 0 ? reps : '-'}
+                              {activeChallenge.trackReps ? (reps > 0 ? reps : '-') : ''}
                             </span>
                           </div>
                           <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
@@ -914,9 +743,9 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                           </div>
                         </div>
                         <div className="w-12 text-right">
-                          {dayGoal > 0 && (
+                          {(dayGoal > 0 || !activeChallenge.trackReps) && (
                             <span className={`text-sm font-bold ${progress >= 100 ? 'text-emerald-400' : 'text-slate-400'}`}>
-                              {progress}%
+                              {activeChallenge.trackReps ? `${progress}%` : ''}
                             </span>
                           )}
                           {progress >= 100 && <Check className="w-4 h-4 text-emerald-400 inline ml-1" />}
