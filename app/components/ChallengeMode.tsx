@@ -269,34 +269,57 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
       const hasGoal = dayGoal > 0;
       const goalReached = hasGoal && reps >= dayGoal;
 
+      // Określ styl tła
+      let bgClass = 'bg-slate-900/30 opacity-40'; // poza wyzwaniem
+      if (inChallenge) {
+        if (goalReached) {
+          bgClass = 'bg-emerald-600/40 border-2 border-emerald-500';
+        } else if (reps > 0 && hasGoal) {
+          bgClass = 'bg-amber-600/30 border-2 border-amber-500/50';
+        } else if (reps > 0) {
+          bgClass = 'bg-amber-500/30';
+        } else if (hasGoal) {
+          bgClass = 'bg-slate-700/50 border border-dashed border-amber-500/30 hover:bg-slate-700';
+        } else {
+          bgClass = 'bg-slate-800/50 hover:bg-slate-700';
+        }
+      }
+
       return (
         <button
           onClick={() => handleDayClick(day, dateStr)}
           disabled={!inChallenge}
-          className={`aspect-square rounded-lg flex flex-col items-center justify-center transition-all relative
-            ${today ? 'ring-2 ring-emerald-500' : ''}
-            ${goalReached ? 'bg-emerald-500/40' : completed ? 'bg-amber-500/30' : inChallenge ? 'bg-amber-500/10 hover:bg-amber-500/20' : 'bg-slate-900/30 opacity-40'}
+          className={`aspect-square rounded-xl flex flex-col items-center justify-center transition-all relative p-1
+            ${today ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-slate-900' : ''}
+            ${bgClass}
             ${inChallenge ? 'cursor-pointer' : 'cursor-not-allowed'}
           `}
         >
           {completed && !activeChallenge.trackReps && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <Check className="w-5 h-5 text-emerald-400" />
+              <Check className="w-6 h-6 text-emerald-400" />
             </div>
           )}
-          <span className={`text-sm ${goalReached ? 'text-emerald-300' : completed ? 'text-amber-300' : today ? 'text-emerald-400 font-bold' : inChallenge ? 'text-amber-200' : 'text-slate-500'}`}>
+          <span className={`text-base font-medium ${goalReached ? 'text-emerald-300' : completed ? 'text-amber-300' : today ? 'text-emerald-400 font-bold' : inChallenge ? 'text-slate-200' : 'text-slate-600'}`}>
             {day}
           </span>
-          {activeChallenge.trackReps && hasGoal && (
-            <span className={`text-[10px] ${goalReached ? 'text-emerald-400' : reps > 0 ? 'text-amber-400' : 'text-slate-500'}`}>
-              {reps > 0 ? `${reps}/${dayGoal}` : dayGoal}
-            </span>
-          )}
-          {activeChallenge.trackReps && !hasGoal && reps > 0 && (
-            <span className="text-xs font-bold text-amber-400">{reps}</span>
+          {activeChallenge.trackReps && (
+            <>
+              {hasGoal && reps > 0 && (
+                <span className={`text-xs font-bold ${goalReached ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {reps}/{dayGoal}
+                </span>
+              )}
+              {hasGoal && reps === 0 && (
+                <span className="text-xs text-slate-500">cel: {dayGoal}</span>
+              )}
+              {!hasGoal && reps > 0 && (
+                <span className="text-xs font-bold text-amber-400">{reps}</span>
+              )}
+            </>
           )}
           {goalReached && (
-            <Check className="w-3 h-3 text-emerald-400 absolute top-1 right-1" />
+            <Check className="w-4 h-4 text-emerald-400 absolute top-0.5 right-0.5" />
           )}
         </button>
       );
