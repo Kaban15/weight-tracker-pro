@@ -172,33 +172,16 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     }
   };
 
-  // Handler for matrix cell clicks (from dashboard view)
+  // Handler for matrix cell clicks (from dashboard view) - simple toggle only
   const handleMatrixCellClick = (challenge: Challenge, dateStr: string) => {
     const inChallenge = dateStr >= challenge.startDate && dateStr <= challenge.endDate;
     if (!inChallenge) return;
 
-    const dateParts = dateStr.split('-');
-    const day = parseInt(dateParts[2]);
-    const clickedMonth = parseInt(dateParts[1]) - 1;
-
-    if (challenge.trackReps) {
-      // For reps tracking, set active challenge and open modal
-      setActiveChallenge(challenge);
-      const currentReps = challenge.completedDays[dateStr] || 0;
-      const currentGoal = challenge.dailyGoals?.[dateStr] || 0;
-      setRepsDay(day);
-      setRepsValue(currentReps > 0 ? currentReps.toString() : '');
-      setGoalValue(currentGoal > 0 ? currentGoal.toString() : '');
-      setCurrentDateStr(dateStr);
-      setCurrentDate(new Date(parseInt(dateParts[0]), clickedMonth, day));
-      setShowRepsModal(true);
-    } else {
-      // For simple tracking, toggle directly
-      const newCompletedDays = challenge.completedDays[dateStr]
-        ? Object.fromEntries(Object.entries(challenge.completedDays).filter(([d]) => d !== dateStr))
-        : { ...challenge.completedDays, [dateStr]: 1 };
-      updateCompletedDays(challenge.id, newCompletedDays);
-    }
+    // Simple toggle for all challenges (no modal)
+    const newCompletedDays = challenge.completedDays[dateStr]
+      ? Object.fromEntries(Object.entries(challenge.completedDays).filter(([d]) => d !== dateStr))
+      : { ...challenge.completedDays, [dateStr]: 1 };
+    updateCompletedDays(challenge.id, newCompletedDays);
   };
 
   const saveReps = () => {
@@ -281,6 +264,43 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
             </button>
           </div>
 
+          {/* Statistics */}
+          {challenges.length > 0 && (() => {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const activeChallenges = challenges.filter(c => new Date(c.endDate) >= today);
+            const completedChallenges = challenges.filter(c => new Date(c.endDate) < today);
+            const totalCompletedDays = challenges.reduce((sum, c) => sum + Object.keys(c.completedDays).length, 0);
+            const totalDays = challenges.reduce((sum, c) => sum + getChallengeProgress(c).totalDays, 0);
+            const overallProgress = totalDays > 0 ? Math.round((totalCompletedDays / totalDays) * 100) : 0;
+
+            return (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                  <div className="text-2xl font-bold text-emerald-400">{activeChallenges.length}</div>
+                  <div className="text-xs text-slate-400">Aktywnych</div>
+                </div>
+                <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                  <div className="text-2xl font-bold text-slate-300">{completedChallenges.length}</div>
+                  <div className="text-xs text-slate-400">Ukończonych</div>
+                </div>
+                <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 col-span-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-slate-400">Ogólny postęp</span>
+                    <span className="text-sm font-bold text-amber-400">{overallProgress}%</span>
+                  </div>
+                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-amber-600 to-emerald-500 transition-all"
+                      style={{ width: `${overallProgress}%` }}
+                    />
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1">{totalCompletedDays}/{totalDays} dni</div>
+                </div>
+              </div>
+            );
+          })()}
+
           {challenges.length === 0 ? (
             <div className="bg-slate-800/50 rounded-xl border-2 border-slate-700 p-8 text-center">
               <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -360,9 +380,6 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                             const dateStr = formatDate(day);
                             const inChallenge = dateStr >= challenge.startDate && dateStr <= challenge.endDate;
                             const completed = !!challenge.completedDays[dateStr];
-                            const reps = challenge.completedDays[dateStr] || 0;
-                            const dayGoal = challenge.dailyGoals?.[dateStr] || 0;
-                            const goalReached = dayGoal > 0 && reps >= dayGoal;
                             const isCurrentDay = isToday(day.getDate(), day.getMonth(), day.getFullYear());
 
                             if (!inChallenge) {
@@ -378,17 +395,11 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                                 <button
                                   onClick={() => handleMatrixCellClick(challenge, dateStr)}
                                   className={`w-8 h-8 mx-auto rounded-lg flex items-center justify-center transition-all ${
-                                    goalReached ? 'bg-emerald-600 text-white hover:bg-emerald-500' :
-                                    completed ? 'bg-amber-600 text-white hover:bg-amber-500' :
-                                    dayGoal > 0 ? 'border-2 border-dashed border-amber-500/50 hover:border-amber-400 text-slate-400' :
-                                    'border-2 border-slate-600 hover:border-slate-500 text-slate-400 hover:text-slate-300'
-                                  } ${isCurrentDay ? 'ring-2 ring-emerald-400 ring-offset-1 ring-offset-slate-800' : ''}`}
+                                    completed ? 'bg-emerald-600 text-white hover:bg-emerald-500' :
+                                    'border-2 border-slate-600 hover:border-slate-500'
+                                  }`}
                                 >
-                                  {goalReached || (completed && !challenge.trackReps) ? (
-                                    <Check className="w-4 h-4" />
-                                  ) : challenge.trackReps && reps > 0 ? (
-                                    <span className="text-xs font-bold">{reps > 99 ? '99' : reps}</span>
-                                  ) : null}
+                                  {completed && <Check className="w-4 h-4" />}
                                 </button>
                               </td>
                             );
@@ -448,23 +459,6 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
           onConfirm={handleDelete}
           onCancel={() => { setShowDeleteConfirm(false); setEditingChallengeId(null); }}
         />
-
-        {/* RepsModal for matrix view */}
-        {activeChallenge && (
-          <RepsModal
-            isOpen={showRepsModal}
-            day={repsDay}
-            month={currentDate.getMonth()}
-            value={repsValue}
-            goalValue={goalValue}
-            goalUnit={activeChallenge.goalUnit}
-            onGoalChange={setGoalValue}
-            onChange={setRepsValue}
-            onSave={saveReps}
-            onDelete={() => { setRepsValue('0'); setGoalValue('0'); saveReps(); }}
-            onClose={() => { setShowRepsModal(false); setActiveChallenge(null); }}
-          />
-        )}
       </div>
     );
   }
