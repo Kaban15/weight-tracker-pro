@@ -137,13 +137,23 @@ export function useChallenges(userId: string | undefined) {
       endDate = formatDateStr(calculateEndDate(startDateObj, formData.durationType, formData.durationValue));
     }
 
+    // Populate dailyGoals with default goal for each day if defaultGoal > 0
+    let dailyGoals: { [date: string]: number } = {};
+    if (formData.trackReps && formData.defaultGoal > 0) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        dailyGoals[formatDateStr(d)] = formData.defaultGoal;
+      }
+    }
+
     const newChallenge: Challenge = {
       id: crypto.randomUUID(),
       name: formData.name.trim() || 'Nowe wyzwanie',
       startDate,
       endDate,
       trackReps: formData.trackReps,
-      dailyGoals: {},
+      dailyGoals,
       goalUnit: formData.trackReps ? formData.goalUnit : undefined,
       completedDays: {}
     };

@@ -39,11 +39,13 @@ export interface ChallengeFormData {
   endDate: string;
   trackReps: boolean;
   goalUnit: string;
+  defaultGoal: number; // domyślna ilość powtórzeń na każdy dzień
 }
 
 export const GOAL_UNITS = [
   { value: 'powtórzeń', label: 'Powtórzeń' },
   { value: 'minut', label: 'Minut' },
+  { value: 'sekund', label: 'Sekund' },
   { value: 'km', label: 'Kilometrów' },
   { value: 'stron', label: 'Stron' },
   { value: 'kalorii', label: 'Kalorii' },
@@ -58,5 +60,6 @@ export const DEFAULT_FORM_DATA: ChallengeFormData = {
   startDate: '',
   endDate: '',
   trackReps: false,
-  goalUnit: 'powtórzeń'
+  goalUnit: 'powtórzeń',
+  defaultGoal: 0
 };

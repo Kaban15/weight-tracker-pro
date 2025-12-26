@@ -185,9 +185,22 @@ export default function ChallengeFormModal({
                   ))}
                 </select>
               </div>
-              <p className="text-xs text-slate-500">
-                Cele dla każdego dnia ustawisz w kalendarzu po utworzeniu wyzwania
-              </p>
+              <div>
+                <label className="block text-sm text-slate-400 mb-2">
+                  Domyślny cel na każdy dzień ({formData.goalUnit})
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.defaultGoal || ''}
+                  onChange={(e) => onChange({ defaultGoal: Number(e.target.value) || 0 })}
+                  placeholder="np. 30 (0 = brak domyślnego celu)"
+                  className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Zostaw 0 aby ustawiać cele indywidualnie dla każdego dnia
+                </p>
+              </div>
             </div>
           )}
 

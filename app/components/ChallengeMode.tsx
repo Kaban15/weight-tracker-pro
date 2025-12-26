@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Flame, Home, Plus, Trophy, Edit2, Trash2, ArrowLeft, Loader2, Grid3X3, BarChart3, ChevronLeft, ChevronRight, Info } from "lucide-react";
+import { Check, Flame, Home, Plus, Trophy, Edit2, Trash2, ArrowLeft, Loader2, Grid3X3, BarChart3, ChevronLeft, ChevronRight, Info, History, Zap } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { isToday } from "./shared/Calendar";
 import SyncIndicator from "./shared/SyncIndicator";
@@ -38,6 +38,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   // View state
   const [view, setView] = useState<'list' | 'detail'>('list');
   const [detailView, setDetailView] = useState<'grid' | 'table'>('grid');
+  const [dashboardTab, setDashboardTab] = useState<'active' | 'history'>('active');
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [weekOffset, setWeekOffset] = useState(0);
@@ -136,7 +137,8 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
       startDate: challenge.startDate,
       endDate: challenge.endDate,
       trackReps: challenge.trackReps,
-      goalUnit: challenge.goalUnit || 'powtórzeń'
+      goalUnit: challenge.goalUnit || 'powtórzeń',
+      defaultGoal: 0
     });
     setShowEditModal(true);
   };
@@ -242,56 +244,136 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
         </header>
 
         <main className="max-w-4xl mx-auto px-4 py-6">
-          {/* Week Navigation */}
-          <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={() => setWeekOffset(prev => prev - 1)}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <div className="text-center">
-              <h2 className="text-lg font-semibold text-white">Tydzień {weekNum}</h2>
-              <p className="text-xs text-slate-500">
-                {weekDays[0].toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })} - {weekDays[6].toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', year: 'numeric' })}
-              </p>
+          {/* Week Navigation - only show for active tab */}
+          {dashboardTab === 'active' && (
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => setWeekOffset(prev => prev - 1)}
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <div className="text-center">
+                <h2 className="text-lg font-semibold text-white">Tydzień {weekNum}</h2>
+                <p className="text-xs text-slate-500">
+                  {weekDays[0].toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })} - {weekDays[6].toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+              </div>
+              <button
+                onClick={() => setWeekOffset(prev => prev + 1)}
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
             </div>
-            <button
-              onClick={() => setWeekOffset(prev => prev + 1)}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
+          )}
 
-          {/* Statistics */}
-          {challenges.length > 0 && (() => {
+          {/* Tab Toggle */}
+          {(() => {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             const activeChallenges = challenges.filter(c => new Date(c.endDate) >= today);
             const completedChallenges = challenges.filter(c => new Date(c.endDate) < today);
 
             return (
-              <div className="flex gap-3 mb-4">
-                <div className="bg-slate-800/50 rounded-lg px-4 py-2 border border-slate-700 flex items-center gap-2">
-                  <span className="text-xl font-bold text-emerald-400">{activeChallenges.length}</span>
-                  <span className="text-xs text-slate-400">aktywnych</span>
+              <>
+                <div className="flex gap-2 mb-4 bg-slate-800/50 p-1 rounded-lg">
+                  <button
+                    onClick={() => setDashboardTab('active')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg transition-all ${
+                      dashboardTab === 'active' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                    }`}
+                  >
+                    <Zap className="w-4 h-4" />
+                    <span className="text-sm font-medium">Aktywne</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${dashboardTab === 'active' ? 'bg-emerald-500' : 'bg-slate-700'}`}>
+                      {activeChallenges.length}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setDashboardTab('history')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg transition-all ${
+                      dashboardTab === 'history' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                    }`}
+                  >
+                    <History className="w-4 h-4" />
+                    <span className="text-sm font-medium">Historia</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${dashboardTab === 'history' ? 'bg-slate-500' : 'bg-slate-700'}`}>
+                      {completedChallenges.length}
+                    </span>
+                  </button>
                 </div>
-                <div className="bg-slate-800/50 rounded-lg px-4 py-2 border border-slate-700 flex items-center gap-2">
-                  <span className="text-xl font-bold text-slate-300">{completedChallenges.length}</span>
-                  <span className="text-xs text-slate-400">ukończonych</span>
-                </div>
-              </div>
+
+                {/* History View */}
+                {dashboardTab === 'history' && (
+                  completedChallenges.length === 0 ? (
+                    <div className="bg-slate-800/50 rounded-xl border-2 border-slate-700 p-8 text-center">
+                      <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <History className="w-8 h-8 text-slate-500" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-white mb-2">Brak historii</h3>
+                      <p className="text-slate-400">Ukończone wyzwania pojawią się tutaj</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {completedChallenges.map(challenge => {
+                        const progress = getChallengeProgress(challenge);
+                        return (
+                          <button
+                            key={challenge.id}
+                            onClick={() => { setActiveChallenge(challenge); setView('detail'); }}
+                            className="w-full bg-slate-800/50 rounded-xl border border-slate-700 p-4 hover:bg-slate-700/50 transition-colors text-left"
+                          >
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-white truncate">{challenge.name}</h3>
+                                <p className="text-xs text-slate-500">
+                                  {challenge.startDate} - {challenge.endDate}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2 ml-4">
+                                {progress.percentage >= 100 ? (
+                                  <div className="flex items-center gap-1 bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-lg">
+                                    <Trophy className="w-4 h-4" />
+                                    <span className="text-sm font-medium">100%</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1 bg-slate-700 text-slate-300 px-2 py-1 rounded-lg">
+                                    <span className="text-sm font-medium">{progress.percentage}%</span>
+                                  </div>
+                                )}
+                                <Info className="w-4 h-4 text-slate-500" />
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-slate-400">
+                              <span>{progress.completedCount}/{progress.totalDays} dni</span>
+                              {challenge.trackReps && progress.totalReps > 0 && (
+                                <span className="text-amber-400">{progress.totalReps} {challenge.goalUnit}</span>
+                              )}
+                            </div>
+                            <div className="mt-2 h-2 bg-slate-700 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full ${progress.percentage >= 100 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                                style={{ width: `${progress.percentage}%` }}
+                              />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )
+                )}
+              </>
             );
           })()}
 
-          {challenges.length === 0 ? (
+          {dashboardTab === 'active' && challenges.filter(c => new Date(c.endDate) >= new Date(new Date().setHours(0, 0, 0, 0))).length === 0 ? (
             <div className="bg-slate-800/50 rounded-xl border-2 border-slate-700 p-8 text-center">
               <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Trophy className="w-8 h-8 text-amber-400" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Brak wyzwań</h3>
-              <p className="text-slate-400 mb-4">Utwórz swoje pierwsze wyzwanie!</p>
+              <h3 className="text-xl font-semibold text-white mb-2">Brak aktywnych wyzwań</h3>
+              <p className="text-slate-400 mb-4">Utwórz nowe wyzwanie lub sprawdź historię!</p>
               <button
                 onClick={() => { resetForm(); setShowCreateModal(true); }}
                 className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg transition-colors mx-auto"
@@ -300,7 +382,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                 Nowe wyzwanie
               </button>
             </div>
-          ) : (
+          ) : dashboardTab === 'active' && (
             <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
               {/* Matrix Header */}
               <div className="overflow-x-auto">
@@ -332,7 +414,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-700/50">
-                    {challenges.map(challenge => {
+                    {challenges.filter(c => new Date(c.endDate) >= new Date(new Date().setHours(0, 0, 0, 0))).map(challenge => {
                       const progress = getChallengeProgress(challenge);
                       return (
                         <tr key={challenge.id} className="hover:bg-slate-700/30 transition-colors">
@@ -430,8 +512,8 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
             </div>
           )}
 
-          {/* Today button */}
-          {weekOffset !== 0 && (
+          {/* Today button - only show for active tab */}
+          {dashboardTab === 'active' && weekOffset !== 0 && (
             <div className="mt-4 text-center">
               <button
                 onClick={() => setWeekOffset(0)}
