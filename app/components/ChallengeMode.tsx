@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Flame, Home, Plus, Trophy, Edit2, Trash2, ArrowLeft, Loader2, Calendar as CalendarIcon, List } from "lucide-react";
+import { Check, Flame, Home, Plus, Trophy, Edit2, Trash2, ArrowLeft, Loader2, Calendar as CalendarIcon, List, Grid3X3, LayoutList, BarChart3 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import Calendar, { isToday } from "./shared/Calendar";
 import SyncIndicator from "./shared/SyncIndicator";
@@ -37,7 +37,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
 
   // View state
   const [view, setView] = useState<'list' | 'detail'>('list');
-  const [detailView, setDetailView] = useState<'calendar' | 'table'>('calendar');
+  const [detailView, setDetailView] = useState<'calendar' | 'grid' | 'checklist' | 'table'>('calendar');
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -126,6 +126,10 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     const inChallenge = dateStr >= activeChallenge.startDate && dateStr <= activeChallenge.endDate;
     if (!inChallenge) return;
 
+    // Parse month from dateStr for modal display
+    const dateParts = dateStr.split('-');
+    const clickedMonth = parseInt(dateParts[1]) - 1; // 0-indexed month
+
     if (activeChallenge.trackReps) {
       const currentReps = activeChallenge.completedDays[dateStr] || 0;
       const currentGoal = activeChallenge.dailyGoals?.[dateStr] || 0;
@@ -133,6 +137,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
       setRepsValue(currentReps > 0 ? currentReps.toString() : '');
       setGoalValue(currentGoal > 0 ? currentGoal.toString() : '');
       setCurrentDateStr(dateStr);
+      setCurrentDate(new Date(parseInt(dateParts[0]), clickedMonth, day));
       setShowRepsModal(true);
     } else {
       const newCompletedDays = activeChallenge.completedDays[dateStr]
@@ -397,28 +402,46 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
           </div>
 
           {/* View Toggle */}
-          {activeChallenge.trackReps && (
-            <div className="flex gap-2 bg-slate-800/50 p-1 rounded-lg">
-              <button
-                onClick={() => setDetailView('calendar')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg transition-all ${
-                  detailView === 'calendar' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <CalendarIcon className="w-4 h-4" />
-                <span className="text-sm font-medium">Kalendarz</span>
-              </button>
+          <div className="flex gap-1 bg-slate-800/50 p-1 rounded-lg overflow-x-auto">
+            <button
+              onClick={() => setDetailView('calendar')}
+              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all whitespace-nowrap ${
+                detailView === 'calendar' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+              }`}
+            >
+              <CalendarIcon className="w-4 h-4" />
+              <span className="text-sm font-medium">Miesiąc</span>
+            </button>
+            <button
+              onClick={() => setDetailView('grid')}
+              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all whitespace-nowrap ${
+                detailView === 'grid' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+              }`}
+            >
+              <Grid3X3 className="w-4 h-4" />
+              <span className="text-sm font-medium">Siatka</span>
+            </button>
+            <button
+              onClick={() => setDetailView('checklist')}
+              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all whitespace-nowrap ${
+                detailView === 'checklist' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+              }`}
+            >
+              <LayoutList className="w-4 h-4" />
+              <span className="text-sm font-medium">Lista</span>
+            </button>
+            {activeChallenge.trackReps && (
               <button
                 onClick={() => setDetailView('table')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg transition-all ${
-                  detailView === 'table' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
+                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all whitespace-nowrap ${
+                  detailView === 'table' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
                 }`}
               >
-                <List className="w-4 h-4" />
+                <BarChart3 className="w-4 h-4" />
                 <span className="text-sm font-medium">Analiza</span>
               </button>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Calendar View */}
           {detailView === 'calendar' && (
@@ -434,6 +457,188 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                   : 'Kliknij na dzień w zakresie wyzwania, aby oznaczyć jako wykonane'}
               </p>
             </>
+          )}
+
+          {/* Weekly Grid View */}
+          {detailView === 'grid' && (
+            <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
+              {(() => {
+                const start = new Date(activeChallenge.startDate);
+                const end = new Date(activeChallenge.endDate);
+                const dayNames = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'];
+
+                // Find the Monday of the first week
+                const firstDay = new Date(start);
+                const dayOfWeek = firstDay.getDay();
+                const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+                firstDay.setDate(firstDay.getDate() + mondayOffset);
+
+                // Build weeks array
+                const weeks: Date[][] = [];
+                let currentWeek: Date[] = [];
+                let current = new Date(firstDay);
+
+                while (current <= end || currentWeek.length > 0) {
+                  currentWeek.push(new Date(current));
+                  if (currentWeek.length === 7) {
+                    weeks.push(currentWeek);
+                    currentWeek = [];
+                  }
+                  current.setDate(current.getDate() + 1);
+                  if (current > end && currentWeek.length === 0) break;
+                }
+
+                return (
+                  <>
+                    {/* Header */}
+                    <div className="grid grid-cols-8 bg-slate-700/50 border-b border-slate-600">
+                      <div className="p-2 text-center text-xs text-slate-400 font-medium">Tydz.</div>
+                      {dayNames.map(day => (
+                        <div key={day} className="p-2 text-center text-xs text-slate-400 font-medium">{day}</div>
+                      ))}
+                    </div>
+                    {/* Weeks */}
+                    <div className="divide-y divide-slate-700/50 max-h-[400px] overflow-y-auto">
+                      {weeks.map((week, weekIdx) => {
+                        const weekNum = weekIdx + 1;
+                        return (
+                          <div key={weekIdx} className="grid grid-cols-8">
+                            <div className="p-2 flex items-center justify-center text-xs text-slate-500 bg-slate-800/30">
+                              {weekNum}
+                            </div>
+                            {week.map((day, dayIdx) => {
+                              const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+                              const inChallenge = dateStr >= activeChallenge.startDate && dateStr <= activeChallenge.endDate;
+                              const completed = !!activeChallenge.completedDays[dateStr];
+                              const reps = activeChallenge.completedDays[dateStr] || 0;
+                              const dayGoal = activeChallenge.dailyGoals?.[dateStr] || 0;
+                              const goalReached = dayGoal > 0 && reps >= dayGoal;
+                              const todayCheck = isToday(day.getDate(), day.getMonth(), day.getFullYear());
+
+                              if (!inChallenge) {
+                                return (
+                                  <div key={dayIdx} className="p-1.5 flex items-center justify-center">
+                                    <div className="w-8 h-8 flex items-center justify-center text-xs text-slate-600">
+                                      {day.getDate()}
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <button
+                                  key={dayIdx}
+                                  onClick={() => handleDayClick(day.getDate(), dateStr)}
+                                  className={`p-1.5 flex items-center justify-center transition-colors ${todayCheck ? 'bg-emerald-500/10' : 'hover:bg-slate-700/50'}`}
+                                >
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                                    goalReached ? 'bg-emerald-600 text-white' :
+                                    completed ? 'bg-amber-600 text-white' :
+                                    dayGoal > 0 ? 'border-2 border-dashed border-amber-500/50 text-slate-300' :
+                                    'border-2 border-slate-600 text-slate-300'
+                                  } ${todayCheck ? 'ring-2 ring-emerald-400 ring-offset-1 ring-offset-slate-800' : ''}`}>
+                                    {goalReached || (completed && !activeChallenge.trackReps) ? (
+                                      <Check className="w-4 h-4" />
+                                    ) : activeChallenge.trackReps && reps > 0 ? (
+                                      <span className="text-xs font-bold">{reps}</span>
+                                    ) : (
+                                      <span className="text-xs">{day.getDate()}</span>
+                                    )}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Checklist View */}
+          {detailView === 'checklist' && (
+            <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
+              <div className="divide-y divide-slate-700/50 max-h-[500px] overflow-y-auto">
+                {(() => {
+                  const start = new Date(activeChallenge.startDate);
+                  const end = new Date(activeChallenge.endDate);
+                  const days = [];
+                  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    days.push(new Date(d));
+                  }
+                  const dayLabels = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+
+                  return days.map((day) => {
+                    const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+                    const completed = !!activeChallenge.completedDays[dateStr];
+                    const reps = activeChallenge.completedDays[dateStr] || 0;
+                    const dayGoal = activeChallenge.dailyGoals?.[dateStr] || 0;
+                    const goalReached = dayGoal > 0 && reps >= dayGoal;
+                    const todayCheck = isToday(day.getDate(), day.getMonth(), day.getFullYear());
+
+                    return (
+                      <button
+                        key={dateStr}
+                        onClick={() => handleDayClick(day.getDate(), dateStr)}
+                        className={`w-full px-4 py-3 flex items-center gap-4 hover:bg-slate-700/50 transition-colors ${
+                          todayCheck ? 'bg-emerald-500/10' : ''
+                        }`}
+                      >
+                        {/* Checkbox */}
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${
+                          goalReached ? 'bg-emerald-600 text-white' :
+                          completed ? 'bg-amber-600 text-white' :
+                          dayGoal > 0 ? 'border-2 border-dashed border-amber-500/50' :
+                          'border-2 border-slate-600'
+                        }`}>
+                          {(goalReached || (completed && !activeChallenge.trackReps)) && (
+                            <Check className="w-4 h-4" />
+                          )}
+                          {activeChallenge.trackReps && reps > 0 && !goalReached && (
+                            <span className="text-xs font-bold">{reps > 99 ? '99+' : reps}</span>
+                          )}
+                        </div>
+
+                        {/* Day info */}
+                        <div className="flex-1 text-left">
+                          <div className={`font-medium ${todayCheck ? 'text-emerald-400' : goalReached ? 'text-emerald-300' : completed ? 'text-amber-300' : 'text-slate-200'}`}>
+                            {day.getDate()} {day.toLocaleDateString('pl-PL', { month: 'long' })}
+                          </div>
+                          <div className="text-xs text-slate-500">
+                            {dayLabels[day.getDay()]}
+                          </div>
+                        </div>
+
+                        {/* Progress info */}
+                        {activeChallenge.trackReps && (
+                          <div className="text-right flex-shrink-0">
+                            {dayGoal > 0 ? (
+                              <>
+                                <div className={`text-sm font-bold ${goalReached ? 'text-emerald-400' : reps > 0 ? 'text-amber-400' : 'text-slate-500'}`}>
+                                  {reps}/{dayGoal}
+                                </div>
+                                <div className="text-xs text-slate-500">{activeChallenge.goalUnit}</div>
+                              </>
+                            ) : reps > 0 ? (
+                              <div className="text-sm font-bold text-amber-400">{reps}</div>
+                            ) : null}
+                          </div>
+                        )}
+
+                        {todayCheck && (
+                          <div className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs rounded-full flex-shrink-0">
+                            dziś
+                          </div>
+                        )}
+                      </button>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
           )}
 
           {/* Table/Analysis View */}
