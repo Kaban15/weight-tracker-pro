@@ -99,13 +99,10 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   const resetForm = () => setFormData(DEFAULT_FORM_DATA);
 
   const handleCreate = async () => {
-    const newChallenge = await createChallenge(formData);
-    if (newChallenge) {
-      setActiveChallenge(newChallenge);
-      setView('detail');
-    }
+    await createChallenge(formData);
     setShowCreateModal(false);
     resetForm();
+    // Stay on dashboard - user can click challenge name to see details
   };
 
   const handleUpdate = async () => {
