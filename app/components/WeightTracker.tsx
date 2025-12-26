@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Calendar, Target, Activity, LogOut, Table, LineChart, Home } from 'lucide-react';
+import { Calendar, Target, Activity, LogOut, Table, LineChart, Home, TrendingDown, TrendingUp, Flame, Scale, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import ProgressChart from './ProgressChart';
 import ProgressTable from './ProgressTable';
@@ -156,6 +156,89 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
             </button>
           </div>
         </div>
+
+        {/* Dashboard Summary */}
+        {entries.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            {/* Current Weight */}
+            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+              <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+                <Scale className="w-4 h-4" />
+                <span>Aktualna waga</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-white">{currentWeight.toFixed(1)}</span>
+                <span className="text-slate-400 text-sm">kg</span>
+              </div>
+              {stats.totalWeightChange !== 0 && (
+                <div className={`flex items-center gap-1 text-sm mt-1 ${stats.totalWeightChange < 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {stats.totalWeightChange < 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
+                  <span>{stats.totalWeightChange > 0 ? '+' : ''}{stats.totalWeightChange.toFixed(1)} kg</span>
+                </div>
+              )}
+            </div>
+
+            {/* Progress */}
+            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+              <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+                <Target className="w-4 h-4" />
+                <span>Postęp</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-white">{Math.max(0, Math.min(100, progress)).toFixed(0)}</span>
+                <span className="text-slate-400 text-sm">%</span>
+              </div>
+              <div className="h-1.5 bg-slate-700 rounded-full mt-2 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all"
+                  style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Streak */}
+            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+              <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+                <Flame className="w-4 h-4 text-orange-400" />
+                <span>Seria dni</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-white">{stats.currentStreak}</span>
+                <span className="text-slate-400 text-sm">dni</span>
+              </div>
+              {stats.currentStreak >= 7 && (
+                <div className="text-orange-400 text-sm mt-1">Super! 🔥</div>
+              )}
+            </div>
+
+            {/* Days Remaining */}
+            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+              <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+                <Clock className="w-4 h-4" />
+                <span>Do celu</span>
+              </div>
+              {(() => {
+                const daysLeft = goal?.target_date
+                  ? Math.ceil((new Date(goal.target_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                  : 0;
+                const weightLeft = goal ? (currentWeight - goal.target_weight).toFixed(1) : '0';
+                return (
+                  <>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold text-white">{Math.max(0, daysLeft)}</span>
+                      <span className="text-slate-400 text-sm">dni</span>
+                    </div>
+                    {parseFloat(weightLeft) > 0 && (
+                      <div className="text-amber-400 text-sm mt-1">
+                        Zostało {weightLeft} kg
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        )}
 
         {/* View Toggle */}
         <div className="flex gap-1 bg-slate-800/50 p-1 rounded-xl border-2 border-slate-700 overflow-x-auto">
