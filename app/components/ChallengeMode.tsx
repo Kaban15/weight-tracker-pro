@@ -584,11 +584,6 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-slate-400 text-sm">{activeChallenge.startDate} - {activeChallenge.endDate}</p>
-                {activeChallenge.trackReps && activeChallenge.goalUnit && (
-                  <p className="text-amber-400 text-sm mt-1">
-                    Jednostka: {activeChallenge.goalUnit}
-                  </p>
-                )}
                 {progress.streak > 0 && (
                   <p className="flex items-center gap-1 text-orange-400 text-sm mt-1">
                     <Flame className="w-4 h-4" /> {progress.streak} dni z rzędu
@@ -596,9 +591,6 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                 )}
               </div>
               <div className="text-right">
-                {activeChallenge.trackReps && progress.totalReps > 0 && (
-                  <p className="text-2xl font-bold text-amber-400">{progress.totalReps}</p>
-                )}
                 {!activeChallenge.trackReps && (
                   <p className="text-2xl font-bold text-amber-400">{progress.percentage}%</p>
                 )}
@@ -612,6 +604,40 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                 )}
               </div>
             </div>
+
+            {/* Total Reps Summary - for trackReps challenges */}
+            {activeChallenge.trackReps && (
+              <div className="mb-3 p-3 bg-gradient-to-r from-amber-600/20 to-amber-500/10 rounded-lg border border-amber-500/30">
+                <div className="flex items-center justify-between">
+                  <div className="text-amber-400 text-sm font-medium">
+                    {progress.isCompleted ? 'Suma wykonanych' : 'Wykonano łącznie'}
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-white">{progress.totalReps}</span>
+                    <span className="text-amber-400 text-sm">{activeChallenge.goalUnit || 'powtórzeń'}</span>
+                  </div>
+                </div>
+                {activeChallenge.dailyGoals && Object.keys(activeChallenge.dailyGoals).length > 0 && (() => {
+                  const totalGoal = Object.values(activeChallenge.dailyGoals).reduce((sum, g) => sum + g, 0);
+                  const goalPercentage = totalGoal > 0 ? Math.round((progress.totalReps / totalGoal) * 100) : 0;
+                  return (
+                    <div className="mt-2">
+                      <div className="flex justify-between text-xs text-slate-400 mb-1">
+                        <span>Cel łączny: {totalGoal} {activeChallenge.goalUnit}</span>
+                        <span className={goalPercentage >= 100 ? 'text-emerald-400' : ''}>{goalPercentage}%</span>
+                      </div>
+                      <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full transition-all ${goalPercentage >= 100 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                          style={{ width: `${Math.min(100, goalPercentage)}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
             <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all ${progress.isCompleted ? 'bg-emerald-500' : 'bg-gradient-to-r from-amber-600 to-amber-400'}`}
@@ -620,7 +646,14 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
             </div>
             {progress.isCompleted && (
               <div className="mt-3 bg-emerald-500/20 border border-emerald-500/50 rounded-lg p-2 text-center">
-                <p className="text-emerald-400 font-semibold">Wyzwanie zakończone!</p>
+                <p className="text-emerald-400 font-semibold">
+                  Wyzwanie zakończone!
+                  {activeChallenge.trackReps && progress.totalReps > 0 && (
+                    <span className="block text-sm mt-1">
+                      Łącznie: {progress.totalReps} {activeChallenge.goalUnit || 'powtórzeń'}
+                    </span>
+                  )}
+                </p>
               </div>
             )}
           </div>
