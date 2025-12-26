@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { X, Scale, Flame, Footprints, Dumbbell } from 'lucide-react';
+import { X, Scale, Flame, Footprints, Dumbbell, Trash2, AlertTriangle } from 'lucide-react';
 import { Entry, Goal, formatDate } from './types';
 
 interface EntryModalProps {
@@ -10,6 +10,7 @@ interface EntryModalProps {
   selectedDate?: string;
   goal?: Goal | null;
   onSave: (entry: Omit<Entry, 'id'>, editingId?: string) => Promise<boolean>;
+  onDelete?: (id: string) => Promise<boolean>;
   onClose: () => void;
 }
 
@@ -19,6 +20,7 @@ export default function EntryModal({
   selectedDate,
   goal,
   onSave,
+  onDelete,
   onClose
 }: EntryModalProps) {
   const [weight, setWeight] = useState(entry?.weight.toString() || '');
@@ -30,6 +32,8 @@ export default function EntryModal({
   const [date, setDate] = useState(entry?.date || selectedDate || formatDate(new Date()));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const MIN_WEIGHT = 30;
   const MAX_WEIGHT = 300;
@@ -70,6 +74,17 @@ export default function EntryModal({
     }, entry?.id);
     setSaving(false);
     if (success) onClose();
+  };
+
+  const handleDelete = async () => {
+    if (!entry?.id || !onDelete) return;
+    setDeleting(true);
+    const success = await onDelete(entry.id);
+    setDeleting(false);
+    if (success) {
+      setShowDeleteConfirm(false);
+      onClose();
+    }
   };
 
   const getTargetForDate = () => {
@@ -183,12 +198,71 @@ export default function EntryModal({
               className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none resize-none" />
           </div>
 
-          <button onClick={handleSave} disabled={!weight || parseFloat(weight) <= 0 || saving}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center">
-            {saving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (entry ? 'Zapisz zmiany' : 'Dodaj wpis')}
-          </button>
+          {/* Buttons */}
+          <div className="flex gap-3">
+            {entry && onDelete && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            )}
+            <button
+              onClick={handleSave}
+              disabled={!weight || parseFloat(weight) <= 0 || saving}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center"
+            >
+              {saving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (entry ? 'Zapisz zmiany' : 'Dodaj wpis')}
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-slate-800 rounded-2xl p-6 max-w-sm w-full border-2 border-red-500/30">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Usuń wpis</h3>
+                <p className="text-sm text-slate-400">
+                  {new Date(date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+            </div>
+            <p className="text-slate-300 mb-6">
+              Czy na pewno chcesz usunąć ten wpis? Ta operacja jest nieodwracalna.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-xl transition-colors"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 bg-red-600 hover:bg-red-500 disabled:bg-slate-700 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                {deleting ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Usuń
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

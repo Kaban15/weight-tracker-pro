@@ -33,6 +33,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     saveGoal,
     resetPlan,
     saveEntry,
+    deleteEntry,
     getEntryForDate,
   } = useWeightTracker(user?.id);
 
@@ -212,6 +213,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
         selectedDate={selectedDate}
         goal={goal}
         onSave={handleSaveEntry}
+        onDelete={deleteEntry}
         onClose={handleCloseEntryModal}
       />
 

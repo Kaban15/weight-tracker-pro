@@ -182,8 +182,6 @@ export function useWeightTracker(userId: string | undefined) {
   };
 
   const deleteEntry = async (id: string): Promise<boolean> => {
-    if (!confirm('Usunąć ten wpis?')) return false;
-
     try {
       const { error } = await supabase
         .from('entries')
