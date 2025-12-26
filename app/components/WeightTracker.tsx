@@ -284,6 +284,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
         <StatsView
           stats={stats}
           goal={goal}
+          entries={entries}
           currentWeight={currentWeight}
           progress={progress}
           onEditGoal={() => setShowGoalModal(true)}

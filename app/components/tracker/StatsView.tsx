@@ -1,11 +1,12 @@
 "use client";
 
-import { Flame, Footprints, Dumbbell, Award, LineChart } from 'lucide-react';
-import { Stats, Goal } from './types';
+import { Flame, Footprints, Dumbbell, Award, LineChart, Download } from 'lucide-react';
+import { Stats, Goal, Entry } from './types';
 
 interface StatsViewProps {
   stats: Stats;
   goal?: Goal | null;
+  entries: Entry[];
   currentWeight: number;
   progress: number;
   onEditGoal: () => void;
@@ -14,10 +15,51 @@ interface StatsViewProps {
 export default function StatsView({
   stats,
   goal,
+  entries,
   currentWeight,
   progress,
   onEditGoal
 }: StatsViewProps) {
+  const exportToCSV = () => {
+    if (entries.length === 0) return;
+
+    // CSV header
+    const headers = ['Data', 'Waga (kg)', 'Kalorie', 'Kroki', 'Trening', 'Czas treningu (min)', 'Notatki'];
+
+    // CSV rows
+    const rows = entries
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .map(entry => [
+        entry.date,
+        entry.weight.toString(),
+        entry.calories?.toString() || '',
+        entry.steps?.toString() || '',
+        entry.workout || '',
+        entry.workout_duration?.toString() || '',
+        entry.notes?.replace(/"/g, '""') || ''
+      ]);
+
+    // Build CSV content
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    // Add BOM for proper Polish characters in Excel
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    // Create download link
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `weight-tracker-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -126,6 +168,25 @@ export default function StatsView({
               </p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Export Button */}
+      {entries.length > 0 && (
+        <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-white mb-1">Eksport danych</h3>
+              <p className="text-slate-400 text-sm">Pobierz wszystkie wpisy ({entries.length}) jako plik CSV</p>
+            </div>
+            <button
+              onClick={exportToCSV}
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
+            >
+              <Download className="w-5 h-5" />
+              <span>Pobierz CSV</span>
+            </button>
+          </div>
         </div>
       )}
     </div>
