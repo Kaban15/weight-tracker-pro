@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Flame, Home, Plus, Trophy, Edit2, Trash2, ArrowLeft, Loader2, Calendar as CalendarIcon, List, Grid3X3, LayoutList, BarChart3 } from "lucide-react";
+import { Check, Flame, Home, Plus, Trophy, Edit2, Trash2, ArrowLeft, Loader2, Calendar as CalendarIcon, List, Grid3X3, LayoutList, BarChart3, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import Calendar, { isToday } from "./shared/Calendar";
 import SyncIndicator from "./shared/SyncIndicator";
@@ -40,6 +40,34 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   const [detailView, setDetailView] = useState<'calendar' | 'grid' | 'checklist' | 'table'>('calendar');
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  // Helper: get week days for given offset
+  const getWeekDays = (offset: number): Date[] => {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + mondayOffset + (offset * 7));
+
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      return d;
+    });
+  };
+
+  // Helper: format date to YYYY-MM-DD
+  const formatDate = (d: Date): string =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  // Helper: get week number
+  const getWeekNumber = (d: Date): number => {
+    const start = new Date(d.getFullYear(), 0, 1);
+    const diff = d.getTime() - start.getTime();
+    const oneWeek = 604800000;
+    return Math.ceil((diff / oneWeek) + 1);
+  };
 
   // Modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -147,6 +175,35 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     }
   };
 
+  // Handler for matrix cell clicks (from dashboard view)
+  const handleMatrixCellClick = (challenge: Challenge, dateStr: string) => {
+    const inChallenge = dateStr >= challenge.startDate && dateStr <= challenge.endDate;
+    if (!inChallenge) return;
+
+    const dateParts = dateStr.split('-');
+    const day = parseInt(dateParts[2]);
+    const clickedMonth = parseInt(dateParts[1]) - 1;
+
+    if (challenge.trackReps) {
+      // For reps tracking, set active challenge and open modal
+      setActiveChallenge(challenge);
+      const currentReps = challenge.completedDays[dateStr] || 0;
+      const currentGoal = challenge.dailyGoals?.[dateStr] || 0;
+      setRepsDay(day);
+      setRepsValue(currentReps > 0 ? currentReps.toString() : '');
+      setGoalValue(currentGoal > 0 ? currentGoal.toString() : '');
+      setCurrentDateStr(dateStr);
+      setCurrentDate(new Date(parseInt(dateParts[0]), clickedMonth, day));
+      setShowRepsModal(true);
+    } else {
+      // For simple tracking, toggle directly
+      const newCompletedDays = challenge.completedDays[dateStr]
+        ? Object.fromEntries(Object.entries(challenge.completedDays).filter(([d]) => d !== dateStr))
+        : { ...challenge.completedDays, [dateStr]: 1 };
+      updateCompletedDays(challenge.id, newCompletedDays);
+    }
+  };
+
   const saveReps = () => {
     if (!activeChallenge || !currentDateStr) return;
     const reps = parseInt(repsValue) || 0;
@@ -180,8 +237,12 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     );
   }
 
-  // LIST VIEW
+  // DASHBOARD MATRIX VIEW
   if (view === 'list') {
+    const weekDays = getWeekDays(weekOffset);
+    const dayNames = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'];
+    const weekNum = getWeekNumber(weekDays[0]);
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950">
         <header className="bg-slate-900/50 border-b border-slate-800">
@@ -201,14 +262,25 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
         </header>
 
         <main className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-white">Twoje wyzwania</h2>
+          {/* Week Navigation */}
+          <div className="flex items-center justify-between mb-4">
             <button
-              onClick={() => { resetForm(); setShowCreateModal(true); }}
-              className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg transition-colors"
+              onClick={() => setWeekOffset(prev => prev - 1)}
+              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors"
             >
-              <Plus className="w-4 h-4" />
-              Nowe wyzwanie
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div className="text-center">
+              <h2 className="text-lg font-semibold text-white">Tydzień {weekNum}</h2>
+              <p className="text-xs text-slate-500">
+                {weekDays[0].toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })} - {weekDays[6].toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </p>
+            </div>
+            <button
+              onClick={() => setWeekOffset(prev => prev + 1)}
+              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors"
+            >
+              <ChevronRight className="w-5 h-5" />
             </button>
           </div>
 
@@ -218,20 +290,141 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                 <Trophy className="w-8 h-8 text-amber-400" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">Brak wyzwań</h3>
-              <p className="text-slate-400">Utwórz swoje pierwsze wyzwanie!</p>
+              <p className="text-slate-400 mb-4">Utwórz swoje pierwsze wyzwanie!</p>
+              <button
+                onClick={() => { resetForm(); setShowCreateModal(true); }}
+                className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg transition-colors mx-auto"
+              >
+                <Plus className="w-4 h-4" />
+                Nowe wyzwanie
+              </button>
             </div>
           ) : (
-            <div className="space-y-4">
-              {challenges.map(challenge => (
-                <ChallengeCard
-                  key={challenge.id}
-                  challenge={challenge}
-                  progress={getChallengeProgress(challenge)}
-                  onClick={() => { setActiveChallenge(challenge); setView('detail'); }}
-                  onEdit={() => openEditModal(challenge)}
-                  onDelete={() => openDeleteConfirm(challenge.id)}
-                />
-              ))}
+            <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
+              {/* Matrix Header */}
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[500px]">
+                  <thead>
+                    <tr className="bg-slate-700/50 border-b border-slate-600">
+                      <th className="text-left px-4 py-3 text-sm font-medium text-slate-300 min-w-[160px]">
+                        Wyzwanie
+                      </th>
+                      {weekDays.map((day, idx) => {
+                        const isCurrentDay = isToday(day.getDate(), day.getMonth(), day.getFullYear());
+                        return (
+                          <th
+                            key={idx}
+                            className={`text-center px-2 py-3 min-w-[48px] ${isCurrentDay ? 'bg-emerald-500/20' : ''}`}
+                          >
+                            <div className={`text-xs font-medium ${isCurrentDay ? 'text-emerald-400' : 'text-slate-400'}`}>
+                              {dayNames[idx]}
+                            </div>
+                            <div className={`text-sm font-bold ${isCurrentDay ? 'text-emerald-400' : 'text-slate-300'}`}>
+                              {day.getDate()}
+                            </div>
+                          </th>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700/50">
+                    {challenges.map(challenge => {
+                      const progress = getChallengeProgress(challenge);
+                      return (
+                        <tr key={challenge.id} className="hover:bg-slate-700/30 transition-colors">
+                          {/* Challenge name - click to go to details */}
+                          <td className="px-4 py-3">
+                            <button
+                              onClick={() => { setActiveChallenge(challenge); setView('detail'); }}
+                              className="flex items-center gap-2 group text-left w-full"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-slate-200 group-hover:text-amber-400 transition-colors truncate">
+                                  {challenge.name}
+                                </div>
+                                <div className="text-xs text-slate-500 flex items-center gap-2">
+                                  <span>{progress.completedCount}/{progress.totalDays}</span>
+                                  {challenge.trackReps && challenge.goalUnit && (
+                                    <span className="text-amber-500/70">{challenge.goalUnit}</span>
+                                  )}
+                                  {progress.streak > 0 && (
+                                    <span className="flex items-center gap-0.5 text-orange-400">
+                                      <Flame className="w-3 h-3" />{progress.streak}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <Info className="w-4 h-4 text-slate-500 group-hover:text-amber-400 flex-shrink-0" />
+                            </button>
+                          </td>
+
+                          {/* Day cells */}
+                          {weekDays.map((day, dayIdx) => {
+                            const dateStr = formatDate(day);
+                            const inChallenge = dateStr >= challenge.startDate && dateStr <= challenge.endDate;
+                            const completed = !!challenge.completedDays[dateStr];
+                            const reps = challenge.completedDays[dateStr] || 0;
+                            const dayGoal = challenge.dailyGoals?.[dateStr] || 0;
+                            const goalReached = dayGoal > 0 && reps >= dayGoal;
+                            const isCurrentDay = isToday(day.getDate(), day.getMonth(), day.getFullYear());
+
+                            if (!inChallenge) {
+                              return (
+                                <td key={dayIdx} className={`text-center px-2 py-3 ${isCurrentDay ? 'bg-emerald-500/10' : ''}`}>
+                                  <div className="w-8 h-8 mx-auto rounded-lg bg-slate-800/30 opacity-30" />
+                                </td>
+                              );
+                            }
+
+                            return (
+                              <td key={dayIdx} className={`text-center px-2 py-3 ${isCurrentDay ? 'bg-emerald-500/10' : ''}`}>
+                                <button
+                                  onClick={() => handleMatrixCellClick(challenge, dateStr)}
+                                  className={`w-8 h-8 mx-auto rounded-lg flex items-center justify-center transition-all ${
+                                    goalReached ? 'bg-emerald-600 text-white hover:bg-emerald-500' :
+                                    completed ? 'bg-amber-600 text-white hover:bg-amber-500' :
+                                    dayGoal > 0 ? 'border-2 border-dashed border-amber-500/50 hover:border-amber-400 text-slate-400' :
+                                    'border-2 border-slate-600 hover:border-slate-500 text-slate-400 hover:text-slate-300'
+                                  } ${isCurrentDay ? 'ring-2 ring-emerald-400 ring-offset-1 ring-offset-slate-800' : ''}`}
+                                >
+                                  {goalReached || (completed && !challenge.trackReps) ? (
+                                    <Check className="w-4 h-4" />
+                                  ) : challenge.trackReps && reps > 0 ? (
+                                    <span className="text-xs font-bold">{reps > 99 ? '99' : reps}</span>
+                                  ) : null}
+                                </button>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Add new challenge button */}
+              <div className="border-t border-slate-700 p-3">
+                <button
+                  onClick={() => { resetForm(); setShowCreateModal(true); }}
+                  className="w-full flex items-center justify-center gap-2 py-2 text-slate-400 hover:text-amber-400 hover:bg-slate-700/50 rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="text-sm">Dodaj wyzwanie</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Today button */}
+          {weekOffset !== 0 && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => setWeekOffset(0)}
+                className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+              >
+                ← Wróć do bieżącego tygodnia
+              </button>
             </div>
           )}
         </main>
@@ -258,6 +451,23 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
           onConfirm={handleDelete}
           onCancel={() => { setShowDeleteConfirm(false); setEditingChallengeId(null); }}
         />
+
+        {/* RepsModal for matrix view */}
+        {activeChallenge && (
+          <RepsModal
+            isOpen={showRepsModal}
+            day={repsDay}
+            month={currentDate.getMonth()}
+            value={repsValue}
+            goalValue={goalValue}
+            goalUnit={activeChallenge.goalUnit}
+            onGoalChange={setGoalValue}
+            onChange={setRepsValue}
+            onSave={saveReps}
+            onDelete={() => { setRepsValue('0'); setGoalValue('0'); saveReps(); }}
+            onClose={() => { setShowRepsModal(false); setActiveChallenge(null); }}
+          />
+        )}
       </div>
     );
   }
