@@ -179,10 +179,13 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     const inChallenge = dateStr >= challenge.startDate && dateStr <= challenge.endDate;
     if (!inChallenge) return;
 
-    // Simple toggle for all challenges (no modal)
+    // Get the daily goal for this date (if set) - use it as the default value when marking complete
+    const dailyGoal = challenge.dailyGoals?.[dateStr] || 1;
+
+    // Toggle: if already completed, remove; otherwise set to daily goal value
     const newCompletedDays = challenge.completedDays[dateStr]
       ? Object.fromEntries(Object.entries(challenge.completedDays).filter(([d]) => d !== dateStr))
-      : { ...challenge.completedDays, [dateStr]: 1 };
+      : { ...challenge.completedDays, [dateStr]: dailyGoal };
     updateCompletedDays(challenge.id, newCompletedDays);
   };
 
