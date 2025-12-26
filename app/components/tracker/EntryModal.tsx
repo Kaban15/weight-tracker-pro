@@ -29,25 +29,47 @@ export default function EntryModal({
   const [notes, setNotes] = useState(entry?.notes || '');
   const [date, setDate] = useState(entry?.date || selectedDate || formatDate(new Date()));
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const MIN_WEIGHT = 30;
+  const MAX_WEIGHT = 300;
 
   if (!isOpen) return null;
 
+  const validateWeight = (w: number): string | null => {
+    if (isNaN(w) || w <= 0) return 'Podaj prawidłową wagę';
+    if (w < MIN_WEIGHT) return `Waga musi być większa niż ${MIN_WEIGHT} kg`;
+    if (w > MAX_WEIGHT) return `Waga musi być mniejsza niż ${MAX_WEIGHT} kg`;
+    return null;
+  };
+
   const handleSave = async () => {
     const w = parseFloat(weight);
-    if (w > 0 && date) {
-      setSaving(true);
-      const success = await onSave({
-        date,
-        weight: w,
-        calories: calories ? parseInt(calories) : undefined,
-        steps: steps ? parseInt(steps) : undefined,
-        workout: workout || undefined,
-        workout_duration: workoutDuration ? parseInt(workoutDuration) : undefined,
-        notes: notes || undefined,
-      }, entry?.id);
-      setSaving(false);
-      if (success) onClose();
+    const validationError = validateWeight(w);
+
+    if (validationError) {
+      setError(validationError);
+      return;
     }
+
+    if (!date) {
+      setError('Wybierz datę');
+      return;
+    }
+
+    setError(null);
+    setSaving(true);
+    const success = await onSave({
+      date,
+      weight: w,
+      calories: calories ? parseInt(calories) : undefined,
+      steps: steps ? parseInt(steps) : undefined,
+      workout: workout || undefined,
+      workout_duration: workoutDuration ? parseInt(workoutDuration) : undefined,
+      notes: notes || undefined,
+    }, entry?.id);
+    setSaving(false);
+    if (success) onClose();
   };
 
   const getTargetForDate = () => {
@@ -93,8 +115,21 @@ export default function EntryModal({
 
           <div>
             <label className="block text-slate-300 mb-2 font-semibold">Waga (kg) *</label>
-            <input type="number" step="0.1" value={weight} onChange={(e) => setWeight(e.target.value)}
-              className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none" />
+            <input
+              type="number"
+              step="0.1"
+              min={MIN_WEIGHT}
+              max={MAX_WEIGHT}
+              value={weight}
+              onChange={(e) => { setWeight(e.target.value); setError(null); }}
+              placeholder={`${MIN_WEIGHT}-${MAX_WEIGHT} kg`}
+              className={`w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 outline-none ${
+                error ? 'border-red-500 focus:border-red-500' : 'border-slate-700 focus:border-emerald-500'
+              }`}
+            />
+            {error && (
+              <p className="text-red-400 text-sm mt-1">{error}</p>
+            )}
           </div>
 
           <div>
