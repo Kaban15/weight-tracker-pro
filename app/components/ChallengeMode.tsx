@@ -270,32 +270,16 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
             today.setHours(0, 0, 0, 0);
             const activeChallenges = challenges.filter(c => new Date(c.endDate) >= today);
             const completedChallenges = challenges.filter(c => new Date(c.endDate) < today);
-            const totalCompletedDays = challenges.reduce((sum, c) => sum + Object.keys(c.completedDays).length, 0);
-            const totalDays = challenges.reduce((sum, c) => sum + getChallengeProgress(c).totalDays, 0);
-            const overallProgress = totalDays > 0 ? Math.round((totalCompletedDays / totalDays) * 100) : 0;
 
             return (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
-                  <div className="text-2xl font-bold text-emerald-400">{activeChallenges.length}</div>
-                  <div className="text-xs text-slate-400">Aktywnych</div>
+              <div className="flex gap-3 mb-4">
+                <div className="bg-slate-800/50 rounded-lg px-4 py-2 border border-slate-700 flex items-center gap-2">
+                  <span className="text-xl font-bold text-emerald-400">{activeChallenges.length}</span>
+                  <span className="text-xs text-slate-400">aktywnych</span>
                 </div>
-                <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
-                  <div className="text-2xl font-bold text-slate-300">{completedChallenges.length}</div>
-                  <div className="text-xs text-slate-400">Ukończonych</div>
-                </div>
-                <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 col-span-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-slate-400">Ogólny postęp</span>
-                    <span className="text-sm font-bold text-amber-400">{overallProgress}%</span>
-                  </div>
-                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-amber-600 to-emerald-500 transition-all"
-                      style={{ width: `${overallProgress}%` }}
-                    />
-                  </div>
-                  <div className="text-xs text-slate-500 mt-1">{totalCompletedDays}/{totalDays} dni</div>
+                <div className="bg-slate-800/50 rounded-lg px-4 py-2 border border-slate-700 flex items-center gap-2">
+                  <span className="text-xl font-bold text-slate-300">{completedChallenges.length}</span>
+                  <span className="text-xs text-slate-400">ukończonych</span>
                 </div>
               </div>
             );
@@ -323,7 +307,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                 <table className="w-full min-w-[500px]">
                   <thead>
                     <tr className="bg-slate-700/50 border-b border-slate-600">
-                      <th className="text-left px-4 py-3 text-sm font-medium text-slate-300 min-w-[160px]">
+                      <th className="text-left px-4 py-3 text-sm font-medium text-slate-300 min-w-[140px]">
                         Wyzwanie
                       </th>
                       {weekDays.map((day, idx) => {
@@ -331,7 +315,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                         return (
                           <th
                             key={idx}
-                            className={`text-center px-2 py-3 min-w-[48px] ${isCurrentDay ? 'bg-emerald-500/20' : ''}`}
+                            className={`text-center px-2 py-3 min-w-[44px] ${isCurrentDay ? 'bg-emerald-500/20' : ''}`}
                           >
                             <div className={`text-xs font-medium ${isCurrentDay ? 'text-emerald-400' : 'text-slate-400'}`}>
                               {dayNames[idx]}
@@ -342,6 +326,9 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                           </th>
                         );
                       })}
+                      <th className="text-center px-3 py-3 text-sm font-medium text-slate-300 min-w-[80px]">
+                        Postęp
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-700/50">
@@ -404,6 +391,25 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
                               </td>
                             );
                           })}
+
+                          {/* Progress bar cell */}
+                          <td className="px-3 py-3">
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full transition-all ${
+                                    progress.percentage >= 100 ? 'bg-emerald-500' : 'bg-amber-500'
+                                  }`}
+                                  style={{ width: `${progress.percentage}%` }}
+                                />
+                              </div>
+                              <span className={`text-xs font-medium ${
+                                progress.percentage >= 100 ? 'text-emerald-400' : 'text-slate-400'
+                              }`}>
+                                {progress.percentage}%
+                              </span>
+                            </div>
+                          </td>
                         </tr>
                       );
                     })}
