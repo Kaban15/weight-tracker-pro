@@ -1,10 +1,52 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Task, TaskFormData, TaskStats, DEFAULT_TASK_FORM } from "./types";
+import { Task, TaskFormData, TaskStats, DEFAULT_TASK_FORM, Category, TaskStatus, CATEGORY_CONFIG, STATUS_CONFIG } from "./types";
 
 function generateId(): string {
   return `todo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// Migrate old task data to new format
+function migrateTask(task: Record<string, unknown>): Task {
+  // Map old categories to new ones
+  const categoryMap: Record<string, Category> = {
+    'other': 'duties', // 'other' was removed, map to 'duties'
+    'work': 'work',
+    'money': 'money',
+    'ideas': 'ideas',
+    'duties': 'duties',
+    'spirituality': 'spirituality',
+    'health': 'health',
+    'family': 'family',
+    'personal_growth': 'personal_growth',
+    'free_time': 'free_time',
+  };
+
+  // Ensure category is valid
+  let category = task.category as string;
+  if (!category || !CATEGORY_CONFIG[category as Category]) {
+    category = categoryMap[category] || 'duties';
+  }
+
+  // Ensure status is valid
+  let status = task.status as string;
+  if (!status || !STATUS_CONFIG[status as TaskStatus]) {
+    status = task.completed ? 'done' : 'not_started';
+  }
+
+  return {
+    id: task.id as string,
+    title: task.title as string,
+    notes: task.notes as string | undefined,
+    deadline: task.deadline as string,
+    priority: task.priority as Task['priority'],
+    status: status as TaskStatus,
+    category: category as Category,
+    completed: task.completed as boolean,
+    createdAt: task.createdAt as string,
+    updatedAt: task.updatedAt as string,
+  };
 }
 
 function formatDate(date: Date): string {
@@ -46,7 +88,11 @@ export function useTasks(userId: string | undefined) {
       if (!saved) {
         saved = localStorage.getItem(oldLocalStorageKey);
       }
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+
+      // Parse and migrate tasks to ensure compatibility
+      const rawTasks = JSON.parse(saved) as Record<string, unknown>[];
+      return rawTasks.map(task => migrateTask(task));
     } catch {
       return [];
     }
