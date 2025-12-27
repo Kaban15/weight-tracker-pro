@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Home, Plus, Check, Trash2, ChevronLeft, ChevronRight, Loader2, Calendar, ListChecks } from "lucide-react";
+import { Home, Plus, Check, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import SyncIndicator from "../shared/SyncIndicator";
 import { usePlanner, formatDateStr } from "./usePlanner";
@@ -9,6 +9,208 @@ import { Task } from "./types";
 
 interface PlannerModeProps {
   onBack: () => void;
+}
+
+// Circular Progress Ring Component
+function ProgressRing({ percentage, size = 80 }: { percentage: number; size?: number }) {
+  const strokeWidth = size * 0.1;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="transform -rotate-90">
+        {/* Background circle */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#e5e7eb"
+          strokeWidth={strokeWidth}
+        />
+        {/* Progress circle */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#22c55e"
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-500"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-lg font-bold text-slate-700">{percentage}%</span>
+      </div>
+    </div>
+  );
+}
+
+// Bar Chart Component for weekly overview
+function WeeklyBarChart({ weekDays, getCompletedCountForDate }: {
+  weekDays: Date[];
+  getCompletedCountForDate: (date: string) => { completed: number; total: number };
+}) {
+  const dayLabels = ['pon.', 'wt.', 'śr.', 'czw.', 'pt.', 'sob.', 'niedz.'];
+  const maxHeight = 60;
+
+  return (
+    <div className="flex items-end gap-1 h-20">
+      {weekDays.map((date, index) => {
+        const dateStr = formatDateStr(date);
+        const { completed, total } = getCompletedCountForDate(dateStr);
+        const percentage = total > 0 ? (completed / total) * 100 : 0;
+        const height = total > 0 ? Math.max((percentage / 100) * maxHeight, 4) : 4;
+
+        return (
+          <div key={dateStr} className="flex flex-col items-center gap-1">
+            <div
+              className="w-6 rounded-t transition-all duration-300"
+              style={{
+                height: `${height}px`,
+                backgroundColor: percentage > 0 ? '#22c55e' : '#d1d5db'
+              }}
+            />
+            <span className="text-[10px] text-slate-500">{dayLabels[index]}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Day Card Component
+function DayCard({
+  date,
+  tasks,
+  onToggle,
+  onDelete,
+  onAdd,
+  isToday
+}: {
+  date: Date;
+  tasks: Task[];
+  onToggle: (taskId: string) => void;
+  onDelete: (taskId: string) => void;
+  onAdd: (date: string, title: string) => Promise<Task | null>;
+  isToday: boolean;
+}) {
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const [showInput, setShowInput] = useState(false);
+
+  const dateStr = formatDateStr(date);
+  const dayName = date.toLocaleDateString('pl-PL', { weekday: 'long' });
+  const dateDisplay = date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  const completed = tasks.filter(t => t.completed).length;
+  const total = tasks.length;
+  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  const handleAdd = async () => {
+    if (!newTaskTitle.trim()) return;
+    setIsAdding(true);
+    await onAdd(dateStr, newTaskTitle);
+    setNewTaskTitle('');
+    setIsAdding(false);
+    setShowInput(false);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAdd();
+    }
+    if (e.key === 'Escape') {
+      setShowInput(false);
+      setNewTaskTitle('');
+    }
+  };
+
+  return (
+    <div className={`bg-white rounded-xl shadow-md border-2 ${isToday ? 'border-green-500' : 'border-gray-200'} flex flex-col min-w-[200px] w-[200px]`}>
+      {/* Day Header */}
+      <div className={`text-center py-3 rounded-t-lg ${isToday ? 'bg-green-500' : 'bg-green-600'}`}>
+        <div className="text-white font-semibold capitalize">{dayName}</div>
+        <div className="text-green-100 text-sm">{dateDisplay}</div>
+      </div>
+
+      {/* Progress Ring */}
+      <div className="flex justify-center py-4 bg-gray-50">
+        <ProgressRing percentage={percentage} size={70} />
+      </div>
+
+      {/* Tasks Header */}
+      <div className="bg-green-600 text-white text-center py-2 text-sm font-semibold">
+        Zadania
+      </div>
+
+      {/* Tasks List */}
+      <div className="flex-1 p-2 space-y-1 min-h-[150px] max-h-[250px] overflow-y-auto">
+        {tasks.map(task => (
+          <div
+            key={task.id}
+            className="flex items-center gap-2 p-1.5 hover:bg-gray-50 rounded group"
+          >
+            <button
+              onClick={() => onToggle(task.id)}
+              className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                task.completed
+                  ? 'bg-green-500 border-green-500 text-white'
+                  : 'border-gray-300 hover:border-green-500'
+              }`}
+            >
+              {task.completed && <Check className="w-3 h-3" />}
+            </button>
+            <span className={`flex-1 text-sm ${task.completed ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+              {task.title}
+            </span>
+            <button
+              onClick={() => onDelete(task.id)}
+              className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+
+        {/* Add Task Input */}
+        {showInput ? (
+          <div className="flex items-center gap-1 p-1">
+            <input
+              type="text"
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Nowe zadanie..."
+              className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:border-green-500 focus:outline-none"
+              autoFocus
+            />
+            <button
+              onClick={handleAdd}
+              disabled={!newTaskTitle.trim() || isAdding}
+              className="p-1 text-green-600 hover:text-green-700 disabled:text-gray-300"
+            >
+              {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowInput(true)}
+            className="flex items-center gap-1 text-sm text-gray-400 hover:text-green-600 p-1 w-full"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Dodaj zadanie</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function PlannerMode({ onBack }: PlannerModeProps) {
@@ -25,232 +227,151 @@ export default function PlannerMode({ onBack }: PlannerModeProps) {
     getCompletedCountForDate
   } = usePlanner(user?.id);
 
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [isAdding, setIsAdding] = useState(false);
+  const [weekOffset, setWeekOffset] = useState(0);
 
-  const dateStr = formatDateStr(selectedDate);
-  const dayTasks = getTasksForDate(dateStr);
-  const { completed, total } = getCompletedCountForDate(dateStr);
+  // Get week days starting from Monday
+  const getWeekDays = (offset: number): Date[] => {
+    const today = new Date();
+    const currentDay = today.getDay();
+    const monday = new Date(today);
+    // Adjust to Monday (day 1), if Sunday (0) go back 6 days
+    const daysToMonday = currentDay === 0 ? 6 : currentDay - 1;
+    monday.setDate(today.getDate() - daysToMonday + (offset * 7));
 
-  const goToPreviousDay = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(newDate.getDate() - 1);
-    setSelectedDate(newDate);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      return d;
+    });
   };
 
-  const goToNextDay = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setDate(newDate.getDate() + 1);
-    setSelectedDate(newDate);
-  };
+  const weekDays = getWeekDays(weekOffset);
+  const todayStr = formatDateStr(new Date());
 
-  const goToToday = () => {
-    setSelectedDate(new Date());
-  };
+  // Calculate weekly totals
+  const weeklyStats = weekDays.reduce(
+    (acc, date) => {
+      const { completed, total } = getCompletedCountForDate(formatDateStr(date));
+      return {
+        completed: acc.completed + completed,
+        total: acc.total + total
+      };
+    },
+    { completed: 0, total: 0 }
+  );
+  const weeklyPercentage = weeklyStats.total > 0
+    ? Math.round((weeklyStats.completed / weeklyStats.total) * 100)
+    : 0;
 
-  const handleAddTask = async () => {
-    if (!newTaskTitle.trim()) return;
-    setIsAdding(true);
-    await addTask(dateStr, newTaskTitle);
-    setNewTaskTitle('');
-    setIsAdding(false);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleAddTask();
-    }
-  };
-
-  const isToday = formatDateStr(new Date()) === dateStr;
-  const dayName = selectedDate.toLocaleDateString('pl-PL', { weekday: 'long' });
-  const dateDisplay = selectedDate.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
+  // Week label
+  const weekStart = weekDays[0].toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' });
+  const weekEnd = weekDays[6].toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', year: 'numeric' });
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-violet-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-violet-500 animate-spin mx-auto mb-4" />
-          <p className="text-slate-400">Ładowanie planera...</p>
+          <Loader2 className="w-12 h-12 text-green-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Ładowanie planera...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-violet-950">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
       {/* Header */}
-      <header className="bg-slate-900/50 border-b border-slate-800">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+      <header className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button onClick={onBack} className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors">
             <Home className="w-5 h-5" />
             <span className="hidden sm:inline">Powrót</span>
           </button>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-white">Planer</h1>
+            <h1 className="text-xl font-bold text-gray-800">Tygodniowy Planer</h1>
             <SyncIndicator isSyncing={isSyncing} syncError={syncError} />
           </div>
-          <button onClick={signOut} className="text-slate-400 hover:text-white transition-colors text-sm">
+          <button onClick={signOut} className="text-gray-600 hover:text-green-600 transition-colors text-sm">
             Wyloguj
           </button>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6">
-        {/* Date Navigation */}
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-4 mb-6">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={goToPreviousDay}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-
-            <div className="text-center">
-              <div className={`text-lg font-bold ${isToday ? 'text-violet-400' : 'text-white'}`}>
-                {isToday ? 'Dzisiaj' : dayName}
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        {/* Week Navigation & Overall Progress */}
+        <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            {/* Week Navigation */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setWeekOffset(prev => prev - 1)}
+                className="p-2 text-gray-600 hover:text-green-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <div className="text-center min-w-[200px]">
+                <div className="text-lg font-semibold text-gray-800">
+                  {weekStart} - {weekEnd}
+                </div>
+                {weekOffset === 0 && (
+                  <div className="text-sm text-green-600">Ten tydzień</div>
+                )}
               </div>
-              <div className="text-sm text-slate-400">{dateDisplay}</div>
-            </div>
-
-            <button
-              onClick={goToNextDay}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-
-          {!isToday && (
-            <button
-              onClick={goToToday}
-              className="w-full mt-3 text-sm text-violet-400 hover:text-violet-300 transition-colors"
-            >
-              ← Wróć do dzisiaj
-            </button>
-          )}
-        </div>
-
-        {/* Progress Summary */}
-        {total > 0 && (
-          <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-4 mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-slate-400">
-                <ListChecks className="w-4 h-4" />
-                <span className="text-sm">Postęp dnia</span>
-              </div>
-              <span className={`text-sm font-bold ${completed === total ? 'text-emerald-400' : 'text-slate-300'}`}>
-                {completed}/{total}
-              </span>
-            </div>
-            <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-              <div
-                className={`h-full transition-all ${completed === total ? 'bg-emerald-500' : 'bg-violet-500'}`}
-                style={{ width: `${total > 0 ? (completed / total) * 100 : 0}%` }}
-              />
-            </div>
-            {completed === total && total > 0 && (
-              <p className="text-emerald-400 text-sm mt-2 text-center">Wszystko zrobione!</p>
-            )}
-          </div>
-        )}
-
-        {/* Add Task */}
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-4 mb-6">
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Dodaj nowe zadanie..."
-              className="flex-1 bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none"
-            />
-            <button
-              onClick={handleAddTask}
-              disabled={!newTaskTitle.trim() || isAdding}
-              className="bg-violet-600 hover:bg-violet-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg transition-colors flex items-center gap-2"
-            >
-              {isAdding ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Plus className="w-5 h-5" />
+              <button
+                onClick={() => setWeekOffset(prev => prev + 1)}
+                className="p-2 text-gray-600 hover:text-green-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+              {weekOffset !== 0 && (
+                <button
+                  onClick={() => setWeekOffset(0)}
+                  className="text-sm text-green-600 hover:text-green-700 ml-2"
+                >
+                  Dziś
+                </button>
               )}
-            </button>
+            </div>
+
+            {/* Overall Progress */}
+            <div className="flex items-center gap-6 bg-gray-50 rounded-lg p-4">
+              <div>
+                <div className="text-sm font-semibold text-green-700 mb-2">Ogólny Progres</div>
+                <WeeklyBarChart weekDays={weekDays} getCompletedCountForDate={getCompletedCountForDate} />
+              </div>
+              <div className="text-center">
+                <ProgressRing percentage={weeklyPercentage} size={80} />
+                <div className="text-sm text-gray-600 mt-1">
+                  {weeklyStats.completed} / {weeklyStats.total} Ukończono
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Task List */}
-        <div className="space-y-2">
-          {dayTasks.length === 0 ? (
-            <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-8 text-center">
-              <div className="w-16 h-16 bg-violet-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="w-8 h-8 text-violet-400" />
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Brak zadań</h3>
-              <p className="text-slate-400">Dodaj swoje pierwsze zadanie na ten dzień!</p>
-            </div>
-          ) : (
-            dayTasks.map(task => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                onToggle={() => toggleTask(task.id)}
-                onDelete={() => deleteTask(task.id)}
-              />
-            ))
-          )}
+        {/* Day Cards */}
+        <div className="overflow-x-auto pb-4">
+          <div className="flex gap-4 min-w-max">
+            {weekDays.map(date => {
+              const dateStr = formatDateStr(date);
+              const dayTasks = getTasksForDate(dateStr);
+              const isToday = dateStr === todayStr;
+
+              return (
+                <DayCard
+                  key={dateStr}
+                  date={date}
+                  tasks={dayTasks}
+                  onToggle={toggleTask}
+                  onDelete={deleteTask}
+                  onAdd={addTask}
+                  isToday={isToday}
+                />
+              );
+            })}
+          </div>
         </div>
       </main>
-    </div>
-  );
-}
-
-interface TaskItemProps {
-  task: Task;
-  onToggle: () => void;
-  onDelete: () => void;
-}
-
-function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
-  const [showDelete, setShowDelete] = useState(false);
-
-  return (
-    <div
-      className={`bg-slate-800/50 rounded-xl border p-4 transition-all ${
-        task.completed ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-slate-700'
-      }`}
-      onMouseEnter={() => setShowDelete(true)}
-      onMouseLeave={() => setShowDelete(false)}
-    >
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onToggle}
-          className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-            task.completed
-              ? 'bg-emerald-600 border-emerald-600 text-white'
-              : 'border-slate-600 hover:border-violet-500'
-          }`}
-        >
-          {task.completed && <Check className="w-4 h-4" />}
-        </button>
-
-        <span className={`flex-1 ${task.completed ? 'text-slate-400 line-through' : 'text-white'}`}>
-          {task.title}
-        </span>
-
-        <button
-          onClick={onDelete}
-          className={`p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all ${
-            showDelete ? 'opacity-100' : 'opacity-0 sm:opacity-0'
-          }`}
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
     </div>
   );
 }
