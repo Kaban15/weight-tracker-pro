@@ -6,8 +6,9 @@ import Auth from "./components/Auth";
 import WeightTracker from "./components/WeightTracker";
 import ModeSelector from "./components/ModeSelector";
 import ChallengeMode from "./components/ChallengeMode";
+import { PlannerMode } from "./components/planner";
 
-type AppMode = 'tracker' | 'challenge' | null;
+type AppMode = 'tracker' | 'challenge' | 'planner' | null;
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -31,6 +32,10 @@ export default function Home() {
 
   if (mode === 'challenge') {
     return <ChallengeMode onBack={() => setMode(null)} />;
+  }
+
+  if (mode === 'planner') {
+    return <PlannerMode onBack={() => setMode(null)} />;
   }
 
   return <WeightTracker onBack={() => setMode(null)} />;

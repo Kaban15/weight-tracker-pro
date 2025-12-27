@@ -1,9 +1,9 @@
 "use client";
 
-import { Scale, Target } from "lucide-react";
+import { Scale, Target, ClipboardList } from "lucide-react";
 
 interface ModeSelectorProps {
-  onSelectMode: (mode: 'tracker' | 'challenge') => void;
+  onSelectMode: (mode: 'tracker' | 'challenge' | 'planner') => void;
 }
 
 export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
@@ -17,7 +17,7 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
           Wybierz co chcesz dzisiaj zrobić
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Progress Tracker */}
           <button
             onClick={() => onSelectMode('tracker')}
@@ -47,6 +47,22 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
             </h2>
             <p className="text-slate-400 text-sm">
               Codzienne wyzwania - pompki, burpees i inne ćwiczenia do odhaczenia
+            </p>
+          </button>
+
+          {/* Planner */}
+          <button
+            onClick={() => onSelectMode('planner')}
+            className="group bg-slate-800/50 hover:bg-slate-800 border-2 border-slate-700 hover:border-violet-500 rounded-2xl p-6 transition-all duration-300 text-left"
+          >
+            <div className="w-14 h-14 bg-violet-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-violet-500/30 transition-colors">
+              <ClipboardList className="w-7 h-7 text-violet-400" />
+            </div>
+            <h2 className="text-xl font-semibold text-white mb-2">
+              Planer
+            </h2>
+            <p className="text-slate-400 text-sm">
+              Planuj zadania na każdy dzień i odhaczaj wykonane
             </p>
           </button>
         </div>
