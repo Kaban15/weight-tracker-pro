@@ -62,13 +62,9 @@ export function useAdmin(userEmail: string | undefined) {
 
       if (challengesError) throw challengesError;
 
-      // Fetch tasks count per user
-      const { data: tasksCounts, error: tasksError } = await supabase
-        .from("tasks")
-        .select("user_id, id");
-
-      // Tasks table might not exist yet
-      const tasksData = tasksError ? [] : tasksCounts || [];
+      // Note: Todo tasks are stored in localStorage only, not in Supabase
+      // The 'tasks' table is used by Planner, not Todo
+      const tasksData: { user_id: string }[] = [];
 
       // Fetch planner days count per user
       const { data: plannerCounts, error: plannerError } = await supabase

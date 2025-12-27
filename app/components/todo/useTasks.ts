@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { supabase } from "@/lib/supabase";
 import { Task, TaskFormData, TaskStats, DEFAULT_TASK_FORM } from "./types";
 
 function generateId(): string {
-  return `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `todo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
 function formatDate(date: Date): string {
@@ -15,10 +14,9 @@ function formatDate(date: Date): string {
 export function useTasks(userId: string | undefined) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncError, setSyncError] = useState<string | null>(null);
 
-  const localStorageKey = `tasks_v1_${userId}`;
+  // Use a unique localStorage key that won't conflict with Planner
+  const localStorageKey = `todo_items_v1_${userId}`;
 
   // Load tasks from localStorage
   const loadFromLocalStorage = useCallback((): Task[] => {
@@ -41,100 +39,17 @@ export function useTasks(userId: string | undefined) {
     }
   }, [localStorageKey, userId]);
 
-  // Load tasks from Supabase
-  const loadFromSupabase = useCallback(async (): Promise<Task[]> => {
-    if (!supabase || !userId) return [];
-    try {
-      const { data, error } = await supabase
-        .from("tasks")
-        .select("*")
-        .eq("user_id", userId)
-        .order("deadline", { ascending: true });
-
-      if (error) throw error;
-      return (data || []).map((row: Record<string, unknown>) => ({
-        id: row.id as string,
-        title: row.title as string,
-        deadline: row.deadline as string,
-        priority: row.priority as Task["priority"],
-        status: row.status as Task["status"],
-        category: row.category as Task["category"],
-        completed: row.completed as boolean,
-        createdAt: row.created_at as string,
-        updatedAt: row.updated_at as string,
-      }));
-    } catch {
-      return [];
-    }
-  }, [userId]);
-
-  // Sync tasks to Supabase
-  const syncToSupabase = useCallback(async (data: Task[]) => {
-    if (!supabase || !userId) return;
-    setIsSyncing(true);
-    setSyncError(null);
-
-    try {
-      // Delete all existing tasks for user
-      await supabase.from("tasks").delete().eq("user_id", userId);
-
-      // Insert all current tasks
-      if (data.length > 0) {
-        const rows = data.map(task => ({
-          id: task.id,
-          user_id: userId,
-          title: task.title,
-          deadline: task.deadline,
-          priority: task.priority,
-          status: task.status,
-          category: task.category,
-          completed: task.completed,
-          created_at: task.createdAt,
-          updated_at: task.updatedAt,
-        }));
-
-        const { error } = await supabase.from("tasks").insert(rows);
-        if (error) throw error;
-      }
-    } catch (err) {
-      setSyncError(err instanceof Error ? err.message : "Sync error");
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [userId]);
-
-  // Initial load
+  // Initial load from localStorage only (no Supabase to avoid conflicts with Planner)
   useEffect(() => {
     if (!userId) {
       setIsLoading(false);
       return;
     }
 
-    const load = async () => {
-      setIsLoading(true);
-
-      // Try to load from Supabase first
-      const supabaseTasks = await loadFromSupabase();
-
-      if (supabaseTasks.length > 0) {
-        setTasks(supabaseTasks);
-        saveToLocalStorage(supabaseTasks);
-      } else {
-        // Fall back to localStorage
-        const localTasks = loadFromLocalStorage();
-        setTasks(localTasks);
-
-        // Sync local tasks to Supabase
-        if (localTasks.length > 0) {
-          syncToSupabase(localTasks);
-        }
-      }
-
-      setIsLoading(false);
-    };
-
-    load();
-  }, [userId, loadFromSupabase, loadFromLocalStorage, saveToLocalStorage, syncToSupabase]);
+    const localTasks = loadFromLocalStorage();
+    setTasks(localTasks);
+    setIsLoading(false);
+  }, [userId, loadFromLocalStorage]);
 
   // Add task
   const addTask = useCallback((formData: TaskFormData): Task => {
@@ -150,12 +65,11 @@ export function useTasks(userId: string | undefined) {
     setTasks(prev => {
       const updated = [...prev, newTask];
       saveToLocalStorage(updated);
-      syncToSupabase(updated);
       return updated;
     });
 
     return newTask;
-  }, [saveToLocalStorage, syncToSupabase]);
+  }, [saveToLocalStorage]);
 
   // Update task
   const updateTask = useCallback((taskId: string, updates: Partial<Task>) => {
@@ -166,20 +80,18 @@ export function useTasks(userId: string | undefined) {
           : task
       );
       saveToLocalStorage(updated);
-      syncToSupabase(updated);
       return updated;
     });
-  }, [saveToLocalStorage, syncToSupabase]);
+  }, [saveToLocalStorage]);
 
   // Delete task
   const deleteTask = useCallback((taskId: string) => {
     setTasks(prev => {
       const updated = prev.filter(task => task.id !== taskId);
       saveToLocalStorage(updated);
-      syncToSupabase(updated);
       return updated;
     });
-  }, [saveToLocalStorage, syncToSupabase]);
+  }, [saveToLocalStorage]);
 
   // Toggle task completion
   const toggleComplete = useCallback((taskId: string) => {
@@ -195,10 +107,9 @@ export function useTasks(userId: string | undefined) {
           : task
       );
       saveToLocalStorage(updated);
-      syncToSupabase(updated);
       return updated;
     });
-  }, [saveToLocalStorage, syncToSupabase]);
+  }, [saveToLocalStorage]);
 
   // Calculate stats
   const stats: TaskStats = useMemo(() => {
@@ -228,8 +139,8 @@ export function useTasks(userId: string | undefined) {
     tasks: sortedTasks,
     stats,
     isLoading,
-    isSyncing,
-    syncError,
+    isSyncing: false,
+    syncError: null,
     addTask,
     updateTask,
     deleteTask,
