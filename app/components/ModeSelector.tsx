@@ -1,17 +1,31 @@
 "use client";
 
-import { Scale, Target, ClipboardList, ListChecks } from "lucide-react";
+import { Scale, Target, ClipboardList, ListChecks, Shield } from "lucide-react";
 import ThemeToggle from "./shared/ThemeToggle";
+import { useAuth } from "@/lib/AuthContext";
+import { isAdmin } from "./admin";
 
 interface ModeSelectorProps {
-  onSelectMode: (mode: 'tracker' | 'challenge' | 'planner' | 'todo') => void;
+  onSelectMode: (mode: 'tracker' | 'challenge' | 'planner' | 'todo' | 'admin') => void;
 }
 
 export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
+  const { user } = useAuth();
+  const showAdmin = isAdmin(user?.email);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center p-4 relative">
-      {/* Theme Toggle */}
-      <div className="absolute top-4 right-4">
+      {/* Theme Toggle & Admin */}
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        {showAdmin && (
+          <button
+            onClick={() => onSelectMode('admin')}
+            className="bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 p-2 rounded-lg transition-colors"
+            title="Panel Admina"
+          >
+            <Shield className="w-5 h-5" />
+          </button>
+        )}
         <ThemeToggle />
       </div>
 
