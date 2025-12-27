@@ -1,14 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, Target, Activity, LogOut, Table, LineChart, Home, TrendingDown, TrendingUp, Flame, Scale, Clock, Bell, Keyboard } from 'lucide-react';
+import { Calendar, Target, Activity, LogOut, Table, LineChart, Home, TrendingDown, TrendingUp, Flame, Scale, Clock, Bell } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { initializeNotifications, cancelScheduledReminders } from '@/lib/notifications';
 import { useKeyboardShortcuts, KeyboardShortcut } from '@/lib/useKeyboardShortcuts';
 import ProgressChart from './ProgressChart';
 import ProgressTable from './ProgressTable';
 import NotificationSettings from './shared/NotificationSettings';
-import KeyboardShortcutsHelp from './shared/KeyboardShortcutsHelp';
 import {
   Entry,
   formatDate,
@@ -49,8 +48,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
-  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
+    const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
 
   // Initialize notifications on mount
@@ -83,7 +81,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
   }, []);
 
   // Check if any modal is open
-  const isModalOpen = showAddModal || showGoalModal || showNotificationSettings || showShortcutsHelp;
+  const isModalOpen = showAddModal || showGoalModal || showNotificationSettings;
 
   // Keyboard shortcuts (memoized to prevent re-renders)
   const shortcuts: KeyboardShortcut[] = useMemo(() => [
@@ -99,12 +97,10 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     { key: '4', description: 'Wykres', action: () => setView('chart') },
     { key: 'ArrowLeft', alt: true, description: 'Poprzedni miesiąc', action: prevMonth },
     { key: 'ArrowRight', alt: true, description: 'Następny miesiąc', action: nextMonth },
-    { key: '?', shift: true, description: 'Pomoc', action: () => setShowShortcutsHelp(true) },
     { key: 'Escape', description: 'Zamknij', action: () => {
       setShowAddModal(false);
       setShowGoalModal(false);
       setShowNotificationSettings(false);
-      setShowShortcutsHelp(false);
     }},
   ], [goToToday, prevMonth, nextMonth]);
 
@@ -222,14 +218,6 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
               aria-label="Ustawienia powiadomień"
             >
               <Bell className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setShowShortcutsHelp(true)}
-              className="text-slate-400 hover:text-emerald-400 transition-colors p-2 hidden sm:block"
-              aria-label="Skróty klawiszowe"
-              title="Skróty klawiszowe (Shift + ?)"
-            >
-              <Keyboard className="w-5 h-5" />
             </button>
             <button onClick={signOut} className="text-slate-400 hover:text-white transition-colors flex items-center gap-2">
               <LogOut className="w-4 h-4" />
@@ -398,11 +386,6 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
       <NotificationSettings
         isOpen={showNotificationSettings}
         onClose={() => setShowNotificationSettings(false)}
-      />
-
-      <KeyboardShortcutsHelp
-        isOpen={showShortcutsHelp}
-        onClose={() => setShowShortcutsHelp(false)}
       />
     </div>
   );
