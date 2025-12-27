@@ -1,6 +1,7 @@
 "use client";
 
 import { Scale, Target, ClipboardList } from "lucide-react";
+import ThemeToggle from "./shared/ThemeToggle";
 
 interface ModeSelectorProps {
   onSelectMode: (mode: 'tracker' | 'challenge' | 'planner') => void;
@@ -8,7 +9,12 @@ interface ModeSelectorProps {
 
 export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center p-4 relative">
+      {/* Theme Toggle */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <div className="w-full max-w-2xl">
         <h1 className="text-3xl font-bold text-white text-center mb-2">
           Weight Tracker Pro

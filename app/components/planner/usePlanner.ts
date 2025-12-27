@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
+import { isRateLimited, RATE_LIMITS } from "@/lib/rateLimiter";
+import { withRetry, RETRY_PRESETS } from "@/lib/retry";
 import { Task } from "./types";
 
 // Re-export from shared for backwards compatibility
@@ -20,13 +22,18 @@ export function usePlanner(userId: string | undefined) {
       setIsLoading(true);
       setSyncError(null);
 
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
+      const { data, error } = await withRetry(
+        async () => {
+          const result = await supabase
+            .from('tasks')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: true });
+          if (result.error) throw result.error;
+          return result;
+        },
+        RETRY_PRESETS.standard
+      );
 
       setTasks(data || []);
     } catch (error) {
@@ -43,6 +50,12 @@ export function usePlanner(userId: string | undefined) {
 
   const addTask = async (date: string, title: string): Promise<Task | null> => {
     if (!userId || !title.trim()) return null;
+
+    // Rate limit check
+    if (isRateLimited('planner:create', RATE_LIMITS.create)) {
+      setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
+      return null;
+    }
 
     const newTask: Omit<Task, 'id'> = {
       user_id: userId,
@@ -85,6 +98,12 @@ export function usePlanner(userId: string | undefined) {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
+    // Rate limit check
+    if (isRateLimited('planner:toggle', RATE_LIMITS.toggle)) {
+      setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
+      return;
+    }
+
     // Optimistic update
     setTasks(prev => prev.map(t =>
       t.id === taskId ? { ...t, completed: !t.completed } : t
@@ -115,6 +134,12 @@ export function usePlanner(userId: string | undefined) {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
+    // Rate limit check
+    if (isRateLimited('planner:delete', RATE_LIMITS.delete)) {
+      setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
+      return;
+    }
+
     // Optimistic update
     setTasks(prev => prev.filter(t => t.id !== taskId));
 
@@ -140,6 +165,12 @@ export function usePlanner(userId: string | undefined) {
   const updateTask = async (taskId: string, title: string): Promise<void> => {
     const task = tasks.find(t => t.id === taskId);
     if (!task || !title.trim()) return;
+
+    // Rate limit check
+    if (isRateLimited('planner:write', RATE_LIMITS.write)) {
+      setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
+      return;
+    }
 
     const oldTitle = task.title;
 

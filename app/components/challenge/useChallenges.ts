@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { isRateLimited, RATE_LIMITS } from "@/lib/rateLimiter";
 import { Challenge, ChallengeRow, ChallengeProgress, ChallengeFormData, DEFAULT_FORM_DATA } from "./types";
 import { formatDate } from "./utils/dateUtils";
 
@@ -126,6 +127,12 @@ export function useChallenges(userId: string | undefined) {
   const createChallenge = async (formData: ChallengeFormData): Promise<Challenge | null> => {
     if (!userId) return null;
 
+    // Rate limit check
+    if (isRateLimited('challenge:create', RATE_LIMITS.create)) {
+      setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
+      return null;
+    }
+
     const today = new Date();
     let startDate: string;
     let endDate: string;
@@ -237,6 +244,12 @@ export function useChallenges(userId: string | undefined) {
   };
 
   const deleteChallenge = async (id: string): Promise<void> => {
+    // Rate limit check
+    if (isRateLimited('challenge:delete', RATE_LIMITS.delete)) {
+      setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
+      return;
+    }
+
     setChallenges(prev => prev.filter(c => c.id !== id));
 
     try {
@@ -255,6 +268,12 @@ export function useChallenges(userId: string | undefined) {
   };
 
   const updateCompletedDays = async (challengeId: string, completedDays: { [date: string]: number }): Promise<void> => {
+    // Rate limit check
+    if (isRateLimited('challenge:toggle', RATE_LIMITS.toggle)) {
+      setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
+      return;
+    }
+
     setChallenges(prev => prev.map(c =>
       c.id === challengeId ? { ...c, completedDays } : c
     ));
@@ -276,6 +295,12 @@ export function useChallenges(userId: string | undefined) {
   };
 
   const updateDailyGoals = async (challengeId: string, dailyGoals: { [date: string]: number }): Promise<void> => {
+    // Rate limit check
+    if (isRateLimited('challenge:write', RATE_LIMITS.write)) {
+      setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
+      return;
+    }
+
     setChallenges(prev => prev.map(c =>
       c.id === challengeId ? { ...c, dailyGoals } : c
     ));
