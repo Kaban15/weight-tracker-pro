@@ -145,20 +145,25 @@ export function useTasks(userId: string | undefined) {
   const stats: TaskStats = useMemo(() => {
     const today = formatDate(new Date());
     const total = tasks.length;
-    const completed = tasks.filter(t => t.completed).length;
-    const todayTasks = tasks.filter(t => t.deadline === today && !t.completed).length;
-    const overdue = tasks.filter(t => t.deadline < today && !t.completed).length;
-    const percentComplete = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const completed = tasks.filter(t => t.completed || t.status === 'done').length;
+    const cancelled = tasks.filter(t => t.status === 'cancelled').length;
+    const notCompleted = tasks.filter(t => !t.completed && t.status !== 'done' && t.status !== 'cancelled').length;
+    const todayTasks = tasks.filter(t => t.deadline === today && !t.completed && t.status !== 'cancelled').length;
+    const overdue = tasks.filter(t => t.deadline < today && !t.completed && t.status !== 'cancelled').length;
+    const activeTotal = total - cancelled;
+    const percentComplete = activeTotal > 0 ? Math.round((completed / activeTotal) * 100) : 0;
 
-    return { total, today: todayTasks, overdue, completed, percentComplete };
+    return { total, today: todayTasks, overdue, completed, notCompleted, cancelled, percentComplete };
   }, [tasks]);
 
-  // Sort tasks: incomplete first (by deadline), then completed
+  // Sort tasks: active first (by deadline), then completed/cancelled at bottom
   const sortedTasks = useMemo(() => {
     return [...tasks].sort((a, b) => {
-      // Completed tasks go to the bottom
-      if (a.completed !== b.completed) {
-        return a.completed ? 1 : -1;
+      const aInactive = a.completed || a.status === 'cancelled';
+      const bInactive = b.completed || b.status === 'cancelled';
+      // Completed/cancelled tasks go to the bottom
+      if (aInactive !== bInactive) {
+        return aInactive ? 1 : -1;
       }
       // Sort by deadline
       return a.deadline.localeCompare(b.deadline);

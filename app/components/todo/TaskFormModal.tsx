@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, FileText } from "lucide-react";
 import {
   Task,
   TaskFormData,
@@ -34,6 +34,7 @@ export default function TaskFormModal({
     if (task) {
       setFormData({
         title: task.title,
+        notes: task.notes || '',
         deadline: task.deadline,
         priority: task.priority,
         status: task.status,
@@ -94,6 +95,21 @@ export default function TaskFormModal({
             />
           </div>
 
+          {/* Notes */}
+          <div>
+            <label className="block text-sm text-slate-400 mb-2 flex items-center gap-1.5">
+              <FileText className="w-4 h-4" />
+              Notatki
+            </label>
+            <textarea
+              value={formData.notes || ''}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Dodatkowe informacje..."
+              rows={3}
+              className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none resize-none"
+            />
+          </div>
+
           {/* Deadline */}
           <div>
             <label className="block text-sm text-slate-400 mb-2">
@@ -131,17 +147,20 @@ export default function TaskFormModal({
           {/* Status */}
           <div>
             <label className="block text-sm text-slate-400 mb-2">Status</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {(Object.keys(STATUS_CONFIG) as TaskStatus[]).map((status) => (
                 <button
                   key={status}
                   onClick={() => setFormData({ ...formData, status })}
-                  className={`py-2 px-2 rounded-lg text-xs font-medium transition-all ${
+                  className={`py-2 px-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
                     formData.status === status
-                      ? "bg-rose-600 text-white"
+                      ? status === 'cancelled'
+                        ? "bg-red-600 text-white"
+                        : "bg-rose-600 text-white"
                       : "bg-slate-700 text-slate-300 hover:bg-slate-600"
                   }`}
                 >
+                  {status === 'cancelled' && <X className="w-3 h-3" />}
                   {STATUS_CONFIG[status].label}
                 </button>
               ))}
@@ -151,19 +170,19 @@ export default function TaskFormModal({
           {/* Category */}
           <div>
             <label className="block text-sm text-slate-400 mb-2">Kategoria</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {(Object.keys(CATEGORY_CONFIG) as Category[]).map((category) => (
                 <button
                   key={category}
                   onClick={() => setFormData({ ...formData, category })}
-                  className={`py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                  className={`py-2 px-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
                     formData.category === category
                       ? "bg-rose-600 text-white"
                       : "bg-slate-700 text-slate-300 hover:bg-slate-600"
                   }`}
                 >
                   <span>{CATEGORY_CONFIG[category].emoji}</span>
-                  {CATEGORY_CONFIG[category].label}
+                  <span className="truncate text-xs">{CATEGORY_CONFIG[category].label}</span>
                 </button>
               ))}
             </div>
