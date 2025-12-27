@@ -45,25 +45,36 @@ export default function RepsModal({
   const progress = hasGoal ? Math.min(100, Math.round((currentValue / currentGoal) * 100)) : 0;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reps-modal-title"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="bg-slate-800 rounded-xl border-2 border-slate-700 p-6 w-full max-w-xs">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">
+          <h3 id="reps-modal-title" className="text-lg font-semibold text-white">
             {day} {MONTH_NAMES[month]}
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
-            <X className="w-5 h-5" />
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-white"
+            aria-label="Zamknij"
+          >
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
         <div className="space-y-4">
           {/* Daily Goal Input */}
           <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10">
-            <label className="flex items-center gap-2 text-sm text-amber-400 mb-2">
-              <Target className="w-4 h-4" />
+            <label htmlFor="daily-goal-input" className="flex items-center gap-2 text-sm text-amber-400 mb-2">
+              <Target className="w-4 h-4" aria-hidden="true" />
               Cel na ten dzień ({goalUnit})
             </label>
             <input
+              id="daily-goal-input"
               type="number"
               min="0"
               value={goalValue}
@@ -93,10 +104,11 @@ export default function RepsModal({
           )}
 
           <div>
-            <label className="block text-sm text-slate-400 mb-2">
+            <label htmlFor="reps-completed-input" className="block text-sm text-slate-400 mb-2">
               Wykonano ({goalUnit})
             </label>
             <input
+              id="reps-completed-input"
               type="number"
               min="0"
               value={value}

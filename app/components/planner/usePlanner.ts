@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Task } from "./types";
 
-export function formatDateStr(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
+// Re-export from shared for backwards compatibility
+export { formatDate as formatDateStr } from "../shared/dateUtils";
 
 export function usePlanner(userId: string | undefined) {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -170,17 +169,27 @@ export function usePlanner(userId: string | undefined) {
     }
   };
 
-  const getTasksForDate = (date: string): Task[] => {
-    return tasks.filter(t => t.date === date);
-  };
+  // Memoize tasks grouped by date for efficient lookup
+  const tasksByDate = useMemo(() => {
+    const grouped: { [date: string]: Task[] } = {};
+    tasks.forEach(task => {
+      if (!grouped[task.date]) grouped[task.date] = [];
+      grouped[task.date].push(task);
+    });
+    return grouped;
+  }, [tasks]);
 
-  const getCompletedCountForDate = (date: string): { completed: number; total: number } => {
-    const dateTasks = getTasksForDate(date);
+  const getTasksForDate = useCallback((date: string): Task[] => {
+    return tasksByDate[date] || [];
+  }, [tasksByDate]);
+
+  const getCompletedCountForDate = useCallback((date: string): { completed: number; total: number } => {
+    const dateTasks = tasksByDate[date] || [];
     return {
       completed: dateTasks.filter(t => t.completed).length,
       total: dateTasks.length
     };
-  };
+  }, [tasksByDate]);
 
   return {
     tasks,

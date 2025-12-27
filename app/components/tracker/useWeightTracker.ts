@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Entry, Goal, Stats, Profile, formatDate } from './types';
 
@@ -197,15 +197,18 @@ export function useWeightTracker(userId: string | undefined) {
     }
   };
 
-  const getEntryForDate = (date: string): Entry | undefined => {
+  const getEntryForDate = useCallback((date: string): Entry | undefined => {
     return entries.find(e => e.date === date);
-  };
+  }, [entries]);
 
-  const sortedEntries = [...entries].sort((a, b) =>
-    new Date(a.date).getTime() - new Date(b.date).getTime()
+  // Memoize sorted entries to avoid recalculation on every render
+  const sortedEntries = useMemo(() =>
+    [...entries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    [entries]
   );
 
-  const calculateStats = (): Stats => {
+  // Memoize stats calculation
+  const stats = useMemo((): Stats => {
     if (entries.length === 0) {
       return {
         totalEntries: 0, avgWeight: 0, avgCalories: 0, avgSteps: 0,
@@ -248,19 +251,29 @@ export function useWeightTracker(userId: string | undefined) {
         : Math.max(...sortedEntries.map(e => e.weight)),
       totalWeightChange: currentWeight - startWeight,
     };
-  };
+  }, [entries, sortedEntries, goal]);
 
-  const currentWeight = sortedEntries.length > 0
-    ? sortedEntries[sortedEntries.length - 1].weight
-    : goal?.current_weight || 0;
+  // Memoize derived values
+  const currentWeight = useMemo(() =>
+    sortedEntries.length > 0
+      ? sortedEntries[sortedEntries.length - 1].weight
+      : goal?.current_weight || 0,
+    [sortedEntries, goal?.current_weight]
+  );
 
-  const startWeight = sortedEntries.length > 0
-    ? sortedEntries[0].weight
-    : goal?.current_weight || 0;
+  const startWeight = useMemo(() =>
+    sortedEntries.length > 0
+      ? sortedEntries[0].weight
+      : goal?.current_weight || 0,
+    [sortedEntries, goal?.current_weight]
+  );
 
-  const progress = goal
-    ? ((startWeight - currentWeight) / (startWeight - goal.target_weight)) * 100
-    : 0;
+  const progress = useMemo(() =>
+    goal
+      ? ((startWeight - currentWeight) / (startWeight - goal.target_weight)) * 100
+      : 0,
+    [goal, startWeight, currentWeight]
+  );
 
   return {
     entries,
@@ -268,7 +281,7 @@ export function useWeightTracker(userId: string | undefined) {
     goal,
     profile,
     loading,
-    stats: calculateStats(),
+    stats,
     currentWeight,
     startWeight,
     progress,

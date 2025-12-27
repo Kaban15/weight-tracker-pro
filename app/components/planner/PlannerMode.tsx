@@ -12,7 +12,7 @@ interface PlannerModeProps {
 }
 
 // Circular Progress Ring Component
-function ProgressRing({ percentage, size = 80, isToday = false }: { percentage: number; size?: number; isToday?: boolean }) {
+function ProgressRing({ percentage, size = 80, isToday = false, label }: { percentage: number; size?: number; isToday?: boolean; label?: string }) {
   const strokeWidth = size * 0.08;
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -27,8 +27,16 @@ function ProgressRing({ percentage, size = 80, isToday = false }: { percentage: 
   };
 
   return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="transform -rotate-90">
+    <div
+      className="relative"
+      style={{ width: size, height: size }}
+      role="progressbar"
+      aria-valuenow={percentage}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={label || `Postęp: ${percentage}%`}
+    >
+      <svg width={size} height={size} className="transform -rotate-90" aria-hidden="true">
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -51,7 +59,7 @@ function ProgressRing({ percentage, size = 80, isToday = false }: { percentage: 
           style={{ filter: 'drop-shadow(0 0 6px ' + getColor() + '40)' }}
         />
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
         <span className={`font-bold ${size > 60 ? 'text-lg' : 'text-sm'} ${isToday ? 'text-white' : 'text-slate-300'}`}>
           {percentage}%
         </span>
@@ -69,7 +77,7 @@ function WeeklyMiniChart({ weekDays, getCompletedCountForDate }: {
   const todayStr = formatDateStr(new Date());
 
   return (
-    <div className="flex items-end gap-2">
+    <div className="flex items-end gap-2" role="img" aria-label="Wykres postępu tygodnia">
       {weekDays.map((date, index) => {
         const dateStr = formatDateStr(date);
         const { completed, total } = getCompletedCountForDate(dateStr);
@@ -77,8 +85,13 @@ function WeeklyMiniChart({ weekDays, getCompletedCountForDate }: {
         const isToday = dateStr === todayStr;
 
         return (
-          <div key={dateStr} className="flex flex-col items-center gap-1">
-            <div className="h-16 w-5 bg-slate-700/50 rounded-full overflow-hidden flex flex-col-reverse">
+          <div
+            key={dateStr}
+            className="flex flex-col items-center gap-1"
+            role="presentation"
+            aria-label={`${dayLabels[index]}: ${Math.round(percentage)}% ukończono`}
+          >
+            <div className="h-16 w-5 bg-slate-700/50 rounded-full overflow-hidden flex flex-col-reverse" aria-hidden="true">
               <div
                 className="w-full rounded-full transition-all duration-500"
                 style={{
@@ -91,7 +104,7 @@ function WeeklyMiniChart({ weekDays, getCompletedCountForDate }: {
                 }}
               />
             </div>
-            <span className={`text-[10px] font-medium ${isToday ? 'text-violet-400' : 'text-slate-500'}`}>
+            <span className={`text-[10px] font-medium ${isToday ? 'text-violet-400' : 'text-slate-500'}`} aria-hidden="true">
               {dayLabels[index]}
             </span>
           </div>

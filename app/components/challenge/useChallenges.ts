@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { Challenge, ChallengeRow, ChallengeProgress, ChallengeFormData, DEFAULT_FORM_DATA } from "./types";
-import { formatDateStr } from "../shared/Calendar";
+import { formatDate } from "./utils/dateUtils";
 
 export function calculateEndDate(startDate: Date, durationType: string, durationValue: number): Date {
   const endDate = new Date(startDate);
@@ -28,15 +28,17 @@ export function getChallengeProgress(challenge: Challenge): ChallengeProgress {
   const percentage = Math.round((completedCount / totalDays) * 100);
   const isCompleted = today > end;
 
-  // Calculate streak
+  // Calculate streak (create new Date objects to avoid mutation bugs)
   let streak = 0;
   let checkDate = new Date(today);
   while (true) {
-    const dateStr = formatDateStr(checkDate);
+    const dateStr = formatDate(checkDate);
     if (challenge.completedDays[dateStr]) {
       streak++;
+      checkDate = new Date(checkDate);
       checkDate.setDate(checkDate.getDate() - 1);
     } else if (streak === 0 && checkDate.toDateString() === today.toDateString()) {
+      checkDate = new Date(checkDate);
       checkDate.setDate(checkDate.getDate() - 1);
     } else {
       break;
@@ -129,21 +131,22 @@ export function useChallenges(userId: string | undefined) {
     let endDate: string;
 
     if (formData.dateMode === 'dates') {
-      startDate = formData.startDate || formatDateStr(today);
-      endDate = formData.endDate || formatDateStr(today);
+      startDate = formData.startDate || formatDate(today);
+      endDate = formData.endDate || formatDate(today);
     } else {
       const startDateObj = formData.startDate ? new Date(formData.startDate) : today;
-      startDate = formatDateStr(startDateObj);
-      endDate = formatDateStr(calculateEndDate(startDateObj, formData.durationType, formData.durationValue));
+      startDate = formatDate(startDateObj);
+      endDate = formatDate(calculateEndDate(startDateObj, formData.durationType, formData.durationValue));
     }
 
     // Populate dailyGoals with default goal for each day if defaultGoal > 0
-    let dailyGoals: { [date: string]: number } = {};
+    const dailyGoals: { [date: string]: number } = {};
     if (formData.trackReps && formData.defaultGoal > 0) {
       const start = new Date(startDate);
       const end = new Date(endDate);
-      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        dailyGoals[formatDateStr(d)] = formData.defaultGoal;
+      // Create new Date object in each iteration to avoid mutation bugs
+      for (let d = new Date(start); d <= end; d = new Date(d.getTime() + 86400000)) {
+        dailyGoals[formatDate(d)] = formData.defaultGoal;
       }
     }
 
@@ -194,7 +197,7 @@ export function useChallenges(userId: string | undefined) {
       endDate = formData.endDate;
     } else {
       const startDateObj = new Date(formData.startDate);
-      endDate = formatDateStr(calculateEndDate(startDateObj, formData.durationType, formData.durationValue));
+      endDate = formatDate(calculateEndDate(startDateObj, formData.durationType, formData.durationValue));
     }
 
     const existingChallenge = challenges.find(c => c.id === challengeId);
