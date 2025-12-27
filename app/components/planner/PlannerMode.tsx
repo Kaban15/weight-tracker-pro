@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Home, Plus, Check, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Home, Plus, Check, Trash2, ChevronLeft, ChevronRight, Loader2, Calendar } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import SyncIndicator from "../shared/SyncIndicator";
 import { usePlanner, formatDateStr } from "./usePlanner";
@@ -12,71 +12,88 @@ interface PlannerModeProps {
 }
 
 // Circular Progress Ring Component
-function ProgressRing({ percentage, size = 80 }: { percentage: number; size?: number }) {
-  const strokeWidth = size * 0.1;
+function ProgressRing({ percentage, size = 80, isToday = false }: { percentage: number; size?: number; isToday?: boolean }) {
+  const strokeWidth = size * 0.08;
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (percentage / 100) * circumference;
 
+  // Color based on percentage
+  const getColor = () => {
+    if (percentage === 100) return '#10b981'; // emerald
+    if (percentage >= 50) return '#8b5cf6'; // violet
+    if (percentage > 0) return '#f59e0b'; // amber
+    return '#475569'; // slate
+  };
+
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="transform -rotate-90">
-        {/* Background circle */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#e5e7eb"
+          stroke="rgba(100, 116, 139, 0.3)"
           strokeWidth={strokeWidth}
         />
-        {/* Progress circle */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#22c55e"
+          stroke={getColor()}
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
-          className="transition-all duration-500"
+          className="transition-all duration-700 ease-out"
+          style={{ filter: 'drop-shadow(0 0 6px ' + getColor() + '40)' }}
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-lg font-bold text-slate-700">{percentage}%</span>
+        <span className={`font-bold ${size > 60 ? 'text-lg' : 'text-sm'} ${isToday ? 'text-white' : 'text-slate-300'}`}>
+          {percentage}%
+        </span>
       </div>
     </div>
   );
 }
 
-// Bar Chart Component for weekly overview
-function WeeklyBarChart({ weekDays, getCompletedCountForDate }: {
+// Mini Bar Chart for weekly overview
+function WeeklyMiniChart({ weekDays, getCompletedCountForDate }: {
   weekDays: Date[];
   getCompletedCountForDate: (date: string) => { completed: number; total: number };
 }) {
-  const dayLabels = ['pon.', 'wt.', 'śr.', 'czw.', 'pt.', 'sob.', 'niedz.'];
-  const maxHeight = 60;
+  const dayLabels = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'];
+  const todayStr = formatDateStr(new Date());
 
   return (
-    <div className="flex items-end gap-1 h-20">
+    <div className="flex items-end gap-2">
       {weekDays.map((date, index) => {
         const dateStr = formatDateStr(date);
         const { completed, total } = getCompletedCountForDate(dateStr);
         const percentage = total > 0 ? (completed / total) * 100 : 0;
-        const height = total > 0 ? Math.max((percentage / 100) * maxHeight, 4) : 4;
+        const isToday = dateStr === todayStr;
 
         return (
           <div key={dateStr} className="flex flex-col items-center gap-1">
-            <div
-              className="w-6 rounded-t transition-all duration-300"
-              style={{
-                height: `${height}px`,
-                backgroundColor: percentage > 0 ? '#22c55e' : '#d1d5db'
-              }}
-            />
-            <span className="text-[10px] text-slate-500">{dayLabels[index]}</span>
+            <div className="h-16 w-5 bg-slate-700/50 rounded-full overflow-hidden flex flex-col-reverse">
+              <div
+                className="w-full rounded-full transition-all duration-500"
+                style={{
+                  height: `${percentage}%`,
+                  background: percentage === 100
+                    ? 'linear-gradient(to top, #10b981, #34d399)'
+                    : percentage > 0
+                      ? 'linear-gradient(to top, #8b5cf6, #a78bfa)'
+                      : 'transparent'
+                }}
+              />
+            </div>
+            <span className={`text-[10px] font-medium ${isToday ? 'text-violet-400' : 'text-slate-500'}`}>
+              {dayLabels[index]}
+            </span>
           </div>
         );
       })}
@@ -105,8 +122,8 @@ function DayCard({
   const [showInput, setShowInput] = useState(false);
 
   const dateStr = formatDateStr(date);
-  const dayName = date.toLocaleDateString('pl-PL', { weekday: 'long' });
-  const dateDisplay = date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const dayName = date.toLocaleDateString('pl-PL', { weekday: 'short' });
+  const dayNumber = date.getDate();
 
   const completed = tasks.filter(t => t.completed).length;
   const total = tasks.length;
@@ -133,46 +150,56 @@ function DayCard({
   };
 
   return (
-    <div className={`bg-white rounded-xl shadow-md border-2 ${isToday ? 'border-green-500' : 'border-gray-200'} flex flex-col min-w-[200px] w-[200px]`}>
+    <div className={`
+      rounded-2xl flex flex-col min-w-[180px] w-[180px] overflow-hidden transition-all duration-300
+      ${isToday
+        ? 'bg-gradient-to-b from-violet-600/30 to-slate-800/80 ring-2 ring-violet-500 shadow-lg shadow-violet-500/20'
+        : 'bg-slate-800/60 hover:bg-slate-800/80'}
+    `}>
       {/* Day Header */}
-      <div className={`text-center py-3 rounded-t-lg ${isToday ? 'bg-green-500' : 'bg-green-600'}`}>
-        <div className="text-white font-semibold capitalize">{dayName}</div>
-        <div className="text-green-100 text-sm">{dateDisplay}</div>
+      <div className={`text-center py-3 ${isToday ? 'bg-violet-600/40' : 'bg-slate-700/50'}`}>
+        <div className={`text-2xl font-bold ${isToday ? 'text-white' : 'text-slate-300'}`}>
+          {dayNumber}
+        </div>
+        <div className={`text-xs uppercase tracking-wider ${isToday ? 'text-violet-300' : 'text-slate-500'}`}>
+          {dayName}
+        </div>
       </div>
 
       {/* Progress Ring */}
-      <div className="flex justify-center py-4 bg-gray-50">
-        <ProgressRing percentage={percentage} size={70} />
-      </div>
-
-      {/* Tasks Header */}
-      <div className="bg-green-600 text-white text-center py-2 text-sm font-semibold">
-        Zadania
+      <div className="flex justify-center py-3">
+        <ProgressRing percentage={percentage} size={56} isToday={isToday} />
       </div>
 
       {/* Tasks List */}
-      <div className="flex-1 p-2 space-y-1 min-h-[150px] max-h-[250px] overflow-y-auto">
+      <div className="flex-1 px-2 pb-2 space-y-1 min-h-[120px] max-h-[200px] overflow-y-auto scrollbar-thin">
+        {tasks.length === 0 && !showInput && (
+          <div className="text-center py-4 text-slate-500 text-xs">
+            Brak zadań
+          </div>
+        )}
+
         {tasks.map(task => (
           <div
             key={task.id}
-            className="flex items-center gap-2 p-1.5 hover:bg-gray-50 rounded group"
+            className="flex items-start gap-2 p-1.5 hover:bg-slate-700/30 rounded-lg group"
           >
             <button
               onClick={() => onToggle(task.id)}
-              className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+              className={`w-4 h-4 mt-0.5 rounded flex items-center justify-center flex-shrink-0 transition-all ${
                 task.completed
-                  ? 'bg-green-500 border-green-500 text-white'
-                  : 'border-gray-300 hover:border-green-500'
+                  ? 'bg-emerald-500 text-white'
+                  : 'border border-slate-500 hover:border-violet-400'
               }`}
             >
               {task.completed && <Check className="w-3 h-3" />}
             </button>
-            <span className={`flex-1 text-sm ${task.completed ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+            <span className={`flex-1 text-xs leading-tight ${task.completed ? 'text-slate-500 line-through' : 'text-slate-300'}`}>
               {task.title}
             </span>
             <button
               onClick={() => onDelete(task.id)}
-              className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="p-0.5 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <Trash2 className="w-3 h-3" />
             </button>
@@ -187,25 +214,25 @@ function DayCard({
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Nowe zadanie..."
-              className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 focus:border-green-500 focus:outline-none"
+              onBlur={() => !newTaskTitle && setShowInput(false)}
+              placeholder="Zadanie..."
+              className="flex-1 text-xs bg-slate-700/50 border border-slate-600 rounded px-2 py-1.5 text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none"
               autoFocus
             />
             <button
               onClick={handleAdd}
               disabled={!newTaskTitle.trim() || isAdding}
-              className="p-1 text-green-600 hover:text-green-700 disabled:text-gray-300"
+              className="p-1 text-violet-400 hover:text-violet-300 disabled:text-slate-600"
             >
-              {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             </button>
           </div>
         ) : (
           <button
             onClick={() => setShowInput(true)}
-            className="flex items-center gap-1 text-sm text-gray-400 hover:text-green-600 p-1 w-full"
+            className="flex items-center justify-center gap-1 text-xs text-slate-500 hover:text-violet-400 p-2 w-full transition-colors"
           >
-            <Plus className="w-4 h-4" />
-            <span>Dodaj zadanie</span>
+            <Plus className="w-3 h-3" />
           </button>
         )}
       </div>
@@ -229,12 +256,10 @@ export default function PlannerMode({ onBack }: PlannerModeProps) {
 
   const [weekOffset, setWeekOffset] = useState(0);
 
-  // Get week days starting from Monday
   const getWeekDays = (offset: number): Date[] => {
     const today = new Date();
     const currentDay = today.getDay();
     const monday = new Date(today);
-    // Adjust to Monday (day 1), if Sunday (0) go back 6 days
     const daysToMonday = currentDay === 0 ? 6 : currentDay - 1;
     monday.setDate(today.getDate() - daysToMonday + (offset * 7));
 
@@ -248,14 +273,10 @@ export default function PlannerMode({ onBack }: PlannerModeProps) {
   const weekDays = getWeekDays(weekOffset);
   const todayStr = formatDateStr(new Date());
 
-  // Calculate weekly totals
   const weeklyStats = weekDays.reduce(
     (acc, date) => {
       const { completed, total } = getCompletedCountForDate(formatDateStr(date));
-      return {
-        completed: acc.completed + completed,
-        total: acc.total + total
-      };
+      return { completed: acc.completed + completed, total: acc.total + total };
     },
     { completed: 0, total: 0 }
   );
@@ -263,86 +284,88 @@ export default function PlannerMode({ onBack }: PlannerModeProps) {
     ? Math.round((weeklyStats.completed / weeklyStats.total) * 100)
     : 0;
 
-  // Week label
   const weekStart = weekDays[0].toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' });
-  const weekEnd = weekDays[6].toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', year: 'numeric' });
+  const weekEnd = weekDays[6].toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' });
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-violet-950 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-green-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Ładowanie planera...</p>
+          <Loader2 className="w-12 h-12 text-violet-500 animate-spin mx-auto mb-4" />
+          <p className="text-slate-400">Ładowanie planera...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-violet-950">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={onBack} className="flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors">
+      <header className="bg-slate-900/50 border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
             <Home className="w-5 h-5" />
             <span className="hidden sm:inline">Powrót</span>
           </button>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-gray-800">Tygodniowy Planer</h1>
+          <div className="flex items-center gap-3">
+            <Calendar className="w-5 h-5 text-violet-400" />
+            <h1 className="text-xl font-bold text-white">Planer Tygodnia</h1>
             <SyncIndicator isSyncing={isSyncing} syncError={syncError} />
           </div>
-          <button onClick={signOut} className="text-gray-600 hover:text-green-600 transition-colors text-sm">
+          <button onClick={signOut} className="text-slate-400 hover:text-white transition-colors text-sm">
             Wyloguj
           </button>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {/* Week Navigation & Overall Progress */}
-        <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        {/* Week Navigation & Stats */}
+        <div className="bg-slate-800/40 backdrop-blur rounded-2xl border border-slate-700/50 p-5 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             {/* Week Navigation */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => setWeekOffset(prev => prev - 1)}
-                className="p-2 text-gray-600 hover:text-green-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-xl transition-all"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <div className="text-center min-w-[200px]">
-                <div className="text-lg font-semibold text-gray-800">
+
+              <div className="text-center min-w-[160px]">
+                <div className="text-lg font-semibold text-white">
                   {weekStart} - {weekEnd}
                 </div>
-                {weekOffset === 0 && (
-                  <div className="text-sm text-green-600">Ten tydzień</div>
+                {weekOffset === 0 ? (
+                  <div className="text-xs text-violet-400 font-medium">Ten tydzień</div>
+                ) : (
+                  <button
+                    onClick={() => setWeekOffset(0)}
+                    className="text-xs text-slate-500 hover:text-violet-400 transition-colors"
+                  >
+                    Wróć do dziś
+                  </button>
                 )}
               </div>
+
               <button
                 onClick={() => setWeekOffset(prev => prev + 1)}
-                className="p-2 text-gray-600 hover:text-green-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-xl transition-all"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
-              {weekOffset !== 0 && (
-                <button
-                  onClick={() => setWeekOffset(0)}
-                  className="text-sm text-green-600 hover:text-green-700 ml-2"
-                >
-                  Dziś
-                </button>
-              )}
             </div>
 
-            {/* Overall Progress */}
-            <div className="flex items-center gap-6 bg-gray-50 rounded-lg p-4">
-              <div>
-                <div className="text-sm font-semibold text-green-700 mb-2">Ogólny Progres</div>
-                <WeeklyBarChart weekDays={weekDays} getCompletedCountForDate={getCompletedCountForDate} />
-              </div>
-              <div className="text-center">
-                <ProgressRing percentage={weeklyPercentage} size={80} />
-                <div className="text-sm text-gray-600 mt-1">
-                  {weeklyStats.completed} / {weeklyStats.total} Ukończono
+            {/* Weekly Stats */}
+            <div className="flex items-center gap-8">
+              <WeeklyMiniChart weekDays={weekDays} getCompletedCountForDate={getCompletedCountForDate} />
+
+              <div className="flex items-center gap-4">
+                <ProgressRing percentage={weeklyPercentage} size={70} />
+                <div>
+                  <div className="text-2xl font-bold text-white">
+                    {weeklyStats.completed}<span className="text-slate-500">/{weeklyStats.total}</span>
+                  </div>
+                  <div className="text-xs text-slate-500">ukończono</div>
                 </div>
               </div>
             </div>
@@ -350,8 +373,8 @@ export default function PlannerMode({ onBack }: PlannerModeProps) {
         </div>
 
         {/* Day Cards */}
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-4 min-w-max">
+        <div className="overflow-x-auto pb-4 -mx-4 px-4">
+          <div className="flex gap-3 min-w-max">
             {weekDays.map(date => {
               const dateStr = formatDateStr(date);
               const dayTasks = getTasksForDate(dateStr);
