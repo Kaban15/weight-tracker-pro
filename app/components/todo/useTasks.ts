@@ -17,27 +17,53 @@ export function useTasks(userId: string | undefined) {
 
   // Use a unique localStorage key that won't conflict with Planner
   const localStorageKey = `todo_items_v1_${userId}`;
+  const oldLocalStorageKey = `tasks_v1_${userId}`; // Old key for migration
 
-  // Load tasks from localStorage
+  // Migrate data from old key to new key
+  const migrateOldData = useCallback(() => {
+    if (typeof window === "undefined" || !userId) return;
+    try {
+      const oldData = localStorage.getItem(oldLocalStorageKey);
+      const newData = localStorage.getItem(localStorageKey);
+
+      // Only migrate if old data exists and new data doesn't
+      if (oldData && !newData) {
+        localStorage.setItem(localStorageKey, oldData);
+        // Don't delete old data, just keep both for safety
+      }
+    } catch {
+      // Migration error - ignore
+    }
+  }, [localStorageKey, oldLocalStorageKey, userId]);
+
+  // Load tasks from localStorage (try new key first, then old key)
   const loadFromLocalStorage = useCallback((): Task[] => {
     if (typeof window === "undefined" || !userId) return [];
     try {
-      const saved = localStorage.getItem(localStorageKey);
+      // Try new key first
+      let saved = localStorage.getItem(localStorageKey);
+      // If not found, try old key
+      if (!saved) {
+        saved = localStorage.getItem(oldLocalStorageKey);
+      }
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
     }
-  }, [localStorageKey, userId]);
+  }, [localStorageKey, oldLocalStorageKey, userId]);
 
-  // Save tasks to localStorage
+  // Save tasks to localStorage (save to both keys for safety)
   const saveToLocalStorage = useCallback((data: Task[]) => {
     if (typeof window === "undefined" || !userId) return;
     try {
-      localStorage.setItem(localStorageKey, JSON.stringify(data));
+      const json = JSON.stringify(data);
+      localStorage.setItem(localStorageKey, json);
+      // Also save to old key as backup
+      localStorage.setItem(oldLocalStorageKey, json);
     } catch {
       // localStorage error
     }
-  }, [localStorageKey, userId]);
+  }, [localStorageKey, oldLocalStorageKey, userId]);
 
   // Initial load from localStorage only (no Supabase to avoid conflicts with Planner)
   useEffect(() => {
@@ -46,10 +72,14 @@ export function useTasks(userId: string | undefined) {
       return;
     }
 
+    // First, migrate any old data
+    migrateOldData();
+
+    // Then load from new key
     const localTasks = loadFromLocalStorage();
     setTasks(localTasks);
     setIsLoading(false);
-  }, [userId, loadFromLocalStorage]);
+  }, [userId, migrateOldData, loadFromLocalStorage]);
 
   // Add task
   const addTask = useCallback((formData: TaskFormData): Task => {
