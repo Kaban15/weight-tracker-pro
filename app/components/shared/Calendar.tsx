@@ -20,9 +20,14 @@ export function formatDateStr(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-export function isToday(day: number, month: number, year: number): boolean {
+export function isToday(day: number, month: number, year: number): boolean;
+export function isToday(date: Date): boolean;
+export function isToday(dayOrDate: number | Date, month?: number, year?: number): boolean {
   const today = new Date();
-  return today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+  if (dayOrDate instanceof Date) {
+    return dayOrDate.toDateString() === today.toDateString();
+  }
+  return today.getDate() === dayOrDate && today.getMonth() === month && today.getFullYear() === year;
 }
 
 export default function Calendar({ currentDate, onDateChange, renderDay, className = "" }: CalendarProps) {

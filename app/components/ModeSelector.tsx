@@ -1,10 +1,10 @@
 "use client";
 
-import { Scale, Target, ClipboardList } from "lucide-react";
+import { Scale, Target, ClipboardList, ListChecks } from "lucide-react";
 import ThemeToggle from "./shared/ThemeToggle";
 
 interface ModeSelectorProps {
-  onSelectMode: (mode: 'tracker' | 'challenge' | 'planner') => void;
+  onSelectMode: (mode: 'tracker' | 'challenge' | 'planner' | 'todo') => void;
 }
 
 export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
@@ -23,7 +23,23 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
           Wybierz co chcesz dzisiaj zrobić
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Lista Zadań - TODO */}
+          <button
+            onClick={() => onSelectMode('todo')}
+            className="group bg-slate-800/50 hover:bg-slate-800 border-2 border-slate-700 hover:border-rose-500 rounded-2xl p-6 transition-all duration-300 text-left"
+          >
+            <div className="w-14 h-14 bg-rose-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-rose-500/30 transition-colors">
+              <ListChecks className="w-7 h-7 text-rose-400" />
+            </div>
+            <h2 className="text-xl font-semibold text-white mb-2">
+              Lista Zadań
+            </h2>
+            <p className="text-slate-400 text-sm">
+              Zarządzaj zadaniami z priorytetami, terminami i kategoriami
+            </p>
+          </button>
+
           {/* Progress Tracker */}
           <button
             onClick={() => onSelectMode('tracker')}

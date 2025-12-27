@@ -16,7 +16,7 @@ export function usePlanner(userId: string | undefined) {
   const [syncError, setSyncError] = useState<string | null>(null);
 
   const loadTasks = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || !supabase) return;
 
     try {
       setIsLoading(true);
@@ -24,7 +24,7 @@ export function usePlanner(userId: string | undefined) {
 
       const { data, error } = await withRetry(
         async () => {
-          const result = await supabase
+          const result = await supabase!
             .from('tasks')
             .select('*')
             .eq('user_id', userId)
@@ -36,8 +36,7 @@ export function usePlanner(userId: string | undefined) {
       );
 
       setTasks(data || []);
-    } catch (error) {
-      console.error('Error loading tasks:', error);
+    } catch {
       setSyncError('Błąd ładowania zadań');
     } finally {
       setIsLoading(false);
@@ -49,7 +48,7 @@ export function usePlanner(userId: string | undefined) {
   }, [loadTasks]);
 
   const addTask = async (date: string, title: string): Promise<Task | null> => {
-    if (!userId || !title.trim()) return null;
+    if (!userId || !supabase || !title.trim()) return null;
 
     // Rate limit check
     if (isRateLimited('planner:create', RATE_LIMITS.create)) {
@@ -83,8 +82,7 @@ export function usePlanner(userId: string | undefined) {
       setTasks(prev => prev.map(t => t.id === tempId ? data : t));
       setSyncError(null);
       return data;
-    } catch (error) {
-      console.error('Error adding task:', error);
+    } catch {
       setSyncError('Błąd dodawania zadania');
       // Rollback
       setTasks(prev => prev.filter(t => t.id !== tempId));
@@ -95,6 +93,7 @@ export function usePlanner(userId: string | undefined) {
   };
 
   const toggleTask = async (taskId: string): Promise<void> => {
+    if (!supabase) return;
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
@@ -118,8 +117,7 @@ export function usePlanner(userId: string | undefined) {
 
       if (error) throw error;
       setSyncError(null);
-    } catch (error) {
-      console.error('Error toggling task:', error);
+    } catch {
       setSyncError('Błąd aktualizacji');
       // Rollback
       setTasks(prev => prev.map(t =>
@@ -131,6 +129,7 @@ export function usePlanner(userId: string | undefined) {
   };
 
   const deleteTask = async (taskId: string): Promise<void> => {
+    if (!supabase) return;
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
@@ -152,8 +151,7 @@ export function usePlanner(userId: string | undefined) {
 
       if (error) throw error;
       setSyncError(null);
-    } catch (error) {
-      console.error('Error deleting task:', error);
+    } catch {
       setSyncError('Błąd usuwania');
       // Rollback
       setTasks(prev => [...prev, task]);
@@ -163,6 +161,7 @@ export function usePlanner(userId: string | undefined) {
   };
 
   const updateTask = async (taskId: string, title: string): Promise<void> => {
+    if (!supabase) return;
     const task = tasks.find(t => t.id === taskId);
     if (!task || !title.trim()) return;
 
@@ -188,8 +187,7 @@ export function usePlanner(userId: string | undefined) {
 
       if (error) throw error;
       setSyncError(null);
-    } catch (error) {
-      console.error('Error updating task:', error);
+    } catch {
       setSyncError('Błąd aktualizacji');
       // Rollback
       setTasks(prev => prev.map(t =>

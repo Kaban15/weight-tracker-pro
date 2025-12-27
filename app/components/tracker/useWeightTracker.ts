@@ -4,52 +4,143 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Entry, Goal, Stats, Profile, formatDate } from './types';
 
+// Load last N days of entries initially for better performance
+const INITIAL_DAYS_TO_LOAD = 365;
+const ENTRIES_PER_PAGE = 100;
+
 export function useWeightTracker(userId: string | undefined) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [goal, setGoal] = useState<Goal | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasMoreEntries, setHasMoreEntries] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [oldestLoadedDate, setOldestLoadedDate] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || !supabase) return;
 
     try {
-      const { data: goalData } = await supabase
-        .from('goals')
+      // Calculate date range - load last year initially
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - INITIAL_DAYS_TO_LOAD);
+      const cutoffDateStr = formatDate(cutoffDate);
+
+      // Parallel fetch for better performance
+      const [goalResult, entriesResult, profileResult, countResult] = await Promise.all([
+        supabase
+          .from('goals')
+          .select('*')
+          .eq('user_id', userId)
+          .single(),
+        supabase
+          .from('entries')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('date', cutoffDateStr)
+          .order('date', { ascending: true })
+          .limit(ENTRIES_PER_PAGE * 4), // Max 400 entries initially
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single(),
+        // Check if there are older entries
+        supabase
+          .from('entries')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .lt('date', cutoffDateStr)
+      ]);
+
+      if (goalResult.data) setGoal(goalResult.data);
+      if (profileResult.data) setProfile(profileResult.data);
+
+      if (entriesResult.data) {
+        setEntries(entriesResult.data);
+        if (entriesResult.data.length > 0) {
+          setOldestLoadedDate(entriesResult.data[0].date);
+        }
+      }
+
+      // Check if there are more entries to load
+      setHasMoreEntries((countResult.count ?? 0) > 0);
+    } catch {
+      // Error handled silently - data will be empty
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  // Load older entries on demand
+  const loadMoreEntries = useCallback(async () => {
+    if (!userId || !supabase || !oldestLoadedDate || loadingMore) return;
+
+    setLoadingMore(true);
+    try {
+      const { data, error } = await supabase
+        .from('entries')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .lt('date', oldestLoadedDate)
+        .order('date', { ascending: false })
+        .limit(ENTRIES_PER_PAGE);
 
-      if (goalData) setGoal(goalData);
+      if (error) throw error;
 
-      const { data: entriesData } = await supabase
+      if (data && data.length > 0) {
+        // Reverse to maintain ascending order and prepend
+        const olderEntries = data.reverse();
+        setEntries(prev => [...olderEntries, ...prev]);
+        setOldestLoadedDate(olderEntries[0].date);
+        setHasMoreEntries(data.length === ENTRIES_PER_PAGE);
+      } else {
+        setHasMoreEntries(false);
+      }
+    } catch {
+      // Error handled silently
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [userId, oldestLoadedDate, loadingMore]);
+
+  // Load all entries at once (for export, etc.)
+  const loadAllEntries = useCallback(async (): Promise<Entry[]> => {
+    if (!userId || !supabase || !hasMoreEntries) return entries;
+
+    setLoadingMore(true);
+    try {
+      const { data, error } = await supabase
         .from('entries')
         .select('*')
         .eq('user_id', userId)
         .order('date', { ascending: true });
 
-      if (entriesData) setEntries(entriesData);
+      if (error) throw error;
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (profileData) setProfile(profileData);
-    } catch (error) {
-      console.error('Error fetching data:', error);
+      if (data) {
+        setEntries(data);
+        setHasMoreEntries(false);
+        if (data.length > 0) {
+          setOldestLoadedDate(data[0].date);
+        }
+        return data;
+      }
+      return entries;
+    } catch {
+      // Error handled silently
+      return entries;
     } finally {
-      setLoading(false);
+      setLoadingMore(false);
     }
-  }, [userId]);
+  }, [userId, hasMoreEntries, entries]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   const saveProfile = async (newProfile: Omit<Profile, 'id'>) => {
-    if (!userId) return;
+    if (!userId || !supabase) return;
 
     try {
       if (profile?.id) {
@@ -72,13 +163,13 @@ export function useWeightTracker(userId: string | undefined) {
         if (error) throw error;
         if (data) setProfile(data);
       }
-    } catch (error) {
-      console.error('Error saving profile:', error);
+    } catch {
+      // Error handled silently
     }
   };
 
   const saveGoal = async (newGoal: Omit<Goal, 'id'>): Promise<boolean> => {
-    if (!userId) return false;
+    if (!userId || !supabase) return false;
 
     try {
       if (goal?.id) {
@@ -102,14 +193,13 @@ export function useWeightTracker(userId: string | undefined) {
         if (data) setGoal(data);
       }
       return true;
-    } catch (error) {
-      console.error('Error saving goal:', error);
+    } catch {
       return false;
     }
   };
 
   const resetPlan = async (deleteEntries: boolean = false): Promise<boolean> => {
-    if (!userId || !goal?.id) return false;
+    if (!userId || !supabase || !goal?.id) return false;
 
     const confirmMessage = deleteEntries
       ? 'Czy na pewno chcesz usunąć plan i WSZYSTKIE wpisy? Ta operacja jest nieodwracalna!'
@@ -137,14 +227,13 @@ export function useWeightTracker(userId: string | undefined) {
 
       setGoal(null);
       return true;
-    } catch (error) {
-      console.error('Error resetting plan:', error);
+    } catch {
       return false;
     }
   };
 
   const saveEntry = async (entry: Omit<Entry, 'id'>, editingEntryId?: string): Promise<boolean> => {
-    if (!userId) return false;
+    if (!userId || !supabase) return false;
 
     try {
       const existingEntry = entries.find(e => e.date === entry.date);
@@ -175,13 +264,14 @@ export function useWeightTracker(userId: string | undefined) {
         }
       }
       return true;
-    } catch (error) {
-      console.error('Error saving entry:', error);
+    } catch {
       return false;
     }
   };
 
   const deleteEntry = async (id: string): Promise<boolean> => {
+    if (!supabase) return false;
+
     try {
       const { error } = await supabase
         .from('entries')
@@ -191,8 +281,7 @@ export function useWeightTracker(userId: string | undefined) {
       if (error) throw error;
       setEntries(entries.filter(e => e.id !== id));
       return true;
-    } catch (error) {
-      console.error('Error deleting entry:', error);
+    } catch {
       return false;
     }
   };
@@ -268,12 +357,13 @@ export function useWeightTracker(userId: string | undefined) {
     [sortedEntries, goal?.current_weight]
   );
 
-  const progress = useMemo(() =>
-    goal
-      ? ((startWeight - currentWeight) / (startWeight - goal.target_weight)) * 100
-      : 0,
-    [goal, startWeight, currentWeight]
-  );
+  const progress = useMemo(() => {
+    if (!goal) return 0;
+    const weightDiff = startWeight - goal.target_weight;
+    // Avoid division by zero when startWeight equals target
+    if (weightDiff === 0) return currentWeight === goal.target_weight ? 100 : 0;
+    return ((startWeight - currentWeight) / weightDiff) * 100;
+  }, [goal, startWeight, currentWeight]);
 
   return {
     entries,
@@ -281,6 +371,8 @@ export function useWeightTracker(userId: string | undefined) {
     goal,
     profile,
     loading,
+    loadingMore,
+    hasMoreEntries,
     stats,
     currentWeight,
     startWeight,
@@ -291,5 +383,7 @@ export function useWeightTracker(userId: string | undefined) {
     saveEntry,
     deleteEntry,
     getEntryForDate,
+    loadMoreEntries,
+    loadAllEntries,
   };
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Plus, Flame, Footprints, Dumbbell } from 'lucide-react';
-import { Entry, getDaysInMonth, formatDate, isToday } from './types';
+import { Entry, getDaysInMonth, formatDate } from './types';
+import { isToday } from '../shared/Calendar';
 
 interface CalendarViewProps {
   currentMonth: Date;

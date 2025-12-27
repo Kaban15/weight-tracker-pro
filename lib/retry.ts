@@ -85,14 +85,11 @@ export async function withRetry<T>(
   config: Partial<RetryConfig> = {}
 ): Promise<T> {
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
-  let lastError: unknown;
 
   for (let attempt = 0; attempt <= finalConfig.maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error) {
-      lastError = error;
-
       // Check if we should retry
       const shouldRetry = finalConfig.retryCondition
         ? finalConfig.retryCondition(error)
@@ -108,7 +105,8 @@ export async function withRetry<T>(
     }
   }
 
-  throw lastError;
+  // This should never be reached due to the throw in the loop
+  throw new Error("Retry logic error: exhausted attempts without resolution");
 }
 
 /**

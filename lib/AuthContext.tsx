@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string) => {
     if (!supabase) return { error: new Error('Supabase not configured') };
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -56,12 +56,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           : undefined,
       },
     });
-
-    if (error) {
-      console.error('SignUp error:', error);
-    } else {
-      console.log('SignUp response:', data);
-    }
 
     return { error };
   };

@@ -21,11 +21,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Load theme from localStorage on mount
   useEffect(() => {
     setMounted(true);
-    const savedTheme = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    if (savedTheme) {
-      setThemeState(savedTheme);
-    } else {
-      // Check system preference
+    try {
+      const savedTheme = localStorage.getItem(STORAGE_KEY) as Theme | null;
+      if (savedTheme) {
+        setThemeState(savedTheme);
+      } else {
+        // Check system preference
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        setThemeState(prefersDark ? "dark" : "light");
+      }
+    } catch {
+      // localStorage not available (private browsing, storage full, etc.)
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       setThemeState(prefersDark ? "dark" : "light");
     }
@@ -52,12 +58,20 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
     setThemeState(newTheme);
-    localStorage.setItem(STORAGE_KEY, newTheme);
+    try {
+      localStorage.setItem(STORAGE_KEY, newTheme);
+    } catch {
+      // localStorage not available - theme will reset on reload
+    }
   };
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem(STORAGE_KEY, newTheme);
+    try {
+      localStorage.setItem(STORAGE_KEY, newTheme);
+    } catch {
+      // localStorage not available - theme will reset on reload
+    }
   };
 
   // Prevent flash of unstyled content

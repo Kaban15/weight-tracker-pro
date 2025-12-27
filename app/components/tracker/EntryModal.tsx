@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Scale, Flame, Footprints, Dumbbell, Trash2, AlertTriangle } from 'lucide-react';
 import { Entry, Goal, formatDate } from './types';
 
@@ -35,6 +35,19 @@ export default function EntryModal({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Reset form when entry or selectedDate changes
+  useEffect(() => {
+    setWeight(entry?.weight.toString() || '');
+    setCalories(entry?.calories?.toString() || '');
+    setSteps(entry?.steps?.toString() || '');
+    setWorkout(entry?.workout || '');
+    setWorkoutDuration(entry?.workout_duration?.toString() || '');
+    setNotes(entry?.notes || '');
+    setDate(entry?.date || selectedDate || formatDate(new Date()));
+    setError(null);
+    setShowDeleteConfirm(false);
+  }, [entry, selectedDate]);
+
   const MIN_WEIGHT = 30;
   const MAX_WEIGHT = 300;
 
@@ -61,15 +74,30 @@ export default function EntryModal({
       return;
     }
 
+    // Prevent future dates
+    const selectedDate = new Date(date);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    if (selectedDate > today) {
+      setError('Nie można dodać wpisu z przyszłą datą');
+      return;
+    }
+
     setError(null);
     setSaving(true);
+
+    // Parse and validate numeric fields
+    const parsedCalories = calories ? parseInt(calories) : undefined;
+    const parsedSteps = steps ? parseInt(steps) : undefined;
+    const parsedDuration = workoutDuration ? parseInt(workoutDuration) : undefined;
+
     const success = await onSave({
       date,
       weight: w,
-      calories: calories ? parseInt(calories) : undefined,
-      steps: steps ? parseInt(steps) : undefined,
+      calories: parsedCalories && !isNaN(parsedCalories) ? parsedCalories : undefined,
+      steps: parsedSteps && !isNaN(parsedSteps) ? parsedSteps : undefined,
       workout: workout || undefined,
-      workout_duration: workoutDuration ? parseInt(workoutDuration) : undefined,
+      workout_duration: parsedDuration && !isNaN(parsedDuration) ? parsedDuration : undefined,
       notes: notes || undefined,
     }, entry?.id);
     setSaving(false);
@@ -101,14 +129,20 @@ export default function EntryModal({
   const targetWeight = getTargetForDate();
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="entry-modal-title"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="bg-slate-900 rounded-2xl p-6 max-w-md w-full border-2 border-emerald-500/20 my-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">
+          <h2 id="entry-modal-title" className="text-2xl font-bold text-white">
             {entry ? 'Edytuj wpis' : 'Dodaj wpis'}
           </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
-            <X className="w-6 h-6" />
+          <button onClick={onClose} className="text-slate-400 hover:text-white" aria-label="Zamknij">
+            <X className="w-6 h-6" aria-hidden="true" />
           </button>
         </div>
 
@@ -123,14 +157,21 @@ export default function EntryModal({
 
         <div className="space-y-4">
           <div>
-            <label className="block text-slate-300 mb-2 font-semibold">Data *</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none" />
+            <label htmlFor="entry-date" className="block text-slate-300 mb-2 font-semibold">Data *</label>
+            <input
+              id="entry-date"
+              type="date"
+              value={date}
+              max={formatDate(new Date())}
+              onChange={(e) => { setDate(e.target.value); setError(null); }}
+              className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none"
+            />
           </div>
 
           <div>
-            <label className="block text-slate-300 mb-2 font-semibold">Waga (kg) *</label>
+            <label htmlFor="entry-weight" className="block text-slate-300 mb-2 font-semibold">Waga (kg) *</label>
             <input
+              id="entry-weight"
               type="number"
               step="0.1"
               min={MIN_WEIGHT}
@@ -204,8 +245,9 @@ export default function EntryModal({
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 className="bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center"
+                aria-label="Usuń wpis"
               >
-                <Trash2 className="w-5 h-5" />
+                <Trash2 className="w-5 h-5" aria-hidden="true" />
               </button>
             )}
             <button
@@ -221,20 +263,26 @@ export default function EntryModal({
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[60]">
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[60]"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="delete-modal-title"
+          aria-describedby="delete-modal-desc"
+        >
           <div className="bg-slate-800 rounded-2xl p-6 max-w-sm w-full border-2 border-red-500/30">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-red-400" />
+                <AlertTriangle className="w-6 h-6 text-red-400" aria-hidden="true" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Usuń wpis</h3>
+                <h3 id="delete-modal-title" className="text-lg font-bold text-white">Usuń wpis</h3>
                 <p className="text-sm text-slate-400">
                   {new Date(date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
               </div>
             </div>
-            <p className="text-slate-300 mb-6">
+            <p id="delete-modal-desc" className="text-slate-300 mb-6">
               Czy na pewno chcesz usunąć ten wpis? Ta operacja jest nieodwracalna.
             </p>
             <div className="flex gap-3">

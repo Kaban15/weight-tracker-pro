@@ -1,8 +1,52 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/lib/AuthContext';
-import { Target, Mail, Lock, LogIn, UserPlus } from 'lucide-react';
+import { Target, Mail, Lock, LogIn, UserPlus, Check, X } from 'lucide-react';
+
+// Password validation rules
+const PASSWORD_RULES = {
+  minLength: 8,
+  requireUppercase: true,
+  requireLowercase: true,
+  requireNumber: true,
+};
+
+interface PasswordValidation {
+  isValid: boolean;
+  hasMinLength: boolean;
+  hasUppercase: boolean;
+  hasLowercase: boolean;
+  hasNumber: boolean;
+}
+
+function validatePassword(password: string): PasswordValidation {
+  const hasMinLength = password.length >= PASSWORD_RULES.minLength;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+
+  return {
+    isValid: hasMinLength && hasUppercase && hasLowercase && hasNumber,
+    hasMinLength,
+    hasUppercase,
+    hasLowercase,
+    hasNumber,
+  };
+}
+
+function PasswordRule({ passed, text }: { passed: boolean; text: string }) {
+  return (
+    <li className={`flex items-center gap-2 text-xs ${passed ? 'text-emerald-400' : 'text-slate-500'}`}>
+      {passed ? (
+        <Check className="w-3 h-3" aria-hidden="true" />
+      ) : (
+        <X className="w-3 h-3" aria-hidden="true" />
+      )}
+      {text}
+    </li>
+  );
+}
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -11,25 +55,40 @@ export default function Auth() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [showPasswordRules, setShowPasswordRules] = useState(false);
 
   const { signIn, signUp } = useAuth();
+
+  const passwordValidation = useMemo(() => validatePassword(password), [password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setMessage('');
+
+    // Client-side password validation for signup
+    if (!isLogin && !passwordValidation.isValid) {
+      setError('Hasło nie spełnia wymagań bezpieczeństwa.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
-          setError(error.message);
+          // Translate common login errors
+          if (error.message.includes('Invalid login')) {
+            setError('Nieprawidłowy email lub hasło.');
+          } else {
+            setError(error.message);
+          }
         }
       } else {
         const { error } = await signUp(email, password);
         if (error) {
-          // Tłumaczenie popularnych błędów Supabase
+          // Translate common Supabase errors
           if (error.message.includes('rate limit')) {
             setError('Zbyt wiele prób. Poczekaj chwilę i spróbuj ponownie.');
           } else if (error.message.includes('already registered')) {
@@ -37,7 +96,7 @@ export default function Auth() {
           } else if (error.message.includes('valid email')) {
             setError('Podaj prawidłowy adres email.');
           } else if (error.message.includes('password')) {
-            setError('Hasło musi mieć minimum 6 znaków.');
+            setError('Hasło nie spełnia wymagań bezpieczeństwa.');
           } else {
             setError(error.message);
           }
@@ -45,8 +104,8 @@ export default function Auth() {
           setMessage('Sprawdź swoją skrzynkę email! Link aktywacyjny został wysłany.');
         }
       }
-    } catch (err) {
-      setError('An unexpected error occurred');
+    } catch {
+      setError('Wystąpił nieoczekiwany błąd. Spróbuj ponownie.');
     } finally {
       setLoading(false);
     }
@@ -84,17 +143,48 @@ export default function Auth() {
           <div>
             <label className="flex items-center gap-2 text-slate-300 mb-2 font-semibold">
               <Lock className="w-4 h-4" />
-              Password
+              Hasło
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onFocus={() => !isLogin && setShowPasswordRules(true)}
+              onBlur={() => setShowPasswordRules(false)}
               placeholder="••••••••"
               required
-              minLength={6}
-              className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none"
+              minLength={PASSWORD_RULES.minLength}
+              className={`w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 outline-none transition-colors ${
+                !isLogin && password && !passwordValidation.isValid
+                  ? 'border-amber-500 focus:border-amber-500'
+                  : 'border-slate-700 focus:border-emerald-500'
+              }`}
             />
+
+            {/* Password requirements - only show during signup */}
+            {!isLogin && (showPasswordRules || (password && !passwordValidation.isValid)) && (
+              <div className="mt-2 p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+                <p className="text-xs text-slate-400 mb-2">Wymagania hasła:</p>
+                <ul className="space-y-1">
+                  <PasswordRule
+                    passed={passwordValidation.hasMinLength}
+                    text={`Minimum ${PASSWORD_RULES.minLength} znaków`}
+                  />
+                  <PasswordRule
+                    passed={passwordValidation.hasUppercase}
+                    text="Wielka litera (A-Z)"
+                  />
+                  <PasswordRule
+                    passed={passwordValidation.hasLowercase}
+                    text="Mała litera (a-z)"
+                  />
+                  <PasswordRule
+                    passed={passwordValidation.hasNumber}
+                    text="Cyfra (0-9)"
+                  />
+                </ul>
+              </div>
+            )}
           </div>
 
           {error && (

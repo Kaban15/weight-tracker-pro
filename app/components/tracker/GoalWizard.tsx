@@ -41,8 +41,25 @@ export default function GoalWizard({
   const [gender, setGender] = useState<'male' | 'female'>(profile?.gender || 'male');
   const [height, setHeight] = useState(profile?.height?.toString() || '');
   const [activityLevel, setActivityLevel] = useState(profile?.activity_level?.toString() || '1.2');
+  const [dateError, setDateError] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  // Validate dates
+  const validateDates = (): boolean => {
+    if (!startDate || !targetDate) {
+      setDateError('Wybierz obie daty');
+      return false;
+    }
+    const start = new Date(startDate);
+    const end = new Date(targetDate);
+    if (end <= start) {
+      setDateError('Data końcowa musi być późniejsza niż data startu');
+      return false;
+    }
+    setDateError(null);
+    return true;
+  };
 
   const cw = parseFloat(currentWeightInput) || 0;
   const tw = parseFloat(targetWeight) || 0;
@@ -108,6 +125,7 @@ export default function GoalWizard({
   };
 
   const handleSave = async () => {
+    if (!validateDates()) return;
     if (cw > 0 && tw > 0 && targetDate && startDate) {
       setSaving(true);
 
@@ -296,9 +314,15 @@ export default function GoalWizard({
               </div>
             )}
 
+            {dateError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                <p className="text-red-400 text-sm">{dateError}</p>
+              </div>
+            )}
+
             <div className="flex gap-3">
               <button onClick={() => setStep(1)} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-xl transition-colors">Wstecz</button>
-              <button onClick={() => setStep(3)} disabled={!targetDate || !startDate}
+              <button onClick={() => { if (validateDates()) setStep(3); }} disabled={!targetDate || !startDate}
                 className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors">Dalej</button>
             </div>
           </div>

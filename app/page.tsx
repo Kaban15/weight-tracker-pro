@@ -7,8 +7,9 @@ import WeightTracker from "./components/WeightTracker";
 import ModeSelector from "./components/ModeSelector";
 import ChallengeMode from "./components/ChallengeMode";
 import { PlannerMode } from "./components/planner";
+import { TodoMode } from "./components/todo";
 
-type AppMode = 'tracker' | 'challenge' | 'planner' | null;
+type AppMode = 'tracker' | 'challenge' | 'planner' | 'todo' | null;
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -36,6 +37,10 @@ export default function Home() {
 
   if (mode === 'planner') {
     return <PlannerMode onBack={() => setMode(null)} />;
+  }
+
+  if (mode === 'todo') {
+    return <TodoMode onBack={() => setMode(null)} />;
   }
 
   return <WeightTracker onBack={() => setMode(null)} />;

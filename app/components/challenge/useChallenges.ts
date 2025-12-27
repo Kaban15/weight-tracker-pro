@@ -23,16 +23,18 @@ export function getChallengeProgress(challenge: Challenge): ChallengeProgress {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const totalDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
   const completedCount = Object.keys(challenge.completedDays).length;
   const totalReps = Object.values(challenge.completedDays).reduce((sum, r) => sum + r, 0);
   const percentage = Math.round((completedCount / totalDays) * 100);
   const isCompleted = today > end;
 
   // Calculate streak (create new Date objects to avoid mutation bugs)
+  // Limit to totalDays + 1 to prevent infinite loops
   let streak = 0;
   let checkDate = new Date(today);
-  while (true) {
+  const maxIterations = totalDays + 1;
+  for (let i = 0; i < maxIterations; i++) {
     const dateStr = formatDate(checkDate);
     if (challenge.completedDays[dateStr]) {
       streak++;
@@ -70,7 +72,7 @@ export function useChallenges(userId: string | undefined) {
   });
 
   const loadChallenges = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || !supabase) return;
 
     try {
       setIsLoading(true);
@@ -108,8 +110,7 @@ export function useChallenges(userId: string | undefined) {
       if (error) throw error;
 
       setChallenges((data || []).map(rowToChallenge));
-    } catch (error) {
-      console.error('Error loading challenges:', error);
+    } catch {
       setSyncError('Błąd ładowania danych');
       const localData = localStorage.getItem(localStorageKey);
       if (localData) {
@@ -125,7 +126,7 @@ export function useChallenges(userId: string | undefined) {
   }, [loadChallenges]);
 
   const createChallenge = async (formData: ChallengeFormData): Promise<Challenge | null> => {
-    if (!userId) return null;
+    if (!userId || !supabase) return null;
 
     // Rate limit check
     if (isRateLimited('challenge:create', RATE_LIMITS.create)) {
@@ -187,8 +188,7 @@ export function useChallenges(userId: string | undefined) {
       if (error) throw error;
       setSyncError(null);
       return newChallenge;
-    } catch (error) {
-      console.error('Error creating challenge:', error);
+    } catch {
       setSyncError('Błąd zapisu');
       return newChallenge;
     } finally {
@@ -197,7 +197,7 @@ export function useChallenges(userId: string | undefined) {
   };
 
   const updateChallenge = async (challengeId: string, formData: ChallengeFormData): Promise<void> => {
-    if (!userId) return;
+    if (!userId || !supabase) return;
 
     let endDate: string;
     if (formData.dateMode === 'dates') {
@@ -235,8 +235,7 @@ export function useChallenges(userId: string | undefined) {
 
       if (error) throw error;
       setSyncError(null);
-    } catch (error) {
-      console.error('Error updating challenge:', error);
+    } catch {
       setSyncError('Błąd zapisu');
     } finally {
       setIsSyncing(false);
@@ -244,6 +243,8 @@ export function useChallenges(userId: string | undefined) {
   };
 
   const deleteChallenge = async (id: string): Promise<void> => {
+    if (!supabase) return;
+
     // Rate limit check
     if (isRateLimited('challenge:delete', RATE_LIMITS.delete)) {
       setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
@@ -258,8 +259,7 @@ export function useChallenges(userId: string | undefined) {
 
       if (error) throw error;
       setSyncError(null);
-    } catch (error) {
-      console.error('Error deleting challenge:', error);
+    } catch {
       setSyncError('Błąd usuwania');
       loadChallenges();
     } finally {
@@ -268,6 +268,8 @@ export function useChallenges(userId: string | undefined) {
   };
 
   const updateCompletedDays = async (challengeId: string, completedDays: { [date: string]: number }): Promise<void> => {
+    if (!supabase) return;
+
     // Rate limit check
     if (isRateLimited('challenge:toggle', RATE_LIMITS.toggle)) {
       setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
@@ -286,8 +288,7 @@ export function useChallenges(userId: string | undefined) {
 
       if (error) throw error;
       setSyncError(null);
-    } catch (error) {
-      console.error('Error syncing completed days:', error);
+    } catch {
       setSyncError('Błąd synchronizacji');
     } finally {
       setIsSyncing(false);
@@ -295,6 +296,8 @@ export function useChallenges(userId: string | undefined) {
   };
 
   const updateDailyGoals = async (challengeId: string, dailyGoals: { [date: string]: number }): Promise<void> => {
+    if (!supabase) return;
+
     // Rate limit check
     if (isRateLimited('challenge:write', RATE_LIMITS.write)) {
       setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
@@ -313,8 +316,7 @@ export function useChallenges(userId: string | undefined) {
 
       if (error) throw error;
       setSyncError(null);
-    } catch (error) {
-      console.error('Error syncing daily goals:', error);
+    } catch {
       setSyncError('Błąd synchronizacji');
     } finally {
       setIsSyncing(false);

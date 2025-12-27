@@ -1,10 +1,14 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Calendar, Target, Activity, LogOut, Table, LineChart, Home, TrendingDown, TrendingUp, Flame, Scale, Clock } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Calendar, Target, Activity, LogOut, Table, LineChart, Home, TrendingDown, TrendingUp, Flame, Scale, Clock, Bell, Keyboard } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
+import { initializeNotifications, cancelScheduledReminders } from '@/lib/notifications';
+import { useKeyboardShortcuts, KeyboardShortcut } from '@/lib/useKeyboardShortcuts';
 import ProgressChart from './ProgressChart';
 import ProgressTable from './ProgressTable';
+import NotificationSettings from './shared/NotificationSettings';
+import KeyboardShortcutsHelp from './shared/KeyboardShortcutsHelp';
 import {
   Entry,
   formatDate,
@@ -26,6 +30,8 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     goal,
     profile,
     loading,
+    loadingMore,
+    hasMoreEntries,
     stats,
     currentWeight,
     progress,
@@ -35,14 +41,74 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     saveEntry,
     deleteEntry,
     getEntryForDate,
+    loadAllEntries,
   } = useWeightTracker(user?.id);
 
   const [view, setView] = useState<'calendar' | 'stats' | 'table' | 'chart'>('calendar');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);
   const [showGoalModal, setShowGoalModal] = useState(false);
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
+
+  // Initialize notifications on mount
+  useEffect(() => {
+    initializeNotifications();
+    return () => cancelScheduledReminders();
+  }, []);
+
+  // Go to today
+  const goToToday = useCallback(() => {
+    setCurrentMonth(new Date());
+    setView('calendar');
+  }, []);
+
+  // Navigate months
+  const prevMonth = useCallback(() => {
+    setCurrentMonth(prev => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() - 1);
+      return d;
+    });
+  }, []);
+
+  const nextMonth = useCallback(() => {
+    setCurrentMonth(prev => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() + 1);
+      return d;
+    });
+  }, []);
+
+  // Check if any modal is open
+  const isModalOpen = showAddModal || showGoalModal || showNotificationSettings || showShortcutsHelp;
+
+  // Keyboard shortcuts (memoized to prevent re-renders)
+  const shortcuts: KeyboardShortcut[] = useMemo(() => [
+    { key: 'n', description: 'Nowy wpis', action: () => {
+      setSelectedDate(formatDate(new Date()));
+      setEditingEntry(null);
+      setShowAddModal(true);
+    }},
+    { key: 't', description: 'Idź do dziś', action: goToToday },
+    { key: '1', description: 'Kalendarz', action: () => setView('calendar') },
+    { key: '2', description: 'Statystyki', action: () => setView('stats') },
+    { key: '3', description: 'Tabela', action: () => setView('table') },
+    { key: '4', description: 'Wykres', action: () => setView('chart') },
+    { key: 'ArrowLeft', alt: true, description: 'Poprzedni miesiąc', action: prevMonth },
+    { key: 'ArrowRight', alt: true, description: 'Następny miesiąc', action: nextMonth },
+    { key: '?', shift: true, description: 'Pomoc', action: () => setShowShortcutsHelp(true) },
+    { key: 'Escape', description: 'Zamknij', action: () => {
+      setShowAddModal(false);
+      setShowGoalModal(false);
+      setShowNotificationSettings(false);
+      setShowShortcutsHelp(false);
+    }},
+  ], [goToToday, prevMonth, nextMonth]);
+
+  useKeyboardShortcuts(shortcuts, !isModalOpen || shortcuts.find(s => s.key === 'Escape') !== undefined);
 
   if (loading) {
     return (
@@ -149,6 +215,21 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
           <div className="flex items-center gap-4">
             <button onClick={() => setShowGoalModal(true)} className="text-emerald-400 hover:text-emerald-300 text-sm font-medium">
               Edytuj plan
+            </button>
+            <button
+              onClick={() => setShowNotificationSettings(true)}
+              className="text-slate-400 hover:text-emerald-400 transition-colors p-2"
+              aria-label="Ustawienia powiadomień"
+            >
+              <Bell className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setShowShortcutsHelp(true)}
+              className="text-slate-400 hover:text-emerald-400 transition-colors p-2 hidden sm:block"
+              aria-label="Skróty klawiszowe"
+              title="Skróty klawiszowe (Shift + ?)"
+            >
+              <Keyboard className="w-5 h-5" />
             </button>
             <button onClick={signOut} className="text-slate-400 hover:text-white transition-colors flex items-center gap-2">
               <LogOut className="w-4 h-4" />
@@ -288,6 +369,9 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
           currentWeight={currentWeight}
           progress={progress}
           onEditGoal={() => setShowGoalModal(true)}
+          hasMoreEntries={hasMoreEntries}
+          loadingMore={loadingMore}
+          onLoadAllEntries={loadAllEntries}
         />
       )}
 
@@ -309,6 +393,16 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
         onSaveProfile={saveProfile}
         onReset={handleResetPlan}
         onClose={() => setShowGoalModal(false)}
+      />
+
+      <NotificationSettings
+        isOpen={showNotificationSettings}
+        onClose={() => setShowNotificationSettings(false)}
+      />
+
+      <KeyboardShortcutsHelp
+        isOpen={showShortcutsHelp}
+        onClose={() => setShowShortcutsHelp(false)}
       />
     </div>
   );

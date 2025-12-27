@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { ChallengeFormData, GOAL_UNITS } from "./types";
 
@@ -20,6 +21,37 @@ export default function ChallengeFormModal({
   onSubmit,
   onClose
 }: ChallengeFormModalProps) {
+  const [dateError, setDateError] = useState<string | null>(null);
+
+  // Clear error when dates change
+  useEffect(() => {
+    setDateError(null);
+  }, [formData.startDate, formData.endDate, formData.dateMode]);
+
+  const validateAndSubmit = () => {
+    // Validate name
+    if (!formData.name.trim()) {
+      return;
+    }
+
+    // Validate dates when in custom dates mode
+    if (formData.dateMode === 'dates') {
+      if (!formData.startDate || !formData.endDate) {
+        setDateError('Wybierz obie daty');
+        return;
+      }
+      const start = new Date(formData.startDate);
+      const end = new Date(formData.endDate);
+      if (end < start) {
+        setDateError('Data zakończenia nie może być wcześniejsza niż data rozpoczęcia');
+        return;
+      }
+    }
+
+    setDateError(null);
+    onSubmit();
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -94,6 +126,9 @@ export default function ChallengeFormModal({
                   className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none"
                 />
               </div>
+              {dateError && (
+                <p className="text-red-400 text-sm">{dateError}</p>
+              )}
             </>
           ) : (
             <>
@@ -214,7 +249,7 @@ export default function ChallengeFormModal({
                 Anuluj
               </button>
               <button
-                onClick={onSubmit}
+                onClick={validateAndSubmit}
                 className="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-2 rounded-lg"
               >
                 Zapisz
@@ -222,7 +257,7 @@ export default function ChallengeFormModal({
             </div>
           ) : (
             <button
-              onClick={onSubmit}
+              onClick={validateAndSubmit}
               className="w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-lg font-bold"
             >
               Utwórz wyzwanie

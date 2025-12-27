@@ -48,11 +48,6 @@ export function formatDate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-export function isToday(date: Date): boolean {
-  const today = new Date();
-  return date.toDateString() === today.toDateString();
-}
-
 export function getDaysInMonth(date: Date): (Date | null)[] {
   const year = date.getFullYear();
   const month = date.getMonth();

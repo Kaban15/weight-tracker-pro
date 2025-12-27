@@ -2,21 +2,39 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { useWeightTracker } from '@/app/components/tracker/useWeightTracker'
 
-// Mock Supabase
-const mockSelect = vi.fn()
+// Mock Supabase with pagination support
 const mockInsert = vi.fn()
 const mockUpdate = vi.fn()
 const mockDelete = vi.fn()
-const mockEq = vi.fn()
-const mockOrder = vi.fn()
-const mockSingle = vi.fn()
+
+// Chain builder for entries query (with pagination)
+const createEntriesChain = (data: unknown[], count = 0) => ({
+  eq: () => ({
+    gte: () => ({
+      order: () => ({
+        limit: () => Promise.resolve({ data, error: null })
+      })
+    }),
+    lt: () => Promise.resolve({ count, error: null }),
+    order: () => ({
+      limit: () => Promise.resolve({ data, error: null })
+    })
+  })
+})
+
+// Chain builder for single row queries
+const createSingleChain = (data: unknown) => ({
+  eq: () => ({
+    single: () => Promise.resolve({ data, error: null })
+  })
+})
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
     from: vi.fn((table) => {
       if (table === 'goals') {
         return {
-          select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: mockGoal, error: null }) }) }),
+          select: () => createSingleChain(mockGoal),
           insert: mockInsert,
           update: mockUpdate,
           delete: mockDelete,
@@ -24,7 +42,13 @@ vi.mock('@/lib/supabase', () => ({
       }
       if (table === 'entries') {
         return {
-          select: () => ({ eq: () => ({ order: () => Promise.resolve({ data: mockEntries, error: null }) }) }),
+          select: (fields?: string) => {
+            // Count query
+            if (fields?.includes('count')) {
+              return { eq: () => ({ lt: () => Promise.resolve({ count: 0, error: null }) }) }
+            }
+            return createEntriesChain(mockEntries, 0)
+          },
           insert: mockInsert,
           update: mockUpdate,
           delete: mockDelete,
@@ -32,13 +56,13 @@ vi.mock('@/lib/supabase', () => ({
       }
       if (table === 'profiles') {
         return {
-          select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: mockProfile, error: null }) }) }),
+          select: () => createSingleChain(mockProfile),
           insert: mockInsert,
           update: mockUpdate,
         }
       }
       return {
-        select: mockSelect,
+        select: vi.fn(),
         insert: mockInsert,
         update: mockUpdate,
         delete: mockDelete,
@@ -247,27 +271,53 @@ describe('useWeightTracker', () => {
 
   describe('empty entries', () => {
     it('returns zero stats when no entries', async () => {
-      // Override mock to return empty entries
-      vi.doMock('@/lib/supabase', () => ({
-        supabase: {
-          from: vi.fn((table) => {
-            if (table === 'entries') {
-              return {
-                select: () => ({ eq: () => ({ order: () => Promise.resolve({ data: [], error: null }) }) }),
-              }
-            }
-            return {
-              select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }),
-            }
-          })
-        }
-      }))
-
       const { result } = renderHook(() => useWeightTracker('empty-user'))
 
       await waitFor(() => {
         expect(result.current.loading).toBe(false)
       }, { timeout: 2000 })
+    })
+  })
+
+  describe('pagination', () => {
+    it('exposes hasMoreEntries state', async () => {
+      const { result } = renderHook(() => useWeightTracker(mockUserId))
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false)
+      })
+
+      expect(typeof result.current.hasMoreEntries).toBe('boolean')
+    })
+
+    it('exposes loadingMore state', async () => {
+      const { result } = renderHook(() => useWeightTracker(mockUserId))
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false)
+      })
+
+      expect(result.current.loadingMore).toBe(false)
+    })
+
+    it('provides loadMoreEntries function', async () => {
+      const { result } = renderHook(() => useWeightTracker(mockUserId))
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false)
+      })
+
+      expect(typeof result.current.loadMoreEntries).toBe('function')
+    })
+
+    it('provides loadAllEntries function', async () => {
+      const { result } = renderHook(() => useWeightTracker(mockUserId))
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false)
+      })
+
+      expect(typeof result.current.loadAllEntries).toBe('function')
     })
   })
 })

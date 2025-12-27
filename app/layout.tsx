@@ -4,6 +4,8 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/AuthContext";
 import { PostHogProvider } from "@/lib/PostHogProvider";
 import { ThemeProvider } from "@/lib/ThemeContext";
+import ErrorBoundary from "./components/shared/ErrorBoundary";
+import OfflineIndicator from "./components/shared/OfflineIndicator";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,9 +56,12 @@ export default function RootLayout({
       >
         <PostHogProvider>
           <ThemeProvider>
-            <AuthProvider>
-              {children}
-            </AuthProvider>
+            <ErrorBoundary>
+              <AuthProvider>
+                {children}
+                <OfflineIndicator />
+              </AuthProvider>
+            </ErrorBoundary>
           </ThemeProvider>
         </PostHogProvider>
         <script
@@ -64,14 +69,7 @@ export default function RootLayout({
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(
-                    function(registration) {
-                      console.log('SW registered:', registration.scope);
-                    },
-                    function(err) {
-                      console.log('SW registration failed:', err);
-                    }
-                  );
+                  navigator.serviceWorker.register('/sw.js').catch(function() {});
                 });
               }
             `,

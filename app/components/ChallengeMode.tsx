@@ -158,11 +158,11 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     updateCompletedDays(challenge.id, newCompletedDays);
   };
 
-  // Save reps from modal
-  const saveReps = () => {
+  // Save reps from modal (accepts optional override values for delete case)
+  const saveReps = (overrideReps?: number, overrideGoal?: number) => {
     if (!activeChallenge || !currentDateStr) return;
-    const reps = parseInt(repsValue) || 0;
-    const goal = parseInt(goalValue) || 0;
+    const reps = overrideReps !== undefined ? overrideReps : (parseInt(repsValue) || 0);
+    const goal = overrideGoal !== undefined ? overrideGoal : (parseInt(goalValue) || 0);
 
     const newCompletedDays = reps > 0
       ? { ...activeChallenge.completedDays, [currentDateStr]: reps }
@@ -253,7 +253,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
           onDelete={() => {
             setRepsValue('0');
             setGoalValue('0');
-            saveReps();
+            saveReps(0, 0);
           }}
           onClose={() => setShowRepsModal(false)}
         />

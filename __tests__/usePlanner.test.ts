@@ -39,7 +39,7 @@ describe('usePlanner', () => {
     mockOrder.mockResolvedValue({ data: mockTasks, error: null })
 
     mockInsert.mockReturnValue({ select: vi.fn().mockReturnValue({ single: mockSingle }) })
-    mockSingle.mockResolvedValue({ data: { id: 'new-id', ...mockTasks[0] }, error: null })
+    mockSingle.mockResolvedValue({ data: { ...mockTasks[0], id: 'new-id' }, error: null })
 
     mockUpdate.mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) })
     mockDelete.mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) })
