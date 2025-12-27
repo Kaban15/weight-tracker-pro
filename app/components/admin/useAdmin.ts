@@ -9,14 +9,11 @@ import { AppStatistics, UserStats, DailyActivity } from "./types";
 const ADMIN_EMAILS = process.env.NEXT_PUBLIC_ADMIN_EMAILS
   ? process.env.NEXT_PUBLIC_ADMIN_EMAILS.split(',').map(e => e.trim().toLowerCase())
   : [
-      // Add your email below:
-      // "your-email@example.com",
+      "piotrtokeny@gmail.com",
     ];
 
 export function isAdmin(email: string | undefined): boolean {
   if (!email) return false;
-  // If no admin emails configured, allow all logged-in users (temporary)
-  if (ADMIN_EMAILS.length === 0) return true;
   return ADMIN_EMAILS.includes(email.toLowerCase());
 }
 
