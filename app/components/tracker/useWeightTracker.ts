@@ -441,7 +441,7 @@ export function useWeightTracker(userId: string | undefined) {
         total_entries: completion.stats.totalEntries,
         total_workouts: completion.stats.totalWorkouts,
         avg_calories: completion.stats.avgCalories || null,
-        avg_steps: completion.stats.avgSteps || null,
+        avg_steps: completion.stats.avgSteps ? Math.round(completion.stats.avgSteps) : null,
         best_weight: completion.stats.bestWeight,
         current_streak: completion.stats.currentStreak,
         duration_days: Math.max(1, durationDays),
