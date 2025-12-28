@@ -1,7 +1,9 @@
 "use client";
 
-import { Scale, Target, ClipboardList, ListChecks, Shield } from "lucide-react";
+import { useState } from "react";
+import { Scale, Target, ClipboardList, ListChecks, Shield, MessageSquare } from "lucide-react";
 import ThemeToggle from "./shared/ThemeToggle";
+import FeedbackModal from "./shared/FeedbackModal";
 import { useAuth } from "@/lib/AuthContext";
 import { isAdmin } from "./admin";
 
@@ -12,11 +14,19 @@ interface ModeSelectorProps {
 export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
   const { user } = useAuth();
   const showAdmin = isAdmin(user?.email);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center p-4 relative">
-      {/* Theme Toggle & Admin */}
+      {/* Theme Toggle, Feedback & Admin */}
       <div className="absolute top-4 right-4 flex items-center gap-2">
+        <button
+          onClick={() => setFeedbackOpen(true)}
+          className="bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 p-2 rounded-lg transition-colors"
+          title="Prześlij opinię"
+        >
+          <MessageSquare className="w-5 h-5" />
+        </button>
         {showAdmin && (
           <button
             onClick={() => onSelectMode('admin')}
@@ -103,6 +113,8 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
           </button>
         </div>
       </div>
+
+      <FeedbackModal isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </div>
   );
 }
