@@ -9,7 +9,7 @@ interface CompletionModalProps {
   completion: GoalCompletionData | null;
   onStartNewGoal: () => void;
   onContinueWithoutGoal: () => void;
-  onClose: () => void;
+  onClose: () => void | Promise<void>;
 }
 
 export default function CompletionModal({
@@ -31,12 +31,14 @@ export default function CompletionModal({
     : 100;
   const isSuccess = completionType === 'target_reached';
 
-  const handleAction = async (action: 'new' | 'continue') => {
+  const handleAction = async (action: 'new' | 'continue' | 'close') => {
     setProcessing(true);
     if (action === 'new') {
       await onStartNewGoal();
-    } else {
+    } else if (action === 'continue') {
       await onContinueWithoutGoal();
+    } else {
+      await onClose();
     }
     setProcessing(false);
   };
@@ -45,10 +47,15 @@ export default function CompletionModal({
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
       <div className="bg-slate-900 rounded-2xl p-6 max-w-md w-full border-2 border-emerald-500/30 relative">
         <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+          onClick={() => handleAction('close')}
+          disabled={processing}
+          className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors disabled:opacity-50"
         >
-          <X className="w-5 h-5" />
+          {processing ? (
+            <div className="w-5 h-5 border-2 border-slate-400/30 border-t-slate-400 rounded-full animate-spin" />
+          ) : (
+            <X className="w-5 h-5" />
+          )}
         </button>
 
         {/* Header with icon */}

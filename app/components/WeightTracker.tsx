@@ -176,23 +176,42 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
   // Completion modal handlers
   const handleStartNewGoal = async () => {
     if (completionData) {
-      await archiveGoalToHistory(completionData);
-      clearCompletionData();
-      setShowCompletionModal(false);
-      setShowGoalModal(true);
+      const success = await archiveGoalToHistory(completionData);
+      if (success) {
+        clearCompletionData();
+        setShowCompletionModal(false);
+        setShowGoalModal(true);
+      } else {
+        alert('Nie udalo sie zapisac do historii. Sprawdz czy tabela goal_history istnieje w bazie danych.');
+      }
     }
   };
 
   const handleContinueWithoutGoal = async () => {
     if (completionData) {
-      await archiveGoalToHistory(completionData);
-      clearCompletionData();
-      setShowCompletionModal(false);
+      const success = await archiveGoalToHistory(completionData);
+      if (success) {
+        clearCompletionData();
+        setShowCompletionModal(false);
+      } else {
+        alert('Nie udalo sie zapisac do historii. Sprawdz czy tabela goal_history istnieje w bazie danych.');
+      }
     }
   };
 
-  const handleCloseCompletionModal = () => {
-    setShowCompletionModal(false);
+  // X button should do the same as continue - archive and close
+  const handleCloseCompletionModal = async () => {
+    if (completionData) {
+      const success = await archiveGoalToHistory(completionData);
+      if (success) {
+        clearCompletionData();
+        setShowCompletionModal(false);
+      } else {
+        alert('Nie udalo sie zapisac do historii. Sprawdz czy tabela goal_history istnieje w bazie danych.');
+      }
+    } else {
+      setShowCompletionModal(false);
+    }
   };
 
   // Show goal setup screen only if no goal AND no entries (first time user)
