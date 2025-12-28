@@ -32,13 +32,14 @@ export default function ProgressChart({ entries, goal, startDate, endDate }: Pro
     });
   }
 
-  if (!goal || filteredEntries.length === 0) {
+  // Show empty state only if no entries
+  if (filteredEntries.length === 0) {
     return (
       <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
         <h3 className="text-xl font-bold text-white mb-4">Wykres postępów</h3>
         <p className="text-slate-400 text-center py-12">
           {entries.length === 0
-            ? "Dodaj wpisy i ustaw cel, aby zobaczyć wykres postępów."
+            ? "Dodaj wpisy, aby zobaczyć wykres postępów."
             : "Brak wpisów w wybranym okresie."
           }
         </p>
@@ -46,56 +47,77 @@ export default function ProgressChart({ entries, goal, startDate, endDate }: Pro
     );
   }
 
+  const hasGoal = goal !== null;
+
   // Sort entries by date
   const sortedEntries = [...filteredEntries].sort((a, b) =>
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
-  // Calculate target weight for each date
-  const goalStartDate = goal.start_date ? new Date(goal.start_date) : new Date(sortedEntries[0].date);
-  const goalEndDate = new Date(goal.target_date);
-  const totalDays = Math.ceil((goalEndDate.getTime() - goalStartDate.getTime()) / (1000 * 60 * 60 * 24));
-  const totalWeightLoss = goal.current_weight - goal.target_weight;
-  const dailyWeightLoss = totalWeightLoss / totalDays;
+  // Calculate target weight for each date (only if goal exists)
+  let goalStartDate: Date | null = null;
+  let goalEndDate: Date | null = null;
+  let dailyWeightLoss = 0;
 
-  // Create chart data with both actual and target weights
+  if (hasGoal && goal) {
+    goalStartDate = goal.start_date ? new Date(goal.start_date) : new Date(sortedEntries[0].date);
+    goalEndDate = new Date(goal.target_date);
+    const totalDays = Math.ceil((goalEndDate.getTime() - goalStartDate.getTime()) / (1000 * 60 * 60 * 24));
+    const totalWeightLoss = goal.current_weight - goal.target_weight;
+    dailyWeightLoss = totalDays > 0 ? totalWeightLoss / totalDays : 0;
+  }
+
+  // Create chart data
   const chartData = sortedEntries.map(entry => {
-    const entryDate = new Date(entry.date);
-    const daysFromStart = Math.ceil((entryDate.getTime() - goalStartDate.getTime()) / (1000 * 60 * 60 * 24));
-    const targetWeight = Math.max(
-      goal.target_weight,
-      goal.current_weight - (dailyWeightLoss * daysFromStart)
-    );
-
-    return {
+    const result: {
+      date: string;
+      fullDate: string;
+      actual: number;
+      target?: number;
+      difference?: number;
+    } = {
       date: new Date(entry.date).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }),
       fullDate: entry.date,
       actual: entry.weight,
-      target: parseFloat(targetWeight.toFixed(1)),
-      difference: parseFloat((entry.weight - targetWeight).toFixed(1)),
     };
+
+    // Add target data only if goal exists
+    if (hasGoal && goal && goalStartDate) {
+      const entryDate = new Date(entry.date);
+      const daysFromStart = Math.ceil((entryDate.getTime() - goalStartDate.getTime()) / (1000 * 60 * 60 * 24));
+      const targetWeight = Math.max(
+        goal.target_weight,
+        goal.current_weight - (dailyWeightLoss * daysFromStart)
+      );
+      result.target = parseFloat(targetWeight.toFixed(1));
+      result.difference = parseFloat((entry.weight - targetWeight).toFixed(1));
+    }
+
+    return result;
   });
 
-  // Add future target points if we haven't reached the goal date (only if not filtering by date range)
-  const lastEntryDate = new Date(sortedEntries[sortedEntries.length - 1].date);
-  if (!startDate && !endDate && lastEntryDate < goalEndDate) {
-    // Add end point
-    const targetPoint = {
-      date: goalEndDate.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }),
-      fullDate: goal.target_date,
-      actual: null as number | null,
-      target: goal.target_weight,
-      difference: null as number | null,
-    };
-    chartData.push(targetPoint as any);
+  // Add future target points if we haven't reached the goal date (only if goal exists and not filtering by date range)
+  if (hasGoal && goal && goalEndDate) {
+    const lastEntryDate = new Date(sortedEntries[sortedEntries.length - 1].date);
+    if (!startDate && !endDate && lastEntryDate < goalEndDate) {
+      const targetPoint = {
+        date: goalEndDate.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }),
+        fullDate: goal.target_date,
+        actual: null as number | null,
+        target: goal.target_weight,
+        difference: null as number | null,
+      };
+      chartData.push(targetPoint as any);
+    }
   }
 
-  const minWeight = Math.min(
-    ...chartData.map(d => Math.min(d.actual || Infinity, d.target)).filter(w => w !== Infinity)
-  ) - 2;
-  const maxWeight = Math.max(
-    ...chartData.map(d => Math.max(d.actual || 0, d.target))
-  ) + 2;
+  // Calculate min/max weight for chart domain
+  const actualWeights = chartData.map(d => d.actual).filter((w): w is number => w !== null);
+  const targetWeights = hasGoal ? chartData.map(d => d.target).filter((w): w is number => w !== undefined) : [];
+  const allWeights = [...actualWeights, ...targetWeights];
+
+  const minWeight = Math.min(...allWeights) - 2;
+  const maxWeight = Math.max(...allWeights) + 2;
 
   return (
     <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
@@ -130,29 +152,35 @@ export default function ProgressChart({ entries, goal, startDate, endDate }: Pro
               }}
               labelFormatter={(label) => `Data: ${label}`}
             />
-            <Legend
-              formatter={(value) => {
-                if (value === 'actual') return <span style={{ color: '#10b981' }}>Waga rzeczywista</span>;
-                if (value === 'target') return <span style={{ color: '#f59e0b' }}>Waga docelowa</span>;
-                return value;
-              }}
-            />
-            <ReferenceLine
-              y={goal.target_weight}
-              stroke="#10b981"
-              strokeDasharray="5 5"
-              label={{ value: `Cel: ${goal.target_weight}kg`, fill: '#10b981', fontSize: 12 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="target"
-              stroke="#f59e0b"
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              dot={{ fill: '#f59e0b', strokeWidth: 2, r: 4 }}
-              connectNulls
-              name="target"
-            />
+            {hasGoal && (
+              <Legend
+                formatter={(value) => {
+                  if (value === 'actual') return <span style={{ color: '#10b981' }}>Waga rzeczywista</span>;
+                  if (value === 'target') return <span style={{ color: '#f59e0b' }}>Waga docelowa</span>;
+                  return value;
+                }}
+              />
+            )}
+            {hasGoal && goal && (
+              <ReferenceLine
+                y={goal.target_weight}
+                stroke="#10b981"
+                strokeDasharray="5 5"
+                label={{ value: `Cel: ${goal.target_weight}kg`, fill: '#10b981', fontSize: 12 }}
+              />
+            )}
+            {hasGoal && (
+              <Line
+                type="monotone"
+                dataKey="target"
+                stroke="#f59e0b"
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={{ fill: '#f59e0b', strokeWidth: 2, r: 4 }}
+                connectNulls
+                name="target"
+              />
+            )}
             <Line
               type="monotone"
               dataKey="actual"
@@ -173,14 +201,23 @@ export default function ProgressChart({ entries, goal, startDate, endDate }: Pro
           <div className="w-4 h-1 bg-emerald-500 rounded"></div>
           <span className="text-slate-400">Twoja waga</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-1 bg-amber-500 rounded" style={{ borderStyle: 'dashed' }}></div>
-          <span className="text-slate-400">Waga wzorcowa (plan)</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-0.5 bg-emerald-500 rounded" style={{ borderStyle: 'dashed' }}></div>
-          <span className="text-slate-400">Cel końcowy</span>
-        </div>
+        {hasGoal && (
+          <>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-1 bg-amber-500 rounded" style={{ borderStyle: 'dashed' }}></div>
+              <span className="text-slate-400">Waga wzorcowa (plan)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-0.5 bg-emerald-500 rounded" style={{ borderStyle: 'dashed' }}></div>
+              <span className="text-slate-400">Cel koncowy</span>
+            </div>
+          </>
+        )}
+        {!hasGoal && (
+          <div className="flex items-center gap-2">
+            <span className="text-slate-500 italic">Tryb wolny - brak aktywnego celu</span>
+          </div>
+        )}
       </div>
     </div>
   );

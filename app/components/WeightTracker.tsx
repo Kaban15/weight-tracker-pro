@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, Target, Activity, LogOut, Table, Home, TrendingDown, TrendingUp, Flame, Scale, Clock, Bell } from 'lucide-react';
+import { Calendar, Target, Activity, LogOut, Table, Home, TrendingDown, TrendingUp, Flame, Scale, Clock, Bell, History } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { initializeNotifications, cancelScheduledReminders } from '@/lib/notifications';
 import { useKeyboardShortcuts, KeyboardShortcut } from '@/lib/useKeyboardShortcuts';
@@ -15,7 +15,9 @@ import {
   EntryModal,
   GoalWizard,
   StatsView,
-  CalendarView
+  CalendarView,
+  CompletionModal,
+  GoalHistoryList
 } from './tracker';
 
 interface WeightTrackerProps {
@@ -41,16 +43,29 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     deleteEntry,
     getEntryForDate,
     loadAllEntries,
+    // Goal completion and history
+    completionData,
+    goalHistory,
+    archiveGoalToHistory,
+    clearCompletionData,
   } = useWeightTracker(user?.id);
 
-  const [view, setView] = useState<'calendar' | 'stats' | 'table'>('calendar');
+  const [view, setView] = useState<'calendar' | 'stats' | 'table' | 'history'>('calendar');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [chartDateRange, setChartDateRange] = useState<{ start: string; end: string } | null>(null);
+
+  // Show completion modal when goal is completed
+  useEffect(() => {
+    if (completionData && !showCompletionModal) {
+      setShowCompletionModal(true);
+    }
+  }, [completionData, showCompletionModal]);
 
   // Initialize notifications on mount
   useEffect(() => {
@@ -87,7 +102,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
   }, []);
 
   // Check if any modal is open
-  const isModalOpen = showAddModal || showGoalModal || showNotificationSettings;
+  const isModalOpen = showAddModal || showGoalModal || showNotificationSettings || showCompletionModal;
 
   // Keyboard shortcuts (memoized to prevent re-renders)
   const shortcuts: KeyboardShortcut[] = useMemo(() => [
@@ -158,8 +173,31 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     return success;
   };
 
-  // Show goal setup if no goal
-  if (!goal) {
+  // Completion modal handlers
+  const handleStartNewGoal = async () => {
+    if (completionData) {
+      await archiveGoalToHistory(completionData);
+      clearCompletionData();
+      setShowCompletionModal(false);
+      setShowGoalModal(true);
+    }
+  };
+
+  const handleContinueWithoutGoal = async () => {
+    if (completionData) {
+      await archiveGoalToHistory(completionData);
+      clearCompletionData();
+      setShowCompletionModal(false);
+    }
+  };
+
+  const handleCloseCompletionModal = () => {
+    setShowCompletionModal(false);
+  };
+
+  // Show goal setup screen only if no goal AND no entries (first time user)
+  // If user has entries but no goal, they're in free tracking mode - show main app
+  if (!goal && entries.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center p-4">
         <div className="bg-slate-900/50 backdrop-blur-xl rounded-3xl p-8 max-w-md w-full border-2 border-emerald-500/20">
@@ -168,19 +206,19 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
               <Target className="w-10 h-10 text-emerald-400" />
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">Weight Tracker Pro</h1>
-            <p className="text-slate-400">Śledź wagę, kalorie, kroki i treningi</p>
+            <p className="text-slate-400">Sledz wage, kalorie, kroki i treningi</p>
           </div>
           <button
             onClick={() => setShowGoalModal(true)}
             className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-4 rounded-xl transition-colors"
           >
-            Ustal swój plan
+            Ustal swoj plan
           </button>
           <button
             onClick={signOut}
             className="w-full mt-4 text-slate-400 hover:text-white transition-colors flex items-center justify-center gap-2"
           >
-            <LogOut className="w-4 h-4" />Wyloguj się
+            <LogOut className="w-4 h-4" />Wyloguj sie
           </button>
         </div>
 
@@ -215,7 +253,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
           </div>
           <div className="flex items-center gap-4">
             <button onClick={() => setShowGoalModal(true)} className="text-emerald-400 hover:text-emerald-300 text-sm font-medium">
-              Edytuj plan
+              {goal ? 'Edytuj plan' : 'Ustal cel'}
             </button>
             <button
               onClick={() => setShowNotificationSettings(true)}
@@ -252,23 +290,41 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
               )}
             </div>
 
-            {/* Progress */}
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
-                <Target className="w-4 h-4" />
-                <span>Postęp</span>
+            {/* Progress - only show when goal exists */}
+            {goal ? (
+              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+                  <Target className="w-4 h-4" />
+                  <span>Postep</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold text-white">{Math.max(0, Math.min(100, progress)).toFixed(0)}</span>
+                  <span className="text-slate-400 text-sm">%</span>
+                </div>
+                <div className="h-1.5 bg-slate-700 rounded-full mt-2 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all"
+                    style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+                  />
+                </div>
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-white">{Math.max(0, Math.min(100, progress)).toFixed(0)}</span>
-                <span className="text-slate-400 text-sm">%</span>
+            ) : (
+              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+                  <Target className="w-4 h-4" />
+                  <span>Tryb wolny</span>
+                </div>
+                <div className="text-white text-sm mt-2">
+                  Sledzisz wage bez aktywnego celu
+                </div>
+                <button
+                  onClick={() => setShowGoalModal(true)}
+                  className="text-emerald-400 hover:text-emerald-300 text-sm mt-2"
+                >
+                  Ustal cel &rarr;
+                </button>
               </div>
-              <div className="h-1.5 bg-slate-700 rounded-full mt-2 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all"
-                  style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
-                />
-              </div>
-            </div>
+            )}
 
             {/* Streak */}
             <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
@@ -285,32 +341,53 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
               )}
             </div>
 
-            {/* Days Remaining */}
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
-                <Clock className="w-4 h-4" />
-                <span>Do celu</span>
-              </div>
-              {(() => {
-                const daysLeft = goal?.target_date
-                  ? Math.ceil((new Date(goal.target_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-                  : 0;
-                const weightLeft = goal ? (currentWeight - goal.target_weight).toFixed(1) : '0';
-                return (
-                  <>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold text-white">{Math.max(0, daysLeft)}</span>
-                      <span className="text-slate-400 text-sm">dni</span>
-                    </div>
-                    {parseFloat(weightLeft) > 0 && (
-                      <div className="text-amber-400 text-sm mt-1">
-                        Zostało {weightLeft} kg
+            {/* Days Remaining / History */}
+            {goal ? (
+              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+                  <Clock className="w-4 h-4" />
+                  <span>Do celu</span>
+                </div>
+                {(() => {
+                  const daysLeft = goal?.target_date
+                    ? Math.ceil((new Date(goal.target_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                    : 0;
+                  const weightLeft = goal ? (currentWeight - goal.target_weight).toFixed(1) : '0';
+                  return (
+                    <>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-bold text-white">{Math.max(0, daysLeft)}</span>
+                        <span className="text-slate-400 text-sm">dni</span>
                       </div>
-                    )}
-                  </>
-                );
-              })()}
-            </div>
+                      {parseFloat(weightLeft) > 0 && (
+                        <div className="text-amber-400 text-sm mt-1">
+                          Zostalo {weightLeft} kg
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            ) : (
+              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+                  <Clock className="w-4 h-4" />
+                  <span>Historia</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold text-white">{goalHistory.length}</span>
+                  <span className="text-slate-400 text-sm">celow</span>
+                </div>
+                {goalHistory.length > 0 && (
+                  <button
+                    onClick={() => setView('history')}
+                    className="text-emerald-400 hover:text-emerald-300 text-sm mt-1"
+                  >
+                    Zobacz historie &rarr;
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -320,6 +397,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
             { id: 'calendar', icon: Calendar, label: 'Kalendarz' },
             { id: 'table', icon: Table, label: 'Tabela' },
             { id: 'stats', icon: Activity, label: 'Statystyki' },
+            ...(goalHistory.length > 0 ? [{ id: 'history', icon: History, label: 'Historia' }] : []),
           ].map(({ id, icon: Icon, label }) => (
             <button
               key={id}
@@ -370,6 +448,15 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
           hasMoreEntries={hasMoreEntries}
           loadingMore={loadingMore}
           onLoadAllEntries={loadAllEntries}
+          goalHistory={goalHistory}
+          onViewHistory={() => setView('history')}
+        />
+      )}
+      {view === 'history' && (
+        <GoalHistoryList
+          history={goalHistory}
+          entries={entries}
+          onClose={() => setView('calendar')}
         />
       )}
 
@@ -396,6 +483,14 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
       <NotificationSettings
         isOpen={showNotificationSettings}
         onClose={() => setShowNotificationSettings(false)}
+      />
+
+      <CompletionModal
+        isOpen={showCompletionModal}
+        completion={completionData}
+        onStartNewGoal={handleStartNewGoal}
+        onContinueWithoutGoal={handleContinueWithoutGoal}
+        onClose={handleCloseCompletionModal}
       />
     </div>
   );

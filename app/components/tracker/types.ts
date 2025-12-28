@@ -41,6 +41,49 @@ export interface Profile {
   activity_level?: number;
 }
 
+// Goal completion types
+export type CompletionType = 'target_reached' | 'date_passed' | 'manual';
+
+export interface GoalHistory {
+  id: string;
+  user_id: string;
+  original_goal_id?: string;
+
+  // Original goal snapshot
+  current_weight: number;
+  target_weight: number;
+  start_date: string;
+  target_date: string;
+  weekly_weight_loss?: number;
+  daily_calories_limit?: number;
+  daily_steps_goal?: number;
+  weekly_training_hours?: number;
+  monitoring_method?: string;
+
+  // Completion metadata
+  completion_type: CompletionType;
+  completed_at: string;
+
+  // Final stats
+  final_weight: number;
+  weight_lost: number;
+  progress_percentage: number;
+  total_entries: number;
+  total_workouts: number;
+  avg_calories?: number;
+  avg_steps?: number;
+  best_weight: number;
+  current_streak: number;
+  duration_days: number;
+}
+
+export interface GoalCompletionData {
+  goal: Goal;
+  stats: Stats;
+  completionType: CompletionType;
+  finalWeight: number;
+}
+
 export function formatDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');

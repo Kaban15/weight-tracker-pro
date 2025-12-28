@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from 'react';
-import { Flame, Footprints, Dumbbell, Award, LineChart, Download, FileJson, AlertCircle } from 'lucide-react';
-import { Stats, Goal, Entry } from './types';
+import { Flame, Footprints, Dumbbell, Award, LineChart, Download, FileJson, AlertCircle, History, Trophy, ChevronRight } from 'lucide-react';
+import { Stats, Goal, Entry, GoalHistory } from './types';
 import TrendAnalysis from './TrendAnalysis';
 
 interface StatsViewProps {
@@ -15,6 +15,8 @@ interface StatsViewProps {
   hasMoreEntries?: boolean;
   loadingMore?: boolean;
   onLoadAllEntries?: () => Promise<Entry[]>;
+  goalHistory?: GoalHistory[];
+  onViewHistory?: () => void;
 }
 
 export default function StatsView({
@@ -26,7 +28,9 @@ export default function StatsView({
   onEditGoal,
   hasMoreEntries = false,
   loadingMore = false,
-  onLoadAllEntries
+  onLoadAllEntries,
+  goalHistory = [],
+  onViewHistory
 }: StatsViewProps) {
   const [exporting, setExporting] = useState(false);
 
@@ -242,6 +246,40 @@ export default function StatsView({
             </div>
           )}
         </div>
+      )}
+
+      {/* Goal History Section */}
+      {goalHistory.length > 0 && onViewHistory && (
+        <button
+          onClick={onViewHistory}
+          className="w-full bg-slate-800/50 hover:bg-slate-800 rounded-xl p-6 border-2 border-slate-700 hover:border-emerald-500/50 transition-all text-left group"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-slate-700 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+                <History className="w-6 h-6 text-slate-400 group-hover:text-emerald-400 transition-colors" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Historia celów</h3>
+                <p className="text-slate-400 text-sm">
+                  {goalHistory.length} {goalHistory.length === 1 ? 'zakończony cel' :
+                    goalHistory.length < 5 ? 'zakończone cele' : 'zakończonych celów'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {goalHistory.filter(g => g.completion_type === 'target_reached').length > 0 && (
+                <div className="flex items-center gap-1 bg-emerald-500/20 px-3 py-1 rounded-full">
+                  <Trophy className="w-4 h-4 text-emerald-400" />
+                  <span className="text-emerald-400 text-sm font-medium">
+                    {goalHistory.filter(g => g.completion_type === 'target_reached').length}
+                  </span>
+                </div>
+              )}
+              <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-emerald-400 transition-colors" />
+            </div>
+          </div>
+        </button>
       )}
 
       {/* Trend Analysis */}
