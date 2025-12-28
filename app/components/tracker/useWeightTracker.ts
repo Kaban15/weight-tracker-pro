@@ -403,7 +403,11 @@ export function useWeightTracker(userId: string | undefined) {
 
   // Archive goal to history
   const archiveGoalToHistory = useCallback(async (completion: GoalCompletionData): Promise<boolean> => {
-    if (!userId || !supabase || !completion.goal.id) return false;
+    console.log('[Archive] Starting archive...', { userId, hasSupabase: !!supabase, goalId: completion.goal.id });
+    if (!userId || !supabase || !completion.goal.id) {
+      console.log('[Archive] Missing required data');
+      return false;
+    }
 
     try {
       // Calculate duration in days
@@ -444,32 +448,56 @@ export function useWeightTracker(userId: string | undefined) {
       };
 
       // Insert into history
+      console.log('[Archive] Inserting into goal_history...', historyRecord);
       const { error: historyError } = await supabase
         .from('goal_history')
         .insert(historyRecord);
 
-      if (historyError) throw historyError;
+      if (historyError) {
+        console.error('[Archive] Insert failed:', historyError);
+        throw historyError;
+      }
+      console.log('[Archive] Insert successful');
 
       // Delete the current goal
+      console.log('[Archive] Deleting goal...');
       const { error: deleteError } = await supabase
         .from('goals')
         .delete()
         .eq('id', completion.goal.id);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('[Archive] Delete failed:', deleteError);
+        throw deleteError;
+      }
+      console.log('[Archive] Delete successful');
 
       setGoal(null);
       await fetchGoalHistory();
+      console.log('[Archive] Complete!');
       return true;
     } catch (error) {
-      console.error('Failed to archive goal:', error);
+      console.error('[Archive] Failed to archive goal:', error);
       return false;
     }
   }, [userId, fetchGoalHistory]);
 
   // Check for goal completion
   useEffect(() => {
-    if (loading || !goal || completionHandled || entries.length === 0) return;
+    // Debug logging
+    console.log('[GoalCompletion] Check:', {
+      loading,
+      hasGoal: !!goal,
+      goalTargetDate: goal?.target_date,
+      completionHandled,
+      entriesCount: entries.length,
+      currentWeight
+    });
+
+    if (loading || !goal || completionHandled || entries.length === 0) {
+      console.log('[GoalCompletion] Skipping - conditions not met');
+      return;
+    }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -482,8 +510,18 @@ export function useWeightTracker(userId: string | undefined) {
     // Check if target date passed
     const datePassed = today > targetDate;
 
+    console.log('[GoalCompletion] Evaluation:', {
+      today: today.toISOString(),
+      targetDate: targetDate.toISOString(),
+      targetWeight: goal.target_weight,
+      currentWeight,
+      targetReached,
+      datePassed
+    });
+
     if (targetReached || datePassed) {
       const completionType: CompletionType = targetReached ? 'target_reached' : 'date_passed';
+      console.log('[GoalCompletion] TRIGGERED!', completionType);
       setCompletionData({
         goal,
         stats,
