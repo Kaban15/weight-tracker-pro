@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 
+// Force rebuild to pick up env vars
+
 const CATEGORY_LABELS: Record<string, string> = {
   bug: 'Bug / Błąd',
   feature: 'Nowa funkcja',
