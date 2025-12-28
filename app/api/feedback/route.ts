@@ -10,16 +10,22 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export async function POST(request: NextRequest) {
+  const debug = {
+    supabaseConfigured: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    resendConfigured: !!process.env.RESEND_API_KEY,
+    feedbackEmailConfigured: !!process.env.FEEDBACK_EMAIL,
+    feedbackEmail: process.env.FEEDBACK_EMAIL ? process.env.FEEDBACK_EMAIL.substring(0, 5) + '***' : null,
+    supabaseSaved: false,
+    emailSent: false,
+    emailError: null as string | null,
+  };
+
   try {
     const { userId, userEmail, category, message } = await request.json();
 
-    console.log('[Feedback] Received:', { category, userEmail });
-    console.log('[Feedback] RESEND_API_KEY exists:', !!process.env.RESEND_API_KEY);
-    console.log('[Feedback] FEEDBACK_EMAIL:', process.env.FEEDBACK_EMAIL);
-
     if (!category || !message) {
       return NextResponse.json(
-        { error: 'Kategoria i wiadomość są wymagane' },
+        { error: 'Kategoria i wiadomość są wymagane', debug },
         { status: 400 }
       );
     }
@@ -38,17 +44,16 @@ export async function POST(request: NextRequest) {
         message,
       });
 
-      if (dbError) {
-        console.error('Supabase error:', dbError);
+      if (!dbError) {
+        debug.supabaseSaved = true;
       }
     }
 
     // Wyślij email przez Resend (jeśli skonfigurowane)
     if (process.env.RESEND_API_KEY && process.env.FEEDBACK_EMAIL) {
-      console.log('[Feedback] Sending email via Resend...');
       const resend = new Resend(process.env.RESEND_API_KEY);
 
-      const { data: emailData, error: emailError } = await resend.emails.send({
+      const { error: emailError } = await resend.emails.send({
         from: 'Weight Tracker Pro <onboarding@resend.dev>',
         to: process.env.FEEDBACK_EMAIL,
         subject: `[Feedback] ${CATEGORY_LABELS[category] || category}`,
@@ -72,19 +77,16 @@ export async function POST(request: NextRequest) {
       });
 
       if (emailError) {
-        console.error('[Feedback] Resend error:', emailError);
+        debug.emailError = emailError.message;
       } else {
-        console.log('[Feedback] Email sent successfully:', emailData);
+        debug.emailSent = true;
       }
-    } else {
-      console.log('[Feedback] Skipping email - missing RESEND_API_KEY or FEEDBACK_EMAIL');
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, debug });
   } catch (error) {
-    console.error('Feedback error:', error);
     return NextResponse.json(
-      { error: 'Wystąpił błąd podczas wysyłania feedbacku' },
+      { error: 'Wystąpił błąd podczas wysyłania feedbacku', debug, details: String(error) },
       { status: 500 }
     );
   }

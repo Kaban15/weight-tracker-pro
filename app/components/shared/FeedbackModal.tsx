@@ -51,16 +51,29 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         }),
       });
 
+      const data = await response.json();
+
+      // Tymczasowo pokazuj debug info w konsoli
+      console.log("[Feedback Debug]", data);
+
       if (!response.ok) {
-        throw new Error("Błąd podczas wysyłania");
+        throw new Error(data.error || "Błąd podczas wysyłania");
+      }
+
+      // Pokaż debug info jeśli email nie został wysłany
+      if (data.debug && !data.debug.emailSent) {
+        console.warn("[Feedback] Email nie wysłany:", data.debug);
+        if (data.debug.emailError) {
+          console.error("[Feedback] Błąd email:", data.debug.emailError);
+        }
       }
 
       setSent(true);
       setTimeout(() => {
         handleClose();
       }, 2000);
-    } catch {
-      setError("Nie udało się wysłać feedbacku. Spróbuj ponownie.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Nie udało się wysłać feedbacku. Spróbuj ponownie.");
     } finally {
       setSending(false);
     }
