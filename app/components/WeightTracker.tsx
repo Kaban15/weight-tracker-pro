@@ -81,6 +81,11 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     });
   }, []);
 
+  // Memoized callback for date range changes
+  const handleDateRangeChange = useCallback((start: string, end: string) => {
+    setChartDateRange({ start, end });
+  }, []);
+
   // Check if any modal is open
   const isModalOpen = showAddModal || showGoalModal || showNotificationSettings;
 
@@ -337,7 +342,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
             getEntryForDate={getEntryForDate}
             onDayClick={handleDayClick}
             onAddClick={() => { setSelectedDate(formatDate(new Date())); setShowAddModal(true); }}
-            onDateRangeChange={(start, end) => setChartDateRange({ start, end })}
+            onDateRangeChange={handleDateRangeChange}
           />
           <div className="max-w-6xl mx-auto mt-6">
             <ProgressChart
