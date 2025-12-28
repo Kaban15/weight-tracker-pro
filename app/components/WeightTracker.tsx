@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, Target, Activity, LogOut, Table, LineChart, Home, TrendingDown, TrendingUp, Flame, Scale, Clock, Bell } from 'lucide-react';
+import { Calendar, Target, Activity, LogOut, Table, Home, TrendingDown, TrendingUp, Flame, Scale, Clock, Bell } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { initializeNotifications, cancelScheduledReminders } from '@/lib/notifications';
 import { useKeyboardShortcuts, KeyboardShortcut } from '@/lib/useKeyboardShortcuts';
@@ -43,13 +43,14 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     loadAllEntries,
   } = useWeightTracker(user?.id);
 
-  const [view, setView] = useState<'calendar' | 'stats' | 'table' | 'chart'>('calendar');
+  const [view, setView] = useState<'calendar' | 'stats' | 'table'>('calendar');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
-    const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [chartDateRange, setChartDateRange] = useState<{ start: string; end: string } | null>(null);
 
   // Initialize notifications on mount
   useEffect(() => {
@@ -92,9 +93,8 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     }},
     { key: 't', description: 'Idź do dziś', action: goToToday },
     { key: '1', description: 'Kalendarz', action: () => setView('calendar') },
-    { key: '2', description: 'Statystyki', action: () => setView('stats') },
-    { key: '3', description: 'Tabela', action: () => setView('table') },
-    { key: '4', description: 'Wykres', action: () => setView('chart') },
+    { key: '2', description: 'Tabela', action: () => setView('table') },
+    { key: '3', description: 'Statystyki', action: () => setView('stats') },
     { key: 'ArrowLeft', alt: true, description: 'Poprzedni miesiąc', action: prevMonth },
     { key: 'ArrowRight', alt: true, description: 'Następny miesiąc', action: nextMonth },
     { key: 'Escape', description: 'Zamknij', action: () => {
@@ -314,7 +314,6 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
           {[
             { id: 'calendar', icon: Calendar, label: 'Kalendarz' },
             { id: 'table', icon: Table, label: 'Tabela' },
-            { id: 'chart', icon: LineChart, label: 'Wykres' },
             { id: 'stats', icon: Activity, label: 'Statystyki' },
           ].map(({ id, icon: Icon, label }) => (
             <button
@@ -331,22 +330,28 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
       </div>
 
       {view === 'calendar' && (
-        <CalendarView
-          currentMonth={currentMonth}
-          onMonthChange={setCurrentMonth}
-          getEntryForDate={getEntryForDate}
-          onDayClick={handleDayClick}
-          onAddClick={() => { setSelectedDate(formatDate(new Date())); setShowAddModal(true); }}
-        />
+        <>
+          <CalendarView
+            currentMonth={currentMonth}
+            onMonthChange={setCurrentMonth}
+            getEntryForDate={getEntryForDate}
+            onDayClick={handleDayClick}
+            onAddClick={() => { setSelectedDate(formatDate(new Date())); setShowAddModal(true); }}
+            onDateRangeChange={(start, end) => setChartDateRange({ start, end })}
+          />
+          <div className="max-w-6xl mx-auto mt-6">
+            <ProgressChart
+              entries={entries}
+              goal={goal}
+              startDate={chartDateRange?.start}
+              endDate={chartDateRange?.end}
+            />
+          </div>
+        </>
       )}
       {view === 'table' && (
         <div className="max-w-6xl mx-auto">
           <ProgressTable entries={entries} goal={goal} />
-        </div>
-      )}
-      {view === 'chart' && (
-        <div className="max-w-6xl mx-auto">
-          <ProgressChart entries={entries} goal={goal} />
         </div>
       )}
       {view === 'stats' && (

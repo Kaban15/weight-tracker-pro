@@ -19,36 +19,49 @@ interface Goal {
 interface ProgressChartProps {
   entries: Entry[];
   goal: Goal | null;
+  startDate?: string;
+  endDate?: string;
 }
 
-export default function ProgressChart({ entries, goal }: ProgressChartProps) {
-  if (!goal || entries.length === 0) {
+export default function ProgressChart({ entries, goal, startDate, endDate }: ProgressChartProps) {
+  // Filter entries by date range if provided
+  let filteredEntries = entries;
+  if (startDate && endDate) {
+    filteredEntries = entries.filter(entry => {
+      return entry.date >= startDate && entry.date <= endDate;
+    });
+  }
+
+  if (!goal || filteredEntries.length === 0) {
     return (
       <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
         <h3 className="text-xl font-bold text-white mb-4">Wykres postępów</h3>
         <p className="text-slate-400 text-center py-12">
-          Dodaj wpisy i ustaw cel, aby zobaczyć wykres postępów.
+          {entries.length === 0
+            ? "Dodaj wpisy i ustaw cel, aby zobaczyć wykres postępów."
+            : "Brak wpisów w wybranym okresie."
+          }
         </p>
       </div>
     );
   }
 
   // Sort entries by date
-  const sortedEntries = [...entries].sort((a, b) =>
+  const sortedEntries = [...filteredEntries].sort((a, b) =>
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
   // Calculate target weight for each date
-  const startDate = goal.start_date ? new Date(goal.start_date) : new Date(sortedEntries[0].date);
-  const endDate = new Date(goal.target_date);
-  const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  const goalStartDate = goal.start_date ? new Date(goal.start_date) : new Date(sortedEntries[0].date);
+  const goalEndDate = new Date(goal.target_date);
+  const totalDays = Math.ceil((goalEndDate.getTime() - goalStartDate.getTime()) / (1000 * 60 * 60 * 24));
   const totalWeightLoss = goal.current_weight - goal.target_weight;
   const dailyWeightLoss = totalWeightLoss / totalDays;
 
   // Create chart data with both actual and target weights
   const chartData = sortedEntries.map(entry => {
     const entryDate = new Date(entry.date);
-    const daysFromStart = Math.ceil((entryDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysFromStart = Math.ceil((entryDate.getTime() - goalStartDate.getTime()) / (1000 * 60 * 60 * 24));
     const targetWeight = Math.max(
       goal.target_weight,
       goal.current_weight - (dailyWeightLoss * daysFromStart)
@@ -63,12 +76,12 @@ export default function ProgressChart({ entries, goal }: ProgressChartProps) {
     };
   });
 
-  // Add future target points if we haven't reached the goal date
+  // Add future target points if we haven't reached the goal date (only if not filtering by date range)
   const lastEntryDate = new Date(sortedEntries[sortedEntries.length - 1].date);
-  if (lastEntryDate < endDate) {
+  if (!startDate && !endDate && lastEntryDate < goalEndDate) {
     // Add end point
     const targetPoint = {
-      date: endDate.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }),
+      date: goalEndDate.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }),
       fullDate: goal.target_date,
       actual: null as number | null,
       target: goal.target_weight,
