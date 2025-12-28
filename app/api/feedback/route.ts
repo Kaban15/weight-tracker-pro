@@ -13,6 +13,10 @@ export async function POST(request: NextRequest) {
   try {
     const { userId, userEmail, category, message } = await request.json();
 
+    console.log('[Feedback] Received:', { category, userEmail });
+    console.log('[Feedback] RESEND_API_KEY exists:', !!process.env.RESEND_API_KEY);
+    console.log('[Feedback] FEEDBACK_EMAIL:', process.env.FEEDBACK_EMAIL);
+
     if (!category || !message) {
       return NextResponse.json(
         { error: 'Kategoria i wiadomość są wymagane' },
@@ -41,9 +45,10 @@ export async function POST(request: NextRequest) {
 
     // Wyślij email przez Resend (jeśli skonfigurowane)
     if (process.env.RESEND_API_KEY && process.env.FEEDBACK_EMAIL) {
+      console.log('[Feedback] Sending email via Resend...');
       const resend = new Resend(process.env.RESEND_API_KEY);
 
-      const { error: emailError } = await resend.emails.send({
+      const { data: emailData, error: emailError } = await resend.emails.send({
         from: 'Weight Tracker Pro <onboarding@resend.dev>',
         to: process.env.FEEDBACK_EMAIL,
         subject: `[Feedback] ${CATEGORY_LABELS[category] || category}`,
@@ -67,8 +72,12 @@ export async function POST(request: NextRequest) {
       });
 
       if (emailError) {
-        console.error('Resend error:', emailError);
+        console.error('[Feedback] Resend error:', emailError);
+      } else {
+        console.log('[Feedback] Email sent successfully:', emailData);
       }
+    } else {
+      console.log('[Feedback] Skipping email - missing RESEND_API_KEY or FEEDBACK_EMAIL');
     }
 
     return NextResponse.json({ success: true });
