@@ -223,7 +223,7 @@ function DayCard({
       {/* Add Task - Always Visible */}
       <div className="px-2 pb-2 pt-1">
         {showInput ? (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <input
               type="text"
               value={newTaskTitle}
@@ -231,15 +231,15 @@ function DayCard({
               onKeyDown={handleKeyPress}
               onBlur={() => !newTaskTitle && setShowInput(false)}
               placeholder="Zadanie..."
-              className="flex-1 text-xs bg-slate-700/50 border border-slate-600 rounded px-2 py-1.5 text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none"
+              className="min-w-0 flex-1 text-xs bg-slate-700/50 border border-slate-600 rounded px-2 py-1.5 text-white placeholder-slate-500 focus:border-violet-500 focus:outline-none"
               autoFocus
             />
             <button
               onClick={handleAdd}
               disabled={!newTaskTitle.trim() || isAdding}
-              className="p-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-600 rounded-md transition-colors"
+              className="p-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-600 rounded-md transition-colors flex-shrink-0"
             >
-              {isAdding ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Check className="w-4 h-4 text-white" />}
+              {isAdding ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Check className="w-5 h-5 text-white" />}
             </button>
           </div>
         ) : (
