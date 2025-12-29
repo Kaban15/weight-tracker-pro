@@ -5,6 +5,7 @@ import { Calendar, Target, Activity, LogOut, Table, Home, TrendingDown, Trending
 import { useAuth } from '@/lib/AuthContext';
 import { initializeNotifications, cancelScheduledReminders } from '@/lib/notifications';
 import { useKeyboardShortcuts, KeyboardShortcut } from '@/lib/useKeyboardShortcuts';
+import { ModuleTooltip, useModuleOnboarding } from './onboarding';
 import ProgressChart from './ProgressChart';
 import ProgressTable from './ProgressTable';
 import NotificationSettings from './shared/NotificationSettings';
@@ -23,6 +24,24 @@ import {
 interface WeightTrackerProps {
   onBack?: () => void;
 }
+
+const TRACKER_TOOLTIPS = [
+  {
+    id: "stats-cards",
+    content: "Tu widzisz swoje kluczowe statystyki: aktualną wagę, postęp, streak i dni do celu.",
+    position: "bottom" as const,
+  },
+  {
+    id: "view-toggle",
+    content: "Przełączaj między widokami: Kalendarz, Tabela i Statystyki.",
+    position: "bottom" as const,
+  },
+  {
+    id: "calendar",
+    content: "Kliknij na dzień w kalendarzu, aby dodać lub edytować wpis z wagą.",
+    position: "top" as const,
+  },
+];
 
 export default function WeightTracker({ onBack }: WeightTrackerProps) {
   const { user, signOut } = useAuth();
@@ -59,6 +78,8 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [chartDateRange, setChartDateRange] = useState<{ start: string; end: string } | null>(null);
+
+  const onboarding = useModuleOnboarding("tracker", TRACKER_TOOLTIPS);
 
   // Show completion modal when goal is completed
   useEffect(() => {
@@ -411,24 +432,26 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
         )}
 
         {/* View Toggle */}
-        <div className="flex gap-1 bg-slate-800/50 p-1 rounded-xl border-2 border-slate-700 overflow-x-auto">
-          {[
-            { id: 'calendar', icon: Calendar, label: 'Kalendarz' },
-            { id: 'table', icon: Table, label: 'Tabela' },
-            { id: 'stats', icon: Activity, label: 'Statystyki' },
-            ...(goalHistory.length > 0 ? [{ id: 'history', icon: History, label: 'Historia' }] : []),
-          ].map(({ id, icon: Icon, label }) => (
-            <button
-              key={id}
-              onClick={() => setView(id as typeof view)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-lg transition-all min-w-[100px]
-                ${view === id ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'}`}
-            >
-              <Icon className="w-5 h-5" />
-              <span className="font-semibold text-sm">{label}</span>
-            </button>
-          ))}
-        </div>
+        <ModuleTooltip {...onboarding.getTooltipProps("view-toggle")}>
+          <div className="flex gap-1 bg-slate-800/50 p-1 rounded-xl border-2 border-slate-700 overflow-x-auto">
+            {[
+              { id: 'calendar', icon: Calendar, label: 'Kalendarz' },
+              { id: 'table', icon: Table, label: 'Tabela' },
+              { id: 'stats', icon: Activity, label: 'Statystyki' },
+              ...(goalHistory.length > 0 ? [{ id: 'history', icon: History, label: 'Historia' }] : []),
+            ].map(({ id, icon: Icon, label }) => (
+              <button
+                key={id}
+                onClick={() => setView(id as typeof view)}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-lg transition-all min-w-[100px]
+                  ${view === id ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'}`}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="font-semibold text-sm">{label}</span>
+              </button>
+            ))}
+          </div>
+        </ModuleTooltip>
       </div>
 
       {view === 'calendar' && (

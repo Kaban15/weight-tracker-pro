@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell, BellOff, Clock, Calendar, X } from "lucide-react";
+import { Bell, BellOff, Clock, Calendar, X, RefreshCw } from "lucide-react";
 import {
   NotificationSettings as Settings,
   DEFAULT_SETTINGS,
@@ -12,6 +12,7 @@ import {
   saveNotificationSettings,
   showNotification,
 } from "@/lib/notifications";
+import { useOnboarding } from "@/lib/OnboardingContext";
 
 interface NotificationSettingsProps {
   isOpen: boolean;
@@ -32,12 +33,20 @@ export default function NotificationSettings({ isOpen, onClose }: NotificationSe
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
   const [isSupported, setIsSupported] = useState(true);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const { resetOnboarding } = useOnboarding();
 
   useEffect(() => {
     setIsSupported(isNotificationSupported());
     setPermission(getNotificationPermission());
     setSettings(loadNotificationSettings());
   }, []);
+
+  const handleResetOnboarding = () => {
+    resetOnboarding();
+    setShowResetConfirm(false);
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -196,6 +205,40 @@ export default function NotificationSettings({ isOpen, onClose }: NotificationSe
             )}
           </div>
         )}
+
+        {/* Onboarding reset section */}
+        <div className="mt-6 pt-6 border-t border-slate-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white font-medium">Wskazówki</p>
+              <p className="text-slate-400 text-sm">Pokaż ponownie samouczek</p>
+            </div>
+            {showResetConfirm ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  className="px-3 py-1.5 text-slate-400 hover:text-white text-sm"
+                >
+                  Anuluj
+                </button>
+                <button
+                  onClick={handleResetOnboarding}
+                  className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-sm"
+                >
+                  Potwierdź
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Resetuj
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -24,6 +24,7 @@ import {
 import { useAuth } from "@/lib/AuthContext";
 import { useTasks } from "./useTasks";
 import TaskFormModal from "./TaskFormModal";
+import { ModuleTooltip, useModuleOnboarding } from "../onboarding";
 import {
   Task,
   TaskFormData,
@@ -42,6 +43,24 @@ interface TodoModeProps {
 type ViewMode = "list" | "dashboard";
 type FilterType = "all" | Priority | TaskStatus | Category;
 
+const TODO_TOOLTIPS = [
+  {
+    id: "add-task",
+    content: "Kliknij tutaj, aby dodać swoje pierwsze zadanie. Możesz ustawić priorytet, kategorię i termin.",
+    position: "bottom" as const,
+  },
+  {
+    id: "view-toggle",
+    content: "Przełączaj między widokiem listy a dashboardem ze statystykami.",
+    position: "bottom" as const,
+  },
+  {
+    id: "filters",
+    content: "Filtruj zadania według priorytetu, statusu lub kategorii.",
+    position: "bottom" as const,
+  },
+];
+
 export default function TodoMode({ onBack }: TodoModeProps) {
   const { user } = useAuth();
   const {
@@ -53,6 +72,8 @@ export default function TodoMode({ onBack }: TodoModeProps) {
     deleteTask,
     toggleComplete,
   } = useTasks(user?.id);
+
+  const onboarding = useModuleOnboarding("todo", TODO_TOOLTIPS);
 
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -258,36 +279,40 @@ export default function TodoMode({ onBack }: TodoModeProps) {
           </div>
           <div className="flex items-center gap-2">
             {/* View Toggle */}
-            <div className="flex bg-slate-800/50 rounded-lg p-1 border border-slate-700">
+            <ModuleTooltip {...onboarding.getTooltipProps("view-toggle")}>
+              <div className="flex bg-slate-800/50 rounded-lg p-1 border border-slate-700">
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 rounded transition-colors ${
+                    viewMode === "list" ? "bg-rose-600 text-white" : "text-slate-400 hover:text-white"
+                  }`}
+                  title="Lista"
+                >
+                  <List className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("dashboard")}
+                  className={`p-2 rounded transition-colors ${
+                    viewMode === "dashboard" ? "bg-rose-600 text-white" : "text-slate-400 hover:text-white"
+                  }`}
+                  title="Dashboard"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                </button>
+              </div>
+            </ModuleTooltip>
+            <ModuleTooltip {...onboarding.getTooltipProps("add-task")}>
               <button
-                onClick={() => setViewMode("list")}
-                className={`p-2 rounded transition-colors ${
-                  viewMode === "list" ? "bg-rose-600 text-white" : "text-slate-400 hover:text-white"
-                }`}
-                title="Lista"
+                onClick={() => {
+                  setEditingTask(null);
+                  setShowFormModal(true);
+                }}
+                className="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-colors"
               >
-                <List className="w-4 h-4" />
+                <Plus className="w-5 h-5" />
+                <span className="hidden sm:inline">Nowe zadanie</span>
               </button>
-              <button
-                onClick={() => setViewMode("dashboard")}
-                className={`p-2 rounded transition-colors ${
-                  viewMode === "dashboard" ? "bg-rose-600 text-white" : "text-slate-400 hover:text-white"
-                }`}
-                title="Dashboard"
-              >
-                <LayoutDashboard className="w-4 h-4" />
-              </button>
-            </div>
-            <button
-              onClick={() => {
-                setEditingTask(null);
-                setShowFormModal(true);
-              }}
-              className="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              <span className="hidden sm:inline">Nowe zadanie</span>
-            </button>
+            </ModuleTooltip>
           </div>
         </div>
 
@@ -381,23 +406,25 @@ export default function TodoMode({ onBack }: TodoModeProps) {
         {/* Filters */}
         {viewMode === "list" && (
           <div className="mb-4">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                hasActiveFilters
-                  ? "bg-rose-600/20 text-rose-400 border border-rose-500/30"
-                  : "bg-slate-800/50 text-slate-400 hover:text-white border border-slate-700"
-              }`}
-            >
-              <Filter className="w-4 h-4" />
-              <span>Filtry</span>
-              {hasActiveFilters && (
-                <span className="bg-rose-600 text-white text-xs px-2 py-0.5 rounded-full">
-                  {[priorityFilter !== "all", statusFilter !== "all", categoryFilter !== "all"].filter(Boolean).length}
-                </span>
-              )}
-              <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
-            </button>
+            <ModuleTooltip {...onboarding.getTooltipProps("filters")}>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  hasActiveFilters
+                    ? "bg-rose-600/20 text-rose-400 border border-rose-500/30"
+                    : "bg-slate-800/50 text-slate-400 hover:text-white border border-slate-700"
+                }`}
+              >
+                <Filter className="w-4 h-4" />
+                <span>Filtry</span>
+                {hasActiveFilters && (
+                  <span className="bg-rose-600 text-white text-xs px-2 py-0.5 rounded-full">
+                    {[priorityFilter !== "all", statusFilter !== "all", categoryFilter !== "all"].filter(Boolean).length}
+                  </span>
+                )}
+                <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
+              </button>
+            </ModuleTooltip>
 
             {showFilters && (
               <div className="mt-3 bg-slate-800/50 rounded-xl p-4 border border-slate-700 space-y-4">

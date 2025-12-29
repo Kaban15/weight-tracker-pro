@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
+import { useOnboarding } from "@/lib/OnboardingContext";
 import Auth from "./components/Auth";
 import WeightTracker from "./components/WeightTracker";
 import ModeSelector from "./components/ModeSelector";
@@ -9,14 +10,16 @@ import ChallengeMode from "./components/ChallengeMode";
 import { PlannerMode } from "./components/planner";
 import { TodoMode } from "./components/todo";
 import { AdminMode } from "./components/admin";
+import WelcomeModal from "./components/onboarding/WelcomeModal";
 
 type AppMode = 'tracker' | 'challenge' | 'planner' | 'todo' | 'admin' | null;
 
 export default function Home() {
   const { user, loading } = useAuth();
+  const { hasSeenWelcome, markWelcomeSeen, isLoaded } = useOnboarding();
   const [mode, setMode] = useState<AppMode>(null);
 
-  if (loading) {
+  if (loading || !isLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
@@ -26,6 +29,11 @@ export default function Home() {
 
   if (!user) {
     return <Auth />;
+  }
+
+  // Show welcome modal for first-time users
+  if (!hasSeenWelcome) {
+    return <WelcomeModal onComplete={markWelcomeSeen} />;
   }
 
   if (!mode) {

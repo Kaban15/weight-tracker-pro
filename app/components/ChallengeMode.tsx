@@ -15,10 +15,24 @@ import {
   ChallengeDetail,
   formatDate
 } from "./challenge";
+import { ModuleTooltip, useModuleOnboarding } from "./onboarding";
 
 interface ChallengeModeProps {
   onBack: () => void;
 }
+
+const CHALLENGE_TOOLTIPS = [
+  {
+    id: "create-challenge",
+    content: "Stwórz swoje pierwsze wyzwanie - np. 10 pompek dziennie przez 30 dni.",
+    position: "bottom" as const,
+  },
+  {
+    id: "challenge-matrix",
+    content: "Kliknij na dzień w kalendarzu, aby oznaczyć wyzwanie jako wykonane.",
+    position: "top" as const,
+  },
+];
 
 export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   const { user, signOut } = useAuth();
@@ -54,6 +68,8 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   const [goalValue, setGoalValue] = useState('');
   const [currentDateStr, setCurrentDateStr] = useState('');
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+
+  const onboarding = useModuleOnboarding("challenge", CHALLENGE_TOOLTIPS);
 
   // Sync activeChallenge with challenges
   useEffect(() => {
