@@ -6,4 +6,6 @@ export { default as DeleteConfirmModal } from './DeleteConfirmModal';
 export { default as RepsModal } from './RepsModal';
 export { default as ChallengeDashboard } from './ChallengeDashboard';
 export { default as ChallengeDetail } from './ChallengeDetail';
+export { default as ChallengeTemplatesModal } from './ChallengeTemplatesModal';
+export * from './challengeTemplates';
 export * from './utils/dateUtils';

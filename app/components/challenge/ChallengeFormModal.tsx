@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Sparkles } from "lucide-react";
 import { ChallengeFormData, GOAL_UNITS } from "./types";
+import ChallengeTemplatesModal from "./ChallengeTemplatesModal";
+import { ChallengeTemplate } from "./challengeTemplates";
 
 interface ChallengeFormModalProps {
   isOpen: boolean;
@@ -22,6 +24,20 @@ export default function ChallengeFormModal({
   onClose
 }: ChallengeFormModalProps) {
   const [dateError, setDateError] = useState<string | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  const handleTemplateSelect = (template: ChallengeTemplate) => {
+    onChange({
+      name: template.name,
+      trackReps: template.trackReps,
+      goalUnit: template.goalUnit || "powtórzeń",
+      defaultGoal: template.defaultGoal || 0,
+      dateMode: "duration",
+      durationType: "days",
+      durationValue: template.suggestedDuration,
+    });
+    setShowTemplates(false);
+  };
 
   // Clear error when dates change
   useEffect(() => {
@@ -67,6 +83,17 @@ export default function ChallengeFormModal({
         </div>
 
         <div className="space-y-4">
+          {/* Template selector button - only for new challenges */}
+          {!isEdit && (
+            <button
+              onClick={() => setShowTemplates(true)}
+              className="w-full bg-gradient-to-r from-amber-600/20 to-orange-600/20 hover:from-amber-600/30 hover:to-orange-600/30 border-2 border-amber-500/30 hover:border-amber-500/50 text-amber-400 py-3 px-4 rounded-xl font-medium transition-all flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-5 h-5" />
+              Wybierz z szablonów
+            </button>
+          )}
+
           {/* Name */}
           <div>
             <label className="block text-sm text-slate-400 mb-2">Nazwa wyzwania</label>
@@ -265,6 +292,13 @@ export default function ChallengeFormModal({
           )}
         </div>
       </div>
+
+      {/* Templates Modal */}
+      <ChallengeTemplatesModal
+        isOpen={showTemplates}
+        onClose={() => setShowTemplates(false)}
+        onSelect={handleTemplateSelect}
+      />
     </div>
   );
 }
