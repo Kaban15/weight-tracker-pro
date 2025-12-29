@@ -12,11 +12,11 @@
 
 /* Light theme */
 :root.light {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f0f4f8;
+  --foreground: #1e293b;
   --card-bg: #ffffff;
-  --card-border: #e2e8f0;
-  --muted: #64748b;
+  --card-border: #cbd5e1;
+  --muted: #475569;
   --accent: #059669;
 }
 
@@ -62,19 +62,19 @@ body {
 }
 
 .light .text-white {
-  color: #0f172a !important;
+  color: #1e293b !important;
 }
 
 .light .text-slate-300 {
-  color: #475569 !important;
+  color: #334155 !important;
 }
 
 .light .text-slate-400 {
-  color: #64748b !important;
+  color: #475569 !important;
 }
 
 .light .text-slate-500 {
-  color: #94a3b8 !important;
+  color: #64748b !important;
 }
 
 .light .border-slate-700 {
@@ -91,16 +91,19 @@ body {
 
 /* Light mode gradient backgrounds */
 .light .from-slate-950 {
-  --tw-gradient-from: #f1f5f9 !important;
+  --tw-gradient-from: #e0e7ef !important;
 }
 
 .light .via-slate-900 {
-  --tw-gradient-via: #f8fafc !important;
+  --tw-gradient-via: #eef2f7 !important;
 }
 
-.light .to-emerald-950,
+.light .to-emerald-950 {
+  --tw-gradient-to: #d1fae5 !important;
+}
+
 .light .to-violet-950 {
-  --tw-gradient-to: #ecfdf5 !important;
+  --tw-gradient-to: #ede9fe !important;
 }
 
 /* Light mode input styling */
@@ -129,17 +132,36 @@ body {
 /* Light mode card styling */
 .light .bg-slate-800\/60,
 .light .bg-slate-800\/80,
-.light .bg-slate-800\/40 {
-  background-color: rgba(255, 255, 255, 0.9) !important;
+.light .bg-slate-800\/40,
+.light .bg-slate-800\/50 {
+  background-color: #ffffff !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid #e2e8f0 !important;
 }
 
 .light .bg-slate-700\/50 {
-  background-color: rgba(226, 232, 240, 0.5) !important;
+  background-color: #f1f5f9 !important;
+}
+
+.light .bg-slate-900\/50 {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
 }
 
 /* Light mode shadows */
 .light {
   --tw-shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Light mode buttons with better visibility */
+.light button.group {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+  transition: all 0.2s ease !important;
+}
+
+.light button.group:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-2px);
 }
 
 /* Keep accent colors the same */
@@ -170,4 +192,36 @@ body {
 
 .light .text-rose-400 {
   color: #e11d48 !important;
+}
+
+/* Light mode - better icon backgrounds */
+.light .bg-rose-500\/20 {
+  background-color: #fecdd3 !important;
+}
+
+.light .bg-emerald-500\/20 {
+  background-color: #a7f3d0 !important;
+}
+
+.light .bg-amber-500\/20 {
+  background-color: #fde68a !important;
+}
+
+.light .bg-violet-500\/20 {
+  background-color: #ddd6fe !important;
+}
+
+.light .bg-indigo-600\/20 {
+  background-color: #c7d2fe !important;
+}
+
+.light .bg-emerald-600\/20 {
+  background-color: #a7f3d0 !important;
+}
+
+/* Light mode - header bar */
+.light .bg-slate-900\/50 {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(10px) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
 }
