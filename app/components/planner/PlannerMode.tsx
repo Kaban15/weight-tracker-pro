@@ -197,6 +197,15 @@ function DayCard({
             key={task.id}
             className="flex items-start gap-2 p-1.5 hover:bg-slate-700/30 rounded-lg group"
           >
+            <span className={`flex-1 text-xs leading-tight ${task.completed ? 'text-slate-500 line-through' : 'text-slate-300'}`}>
+              {task.title}
+            </span>
+            <button
+              onClick={() => onDelete(task.id)}
+              className="p-0.5 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
             <button
               onClick={() => onToggle(task.id)}
               className={`w-4 h-4 mt-0.5 rounded flex items-center justify-center flex-shrink-0 transition-all ${
@@ -206,15 +215,6 @@ function DayCard({
               }`}
             >
               {task.completed && <Check className="w-3 h-3" />}
-            </button>
-            <span className={`flex-1 text-xs leading-tight ${task.completed ? 'text-slate-500 line-through' : 'text-slate-300'}`}>
-              {task.title}
-            </span>
-            <button
-              onClick={() => onDelete(task.id)}
-              className="p-0.5 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <Trash2 className="w-3 h-3" />
             </button>
           </div>
         ))}
@@ -235,17 +235,18 @@ function DayCard({
             <button
               onClick={handleAdd}
               disabled={!newTaskTitle.trim() || isAdding}
-              className="p-1 text-violet-400 hover:text-violet-300 disabled:text-slate-600"
+              className="p-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-600 rounded-md transition-colors"
             >
-              {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              {isAdding ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Check className="w-4 h-4 text-white" />}
             </button>
           </div>
         ) : (
           <button
             onClick={() => setShowInput(true)}
-            className="flex items-center justify-center gap-1 text-xs text-slate-500 hover:text-violet-400 p-2 w-full transition-colors"
+            className="flex items-center justify-center gap-1 text-xs text-white bg-violet-600 hover:bg-violet-500 p-2 w-full rounded-lg transition-colors font-medium"
           >
-            <Plus className="w-3 h-3" />
+            <Plus className="w-4 h-4" />
+            <span>Dodaj</span>
           </button>
         )}
       </div>
