@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import SyncIndicator from "../shared/SyncIndicator";
 import { usePlanner, formatDateStr } from "./usePlanner";
 import { Task } from "./types";
+import { ModuleTooltip, useModuleOnboarding } from "../onboarding";
 
 interface PlannerModeProps {
   onBack: () => void;
@@ -256,6 +257,19 @@ function DayCard({
   );
 }
 
+const PLANNER_TOOLTIPS = [
+  {
+    id: "week-nav",
+    content: "Nawiguj między tygodniami używając strzałek. Tu też widzisz statystyki tygodnia.",
+    position: "bottom" as const,
+  },
+  {
+    id: "day-cards",
+    content: "Każda karta to jeden dzień. Kliknij 'Dodaj' aby zaplanować zadanie, checkbox aby oznaczyć jako wykonane.",
+    position: "top" as const,
+  },
+];
+
 export default function PlannerMode({ onBack }: PlannerModeProps) {
   const { user, signOut } = useAuth();
   const {
@@ -271,6 +285,7 @@ export default function PlannerMode({ onBack }: PlannerModeProps) {
   } = usePlanner(user?.id);
 
   const [weekOffset, setWeekOffset] = useState(0);
+  const onboarding = useModuleOnboarding("planner", PLANNER_TOOLTIPS);
 
   const getWeekDays = (offset: number): Date[] => {
     const today = new Date();
@@ -336,7 +351,8 @@ export default function PlannerMode({ onBack }: PlannerModeProps) {
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         {/* Week Navigation & Stats */}
-        <div className="bg-slate-800/40 backdrop-blur rounded-2xl border border-slate-700/50 p-5 mb-6">
+        <ModuleTooltip {...onboarding.getTooltipProps("week-nav")}>
+          <div className="bg-slate-800/40 backdrop-blur rounded-2xl border border-slate-700/50 p-5 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             {/* Week Navigation */}
             <div className="flex items-center gap-3">
@@ -386,10 +402,12 @@ export default function PlannerMode({ onBack }: PlannerModeProps) {
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        </ModuleTooltip>
 
         {/* Day Cards */}
-        <div className="overflow-x-auto pb-4 -mx-4 px-4">
+        <ModuleTooltip {...onboarding.getTooltipProps("day-cards")}>
+          <div className="overflow-x-auto pb-4 -mx-4 px-4">
           <div className="flex gap-3 min-w-max">
             {weekDays.map(date => {
               const dateStr = formatDateStr(date);
@@ -409,7 +427,8 @@ export default function PlannerMode({ onBack }: PlannerModeProps) {
               );
             })}
           </div>
-        </div>
+          </div>
+        </ModuleTooltip>
       </main>
     </div>
   );

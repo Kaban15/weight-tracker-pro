@@ -311,7 +311,8 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
 
         {/* Dashboard Summary */}
         {entries.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <ModuleTooltip {...onboarding.getTooltipProps("stats-cards")}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             {/* Current Weight */}
             <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
               <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
@@ -428,7 +429,8 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
                 )}
               </div>
             )}
-          </div>
+            </div>
+          </ModuleTooltip>
         )}
 
         {/* View Toggle */}
