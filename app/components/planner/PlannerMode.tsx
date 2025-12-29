@@ -185,8 +185,8 @@ function DayCard({
       </div>
 
       {/* Tasks List */}
-      <div className="flex-1 px-2 pb-2 space-y-1 min-h-[120px] max-h-[200px] overflow-y-auto scrollbar-thin">
-        {tasks.length === 0 && !showInput && (
+      <div className="flex-1 px-2 space-y-1 min-h-[80px] max-h-[160px] overflow-y-auto scrollbar-thin">
+        {tasks.length === 0 && (
           <div className="text-center py-4 text-slate-500 text-xs">
             Brak zadań
           </div>
@@ -218,10 +218,12 @@ function DayCard({
             </button>
           </div>
         ))}
+      </div>
 
-        {/* Add Task Input */}
+      {/* Add Task - Always Visible */}
+      <div className="px-2 pb-2 pt-1">
         {showInput ? (
-          <div className="flex items-center gap-1 p-1">
+          <div className="flex items-center gap-1">
             <input
               type="text"
               value={newTaskTitle}
