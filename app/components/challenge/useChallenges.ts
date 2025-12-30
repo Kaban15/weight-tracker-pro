@@ -295,6 +295,65 @@ export function useChallenges(userId: string | undefined) {
     }
   };
 
+  // New function that uses functional update to avoid race conditions
+  const updateCompletedDay = async (challengeId: string, dateStr: string, reps: number | null): Promise<void> => {
+    console.log('[updateCompletedDay] Called with:', { challengeId, dateStr, reps });
+
+    if (!supabase) {
+      console.log('[updateCompletedDay] No supabase, returning');
+      return;
+    }
+
+    // Rate limit check
+    if (isRateLimited('challenge:toggle', RATE_LIMITS.toggle)) {
+      console.log('[updateCompletedDay] Rate limited');
+      setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
+      return;
+    }
+
+    // Use functional update to get latest state and compute new completedDays
+    let newCompletedDays: { [date: string]: number } | null = null;
+
+    setChallenges(prev => {
+      console.log('[updateCompletedDay] setChallenges callback, prev challenges:', prev.length);
+      const challenge = prev.find(c => c.id === challengeId);
+      if (!challenge) {
+        console.log('[updateCompletedDay] Challenge not found!');
+        return prev;
+      }
+      console.log('[updateCompletedDay] Found challenge:', challenge.name, 'current completedDays:', challenge.completedDays);
+
+      newCompletedDays = reps !== null && reps > 0
+        ? { ...challenge.completedDays, [dateStr]: reps }
+        : Object.fromEntries(Object.entries(challenge.completedDays).filter(([d]) => d !== dateStr));
+
+      console.log('[updateCompletedDay] New completedDays:', newCompletedDays);
+      return prev.map(c => c.id === challengeId ? { ...c, completedDays: newCompletedDays! } : c);
+    });
+
+    console.log('[updateCompletedDay] After setChallenges, newCompletedDays:', newCompletedDays);
+
+    // If challenge wasn't found, don't sync to Supabase
+    if (newCompletedDays === null) {
+      console.log('[updateCompletedDay] newCompletedDays is null, not syncing');
+      return;
+    }
+
+    try {
+      setIsSyncing(true);
+      const { error } = await supabase.from('challenges')
+        .update({ completed_days: newCompletedDays })
+        .eq('id', challengeId);
+
+      if (error) throw error;
+      setSyncError(null);
+    } catch {
+      setSyncError('Błąd synchronizacji');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const updateDailyGoals = async (challengeId: string, dailyGoals: { [date: string]: number }): Promise<void> => {
     if (!supabase) return;
 
@@ -323,6 +382,48 @@ export function useChallenges(userId: string | undefined) {
     }
   };
 
+  // New function that uses functional update to avoid race conditions
+  const updateDailyGoal = async (challengeId: string, dateStr: string, goal: number | null): Promise<void> => {
+    if (!supabase) return;
+
+    // Rate limit check
+    if (isRateLimited('challenge:write', RATE_LIMITS.write)) {
+      setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
+      return;
+    }
+
+    // Use functional update to get latest state and compute new dailyGoals
+    let newDailyGoals: { [date: string]: number } | null = null;
+
+    setChallenges(prev => {
+      const challenge = prev.find(c => c.id === challengeId);
+      if (!challenge) return prev;
+
+      newDailyGoals = goal !== null && goal > 0
+        ? { ...(challenge.dailyGoals || {}), [dateStr]: goal }
+        : Object.fromEntries(Object.entries(challenge.dailyGoals || {}).filter(([d]) => d !== dateStr));
+
+      return prev.map(c => c.id === challengeId ? { ...c, dailyGoals: newDailyGoals! } : c);
+    });
+
+    // If challenge wasn't found, don't sync to Supabase
+    if (newDailyGoals === null) return;
+
+    try {
+      setIsSyncing(true);
+      const { error } = await supabase.from('challenges')
+        .update({ daily_goals: newDailyGoals })
+        .eq('id', challengeId);
+
+      if (error) throw error;
+      setSyncError(null);
+    } catch {
+      setSyncError('Błąd synchronizacji');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return {
     challenges,
     isLoading,
@@ -332,6 +433,8 @@ export function useChallenges(userId: string | undefined) {
     updateChallenge,
     deleteChallenge,
     updateCompletedDays,
-    updateDailyGoals
+    updateCompletedDay,
+    updateDailyGoals,
+    updateDailyGoal
   };
 }

@@ -45,7 +45,9 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     updateChallenge,
     deleteChallenge,
     updateCompletedDays,
-    updateDailyGoals
+    updateCompletedDay,
+    updateDailyGoals,
+    updateDailyGoal
   } = useChallenges(user?.id);
 
   // View state
@@ -154,43 +156,35 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   };
 
   // Toggle for simple (non-trackReps) challenges
+  // Uses functional update to avoid race conditions
   const toggleSimpleDay = (dateStr: string, currentlyCompleted: boolean) => {
     if (!activeChallenge) return;
-    const newCompletedDays = currentlyCompleted
-      ? Object.fromEntries(Object.entries(activeChallenge.completedDays).filter(([d]) => d !== dateStr))
-      : { ...activeChallenge.completedDays, [dateStr]: 1 };
-    updateCompletedDays(activeChallenge.id, newCompletedDays);
+    updateCompletedDay(activeChallenge.id, dateStr, currentlyCompleted ? null : 1);
   };
 
   // Matrix cell click handler (from dashboard) - simple toggle
+  // Uses functional update to avoid race conditions
   const handleMatrixCellClick = (challenge: Challenge, dateStr: string) => {
     const inChallenge = dateStr >= challenge.startDate && dateStr <= challenge.endDate;
     if (!inChallenge) return;
 
+    const isCompleted = !!challenge.completedDays[dateStr];
     const dailyGoal = challenge.dailyGoals?.[dateStr] || 1;
-    const newCompletedDays = challenge.completedDays[dateStr]
-      ? Object.fromEntries(Object.entries(challenge.completedDays).filter(([d]) => d !== dateStr))
-      : { ...challenge.completedDays, [dateStr]: dailyGoal };
-    updateCompletedDays(challenge.id, newCompletedDays);
+    updateCompletedDay(challenge.id, dateStr, isCompleted ? null : dailyGoal);
   };
 
   // Save reps from modal (accepts optional override values for delete case)
+  // Uses new updateCompletedDay/updateDailyGoal functions that use functional updates
+  // to avoid race conditions with stale activeChallenge state
   const saveReps = (overrideReps?: number, overrideGoal?: number) => {
     if (!activeChallenge || !currentDateStr) return;
     const reps = overrideReps !== undefined ? overrideReps : (parseInt(repsValue) || 0);
     const goal = overrideGoal !== undefined ? overrideGoal : (parseInt(goalValue) || 0);
 
-    const newCompletedDays = reps > 0
-      ? { ...activeChallenge.completedDays, [currentDateStr]: reps }
-      : Object.fromEntries(Object.entries(activeChallenge.completedDays).filter(([d]) => d !== currentDateStr));
+    // Use functional update functions to ensure we always work with latest state
+    updateCompletedDay(activeChallenge.id, currentDateStr, reps > 0 ? reps : null);
+    updateDailyGoal(activeChallenge.id, currentDateStr, goal > 0 ? goal : null);
 
-    updateCompletedDays(activeChallenge.id, newCompletedDays);
-
-    const newDailyGoals = goal > 0
-      ? { ...(activeChallenge.dailyGoals || {}), [currentDateStr]: goal }
-      : Object.fromEntries(Object.entries(activeChallenge.dailyGoals || {}).filter(([d]) => d !== currentDateStr));
-
-    updateDailyGoals(activeChallenge.id, newDailyGoals);
     setShowRepsModal(false);
   };
 
