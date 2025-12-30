@@ -9,10 +9,11 @@ import ModeSelector from "./components/ModeSelector";
 import ChallengeMode from "./components/ChallengeMode";
 import { PlannerMode } from "./components/planner";
 import { TodoMode } from "./components/todo";
+import { ScheduleMode } from "./components/schedule";
 import { AdminMode } from "./components/admin";
 import WelcomeModal from "./components/onboarding/WelcomeModal";
 
-type AppMode = 'tracker' | 'challenge' | 'planner' | 'todo' | 'admin' | null;
+type AppMode = 'tracker' | 'challenge' | 'planner' | 'todo' | 'schedule' | 'admin' | null;
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -50,6 +51,10 @@ export default function Home() {
 
   if (mode === 'todo') {
     return <TodoMode onBack={() => setMode(null)} />;
+  }
+
+  if (mode === 'schedule') {
+    return <ScheduleMode onBack={() => setMode(null)} />;
   }
 
   if (mode === 'admin') {

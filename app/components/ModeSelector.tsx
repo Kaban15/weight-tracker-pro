@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Scale, Target, ClipboardList, ListChecks, Shield, MessageSquare } from "lucide-react";
+import { Scale, Target, ClipboardList, ListChecks, Shield, MessageSquare, CalendarDays } from "lucide-react";
 import ThemeToggle from "./shared/ThemeToggle";
 import FeedbackModal from "./shared/FeedbackModal";
 import { useAuth } from "@/lib/AuthContext";
 import { isAdmin } from "./admin";
 
 interface ModeSelectorProps {
-  onSelectMode: (mode: 'tracker' | 'challenge' | 'planner' | 'todo' | 'admin') => void;
+  onSelectMode: (mode: 'tracker' | 'challenge' | 'planner' | 'todo' | 'schedule' | 'admin') => void;
 }
 
 export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
@@ -47,7 +47,23 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
           Wybierz co chcesz dzisiaj zrobić
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Harmonogram - NEW */}
+          <button
+            onClick={() => onSelectMode('schedule')}
+            className="group bg-slate-800/50 hover:bg-slate-800 border-2 border-slate-700 hover:border-cyan-500 rounded-2xl p-6 transition-all duration-300 text-left"
+          >
+            <div className="w-14 h-14 bg-cyan-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-cyan-500/30 transition-colors">
+              <CalendarDays className="w-7 h-7 text-cyan-400" />
+            </div>
+            <h2 className="text-xl font-semibold text-white mb-2">
+              Harmonogram
+            </h2>
+            <p className="text-slate-400 text-sm">
+              Dzienny widok zadań i nawyków w jednym miejscu
+            </p>
+          </button>
+
           {/* Lista Zadań - TODO */}
           <button
             onClick={() => onSelectMode('todo')}
@@ -64,6 +80,22 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
             </p>
           </button>
 
+          {/* Challenge */}
+          <button
+            onClick={() => onSelectMode('challenge')}
+            className="group bg-slate-800/50 hover:bg-slate-800 border-2 border-slate-700 hover:border-amber-500 rounded-2xl p-6 transition-all duration-300 text-left"
+          >
+            <div className="w-14 h-14 bg-amber-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-amber-500/30 transition-colors">
+              <Target className="w-7 h-7 text-amber-400" />
+            </div>
+            <h2 className="text-xl font-semibold text-white mb-2">
+              Nawyki
+            </h2>
+            <p className="text-slate-400 text-sm">
+              Codzienne wyzwania - pompki, burpees i inne ćwiczenia do odhaczenia
+            </p>
+          </button>
+
           {/* Progress Tracker */}
           <button
             onClick={() => onSelectMode('tracker')}
@@ -77,22 +109,6 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
             </h2>
             <p className="text-slate-400 text-sm">
               Śledź swoją wagę, ustalaj cele i monitoruj postępy w czasie
-            </p>
-          </button>
-
-          {/* Challenge */}
-          <button
-            onClick={() => onSelectMode('challenge')}
-            className="group bg-slate-800/50 hover:bg-slate-800 border-2 border-slate-700 hover:border-amber-500 rounded-2xl p-6 transition-all duration-300 text-left"
-          >
-            <div className="w-14 h-14 bg-amber-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-amber-500/30 transition-colors">
-              <Target className="w-7 h-7 text-amber-400" />
-            </div>
-            <h2 className="text-xl font-semibold text-white mb-2">
-              Challenge
-            </h2>
-            <p className="text-slate-400 text-sm">
-              Codzienne wyzwania - pompki, burpees i inne ćwiczenia do odhaczenia
             </p>
           </button>
 
