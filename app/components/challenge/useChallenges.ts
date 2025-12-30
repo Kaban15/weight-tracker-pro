@@ -303,36 +303,22 @@ export function useChallenges(userId: string | undefined) {
 
   // New function that uses ref to avoid race conditions with stale closures
   const updateCompletedDay = async (challengeId: string, dateStr: string, reps: number | null): Promise<void> => {
-    console.log('[updateCompletedDay] START:', { challengeId, dateStr, reps });
-    console.log('[updateCompletedDay] challengesRef.current length:', challengesRef.current.length);
-
-    if (!supabase) {
-      console.log('[updateCompletedDay] No supabase!');
-      return;
-    }
+    if (!supabase) return;
 
     // Rate limit check
     if (isRateLimited('challenge:toggle', RATE_LIMITS.toggle)) {
-      console.log('[updateCompletedDay] Rate limited!');
       setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
       return;
     }
 
     // Get current challenge data from ref (always latest)
     const currentChallenge = challengesRef.current.find(c => c.id === challengeId);
-    console.log('[updateCompletedDay] Found challenge:', currentChallenge?.name, 'completedDays:', currentChallenge?.completedDays);
-
-    if (!currentChallenge) {
-      console.log('[updateCompletedDay] Challenge not found!');
-      return;
-    }
+    if (!currentChallenge) return;
 
     // Compute new completedDays
     const newCompletedDays = reps !== null && reps > 0
       ? { ...currentChallenge.completedDays, [dateStr]: reps }
       : Object.fromEntries(Object.entries(currentChallenge.completedDays).filter(([d]) => d !== dateStr));
-
-    console.log('[updateCompletedDay] newCompletedDays:', newCompletedDays);
 
     // Update local state
     setChallenges(prev => prev.map(c =>
@@ -342,19 +328,13 @@ export function useChallenges(userId: string | undefined) {
     // Sync to Supabase
     try {
       setIsSyncing(true);
-      console.log('[updateCompletedDay] Syncing to Supabase...');
       const { error } = await supabase.from('challenges')
         .update({ completed_days: newCompletedDays })
         .eq('id', challengeId);
 
-      if (error) {
-        console.log('[updateCompletedDay] Supabase error:', error);
-        throw error;
-      }
-      console.log('[updateCompletedDay] Supabase sync OK');
+      if (error) throw error;
       setSyncError(null);
-    } catch (e) {
-      console.log('[updateCompletedDay] Catch error:', e);
+    } catch {
       setSyncError('Błąd synchronizacji');
     } finally {
       setIsSyncing(false);

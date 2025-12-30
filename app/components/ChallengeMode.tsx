@@ -177,16 +177,11 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   // Uses new updateCompletedDay/updateDailyGoal functions that use functional updates
   // to avoid race conditions with stale activeChallenge state
   const saveReps = (overrideReps?: number, overrideGoal?: number) => {
-    console.log('[saveReps] Called with:', { overrideReps, overrideGoal, repsValue, goalValue, currentDateStr, activeChallenge: activeChallenge?.id });
+    if (!activeChallenge || !currentDateStr) return;
 
-    if (!activeChallenge || !currentDateStr) {
-      console.log('[saveReps] Missing activeChallenge or currentDateStr!');
-      return;
-    }
-    const reps = overrideReps !== undefined ? overrideReps : (parseInt(repsValue) || 0);
-    const goal = overrideGoal !== undefined ? overrideGoal : (parseInt(goalValue) || 0);
-
-    console.log('[saveReps] Computed reps:', reps, 'goal:', goal);
+    // Check if overrideReps/overrideGoal are actual numbers (not events from onClick)
+    const reps = typeof overrideReps === 'number' ? overrideReps : (parseInt(repsValue) || 0);
+    const goal = typeof overrideGoal === 'number' ? overrideGoal : (parseInt(goalValue) || 0);
 
     // Use functional update functions to ensure we always work with latest state
     updateCompletedDay(activeChallenge.id, currentDateStr, reps > 0 ? reps : null);
