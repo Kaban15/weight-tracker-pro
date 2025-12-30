@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { isRateLimited, RATE_LIMITS } from "@/lib/rateLimiter";
 import { Challenge, ChallengeRow, ChallengeProgress, ChallengeFormData, DEFAULT_FORM_DATA } from "./types";
@@ -56,6 +56,12 @@ export function useChallenges(userId: string | undefined) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+
+  // Ref to always have access to latest challenges (avoids stale closure issues)
+  const challengesRef = useRef<Challenge[]>(challenges);
+  useEffect(() => {
+    challengesRef.current = challenges;
+  }, [challenges]);
 
   const localStorageKey = `challenges_v3_${userId}`;
   const migrationKey = `challenges_migrated_${userId}`;
@@ -295,50 +301,31 @@ export function useChallenges(userId: string | undefined) {
     }
   };
 
-  // New function that uses functional update to avoid race conditions
+  // New function that uses ref to avoid race conditions with stale closures
   const updateCompletedDay = async (challengeId: string, dateStr: string, reps: number | null): Promise<void> => {
-    console.log('[updateCompletedDay] Called with:', { challengeId, dateStr, reps });
-
-    if (!supabase) {
-      console.log('[updateCompletedDay] No supabase, returning');
-      return;
-    }
+    if (!supabase) return;
 
     // Rate limit check
     if (isRateLimited('challenge:toggle', RATE_LIMITS.toggle)) {
-      console.log('[updateCompletedDay] Rate limited');
       setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
       return;
     }
 
-    // Use functional update to get latest state and compute new completedDays
-    let newCompletedDays: { [date: string]: number } | null = null;
+    // Get current challenge data from ref (always latest)
+    const currentChallenge = challengesRef.current.find(c => c.id === challengeId);
+    if (!currentChallenge) return;
 
-    setChallenges(prev => {
-      console.log('[updateCompletedDay] setChallenges callback, prev challenges:', prev.length);
-      const challenge = prev.find(c => c.id === challengeId);
-      if (!challenge) {
-        console.log('[updateCompletedDay] Challenge not found!');
-        return prev;
-      }
-      console.log('[updateCompletedDay] Found challenge:', challenge.name, 'current completedDays:', challenge.completedDays);
+    // Compute new completedDays
+    const newCompletedDays = reps !== null && reps > 0
+      ? { ...currentChallenge.completedDays, [dateStr]: reps }
+      : Object.fromEntries(Object.entries(currentChallenge.completedDays).filter(([d]) => d !== dateStr));
 
-      newCompletedDays = reps !== null && reps > 0
-        ? { ...challenge.completedDays, [dateStr]: reps }
-        : Object.fromEntries(Object.entries(challenge.completedDays).filter(([d]) => d !== dateStr));
+    // Update local state
+    setChallenges(prev => prev.map(c =>
+      c.id === challengeId ? { ...c, completedDays: newCompletedDays } : c
+    ));
 
-      console.log('[updateCompletedDay] New completedDays:', newCompletedDays);
-      return prev.map(c => c.id === challengeId ? { ...c, completedDays: newCompletedDays! } : c);
-    });
-
-    console.log('[updateCompletedDay] After setChallenges, newCompletedDays:', newCompletedDays);
-
-    // If challenge wasn't found, don't sync to Supabase
-    if (newCompletedDays === null) {
-      console.log('[updateCompletedDay] newCompletedDays is null, not syncing');
-      return;
-    }
-
+    // Sync to Supabase
     try {
       setIsSyncing(true);
       const { error } = await supabase.from('challenges')
@@ -382,7 +369,7 @@ export function useChallenges(userId: string | undefined) {
     }
   };
 
-  // New function that uses functional update to avoid race conditions
+  // New function that uses ref to avoid race conditions with stale closures
   const updateDailyGoal = async (challengeId: string, dateStr: string, goal: number | null): Promise<void> => {
     if (!supabase) return;
 
@@ -392,23 +379,21 @@ export function useChallenges(userId: string | undefined) {
       return;
     }
 
-    // Use functional update to get latest state and compute new dailyGoals
-    let newDailyGoals: { [date: string]: number } | null = null;
+    // Get current challenge data from ref (always latest)
+    const currentChallenge = challengesRef.current.find(c => c.id === challengeId);
+    if (!currentChallenge) return;
 
-    setChallenges(prev => {
-      const challenge = prev.find(c => c.id === challengeId);
-      if (!challenge) return prev;
+    // Compute new dailyGoals
+    const newDailyGoals = goal !== null && goal > 0
+      ? { ...(currentChallenge.dailyGoals || {}), [dateStr]: goal }
+      : Object.fromEntries(Object.entries(currentChallenge.dailyGoals || {}).filter(([d]) => d !== dateStr));
 
-      newDailyGoals = goal !== null && goal > 0
-        ? { ...(challenge.dailyGoals || {}), [dateStr]: goal }
-        : Object.fromEntries(Object.entries(challenge.dailyGoals || {}).filter(([d]) => d !== dateStr));
+    // Update local state
+    setChallenges(prev => prev.map(c =>
+      c.id === challengeId ? { ...c, dailyGoals: newDailyGoals } : c
+    ));
 
-      return prev.map(c => c.id === challengeId ? { ...c, dailyGoals: newDailyGoals! } : c);
-    });
-
-    // If challenge wasn't found, don't sync to Supabase
-    if (newDailyGoals === null) return;
-
+    // Sync to Supabase
     try {
       setIsSyncing(true);
       const { error } = await supabase.from('challenges')
