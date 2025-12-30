@@ -24,12 +24,12 @@ interface ChallengeModeProps {
 const CHALLENGE_TOOLTIPS = [
   {
     id: "create-challenge",
-    content: "Stwórz swoje pierwsze wyzwanie - np. 10 pompek dziennie przez 30 dni.",
+    content: "Stwórz swój pierwszy nawyk - np. 10 pompek dziennie przez 30 dni.",
     position: "bottom" as const,
   },
   {
     id: "challenge-matrix",
-    content: "Kliknij na dzień w kalendarzu, aby oznaczyć wyzwanie jako wykonane.",
+    content: "Kliknij na dzień w kalendarzu, aby oznaczyć nawyk jako wykonany.",
     position: "top" as const,
   },
 ];

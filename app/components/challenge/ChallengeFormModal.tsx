@@ -75,7 +75,7 @@ export default function ChallengeFormModal({
       <div className="bg-slate-800 rounded-xl border-2 border-slate-700 p-6 w-full max-w-md">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-white">
-            {isEdit ? 'Edytuj wyzwanie' : 'Nowe wyzwanie'}
+            {isEdit ? 'Edytuj nawyk' : 'Nowy nawyk'}
           </h3>
           <button onClick={onClose} className="text-slate-400 hover:text-white">
             <X className="w-5 h-5" />
@@ -96,7 +96,7 @@ export default function ChallengeFormModal({
 
           {/* Name */}
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Nazwa wyzwania</label>
+            <label className="block text-sm text-slate-400 mb-2">Nazwa nawyku</label>
             <input
               type="text"
               value={formData.name}
@@ -287,7 +287,7 @@ export default function ChallengeFormModal({
               onClick={validateAndSubmit}
               className="w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-lg font-bold"
             >
-              Utwórz wyzwanie
+              Utwórz nawyk
             </button>
           )}
         </div>

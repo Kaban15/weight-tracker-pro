@@ -39,10 +39,10 @@ export default function ChallengeDetail({
           <button
             onClick={onBack}
             className="flex items-center gap-2 text-slate-400 hover:text-white"
-            aria-label="Wróć do listy wyzwań"
+            aria-label="Wróć do listy nawyków"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="hidden sm:inline">Wyzwania</span>
+            <span className="hidden sm:inline">Nawyki</span>
           </button>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-white truncate max-w-[200px]">{challenge.name}</h1>
@@ -52,14 +52,14 @@ export default function ChallengeDetail({
             <button
               onClick={onEdit}
               className="text-slate-400 hover:text-amber-400 p-1"
-              aria-label="Edytuj wyzwanie"
+              aria-label="Edytuj nawyk"
             >
               <Edit2 className="w-4 h-4" />
             </button>
             <button
               onClick={onDelete}
               className="text-slate-400 hover:text-rose-400 p-1"
-              aria-label="Usuń wyzwanie"
+              aria-label="Usuń nawyk"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -172,7 +172,7 @@ function ProgressSummary({ challenge, progress }: ProgressSummaryProps) {
       {progress.isCompleted && (
         <div className="mt-3 bg-emerald-500/20 border border-emerald-500/50 rounded-lg p-2 text-center">
           <p className="text-emerald-400 font-semibold">
-            Wyzwanie zakończone!
+            Cel osiągnięty!
             {challenge.trackReps && progress.totalReps > 0 && (
               <span className="block text-sm mt-1">
                 Łącznie: {progress.totalReps} {challenge.goalUnit || 'powtórzeń'}

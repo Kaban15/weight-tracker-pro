@@ -45,8 +45,8 @@ const slides = [
     secondIcon: Calendar,
     secondIconBg: "bg-violet-500/20",
     secondIconColor: "text-violet-400",
-    title: "Challenge & Planer",
-    description: "Twórz codzienne wyzwania (pompki, burpees) i planuj zadania na każdy dzień tygodnia.",
+    title: "Nawyki & Planer",
+    description: "Twórz codzienne nawyki (pompki, burpees) i planuj zadania na każdy dzień tygodnia.",
   },
 ];
 
