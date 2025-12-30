@@ -5,14 +5,12 @@ import { Scale, Target, ClipboardList, ListChecks, Shield, MessageSquare, Calend
 import ThemeToggle from "./shared/ThemeToggle";
 import FeedbackModal from "./shared/FeedbackModal";
 import { useAuth } from "@/lib/AuthContext";
+import { useNavigation } from "@/lib/NavigationContext";
 import { isAdmin } from "./admin";
 
-interface ModeSelectorProps {
-  onSelectMode: (mode: 'tracker' | 'challenge' | 'planner' | 'todo' | 'schedule' | 'admin') => void;
-}
-
-export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
+export default function ModeSelector() {
   const { user } = useAuth();
+  const { navigateTo } = useNavigation();
   const showAdmin = isAdmin(user?.email);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
@@ -29,7 +27,7 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
         </button>
         {showAdmin && (
           <button
-            onClick={() => onSelectMode('admin')}
+            onClick={() => navigateTo('admin')}
             className="bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 p-2 rounded-lg transition-colors"
             title="Panel Admina"
           >
@@ -48,9 +46,9 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Harmonogram - NEW */}
+          {/* Harmonogram */}
           <button
-            onClick={() => onSelectMode('schedule')}
+            onClick={() => navigateTo('schedule')}
             className="group bg-slate-800/50 hover:bg-slate-800 border-2 border-slate-700 hover:border-cyan-500 rounded-2xl p-6 transition-all duration-300 text-left"
           >
             <div className="w-14 h-14 bg-cyan-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-cyan-500/30 transition-colors">
@@ -66,7 +64,7 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
 
           {/* Lista Zadań - TODO */}
           <button
-            onClick={() => onSelectMode('todo')}
+            onClick={() => navigateTo('todo')}
             className="group bg-slate-800/50 hover:bg-slate-800 border-2 border-slate-700 hover:border-rose-500 rounded-2xl p-6 transition-all duration-300 text-left"
           >
             <div className="w-14 h-14 bg-rose-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-rose-500/30 transition-colors">
@@ -80,9 +78,9 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
             </p>
           </button>
 
-          {/* Challenge */}
+          {/* Nawyki */}
           <button
-            onClick={() => onSelectMode('challenge')}
+            onClick={() => navigateTo('challenge')}
             className="group bg-slate-800/50 hover:bg-slate-800 border-2 border-slate-700 hover:border-amber-500 rounded-2xl p-6 transition-all duration-300 text-left"
           >
             <div className="w-14 h-14 bg-amber-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-amber-500/30 transition-colors">
@@ -92,13 +90,13 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
               Nawyki
             </h2>
             <p className="text-slate-400 text-sm">
-              Codzienne wyzwania - pompki, burpees i inne ćwiczenia do odhaczenia
+              Codzienne nawyki - pompki, burpees i inne ćwiczenia do odhaczenia
             </p>
           </button>
 
           {/* Progress Tracker */}
           <button
-            onClick={() => onSelectMode('tracker')}
+            onClick={() => navigateTo('tracker')}
             className="group bg-slate-800/50 hover:bg-slate-800 border-2 border-slate-700 hover:border-emerald-500 rounded-2xl p-6 transition-all duration-300 text-left"
           >
             <div className="w-14 h-14 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-emerald-500/30 transition-colors">
@@ -114,7 +112,7 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
 
           {/* Planner */}
           <button
-            onClick={() => onSelectMode('planner')}
+            onClick={() => navigateTo('planner')}
             className="group bg-slate-800/50 hover:bg-slate-800 border-2 border-slate-700 hover:border-violet-500 rounded-2xl p-6 transition-all duration-300 text-left"
           >
             <div className="w-14 h-14 bg-violet-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-violet-500/30 transition-colors">

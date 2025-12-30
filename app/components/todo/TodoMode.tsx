@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import {
-  Home,
+  ArrowLeft,
   Plus,
   Check,
   Pencil,
@@ -268,7 +268,7 @@ export default function TodoMode({ onBack }: TodoModeProps) {
               onClick={onBack}
               className="text-slate-400 hover:text-white transition-colors"
             >
-              <Home className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
               <h1 className="text-3xl font-bold text-white">Lista Zadań</h1>

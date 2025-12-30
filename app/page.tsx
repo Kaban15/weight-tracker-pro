@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { useOnboarding } from "@/lib/OnboardingContext";
+import { useNavigation } from "@/lib/NavigationContext";
 import Auth from "./components/Auth";
 import WeightTracker from "./components/WeightTracker";
 import ModeSelector from "./components/ModeSelector";
@@ -13,12 +13,10 @@ import { ScheduleMode } from "./components/schedule";
 import { AdminMode } from "./components/admin";
 import WelcomeModal from "./components/onboarding/WelcomeModal";
 
-type AppMode = 'tracker' | 'challenge' | 'planner' | 'todo' | 'schedule' | 'admin' | null;
-
 export default function Home() {
   const { user, loading } = useAuth();
   const { hasSeenWelcome, markWelcomeSeen, isLoaded } = useOnboarding();
-  const [mode, setMode] = useState<AppMode>(null);
+  const { currentMode, goBack } = useNavigation();
 
   if (loading || !isLoaded) {
     return (
@@ -37,29 +35,29 @@ export default function Home() {
     return <WelcomeModal onComplete={markWelcomeSeen} />;
   }
 
-  if (!mode) {
-    return <ModeSelector onSelectMode={setMode} />;
+  if (!currentMode) {
+    return <ModeSelector />;
   }
 
-  if (mode === 'challenge') {
-    return <ChallengeMode onBack={() => setMode(null)} />;
+  if (currentMode === 'challenge') {
+    return <ChallengeMode onBack={goBack} />;
   }
 
-  if (mode === 'planner') {
-    return <PlannerMode onBack={() => setMode(null)} />;
+  if (currentMode === 'planner') {
+    return <PlannerMode onBack={goBack} />;
   }
 
-  if (mode === 'todo') {
-    return <TodoMode onBack={() => setMode(null)} />;
+  if (currentMode === 'todo') {
+    return <TodoMode onBack={goBack} />;
   }
 
-  if (mode === 'schedule') {
-    return <ScheduleMode onBack={() => setMode(null)} />;
+  if (currentMode === 'schedule') {
+    return <ScheduleMode onBack={goBack} />;
   }
 
-  if (mode === 'admin') {
-    return <AdminMode onBack={() => setMode(null)} />;
+  if (currentMode === 'admin') {
+    return <AdminMode onBack={goBack} />;
   }
 
-  return <WeightTracker onBack={() => setMode(null)} />;
+  return <WeightTracker onBack={goBack} />;
 }

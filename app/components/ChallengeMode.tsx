@@ -196,7 +196,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-amber-500 animate-spin mx-auto mb-4" />
-          <p className="text-slate-400">Ładowanie wyzwań...</p>
+          <p className="text-slate-400">Ładowanie nawyków...</p>
         </div>
       </div>
     );

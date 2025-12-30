@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Home, Plus, Check, Trash2, ChevronLeft, ChevronRight, Loader2, Calendar } from "lucide-react";
+import { ArrowLeft, Plus, Check, Trash2, ChevronLeft, ChevronRight, Loader2, Calendar } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import SyncIndicator from "../shared/SyncIndicator";
 import { usePlanner, formatDateStr } from "./usePlanner";
@@ -335,7 +335,7 @@ export default function PlannerMode({ onBack }: PlannerModeProps) {
       <header className="bg-slate-900/50 border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
-            <Home className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5" />
             <span className="hidden sm:inline">Powrót</span>
           </button>
           <div className="flex items-center gap-3">

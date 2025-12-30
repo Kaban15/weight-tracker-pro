@@ -5,6 +5,7 @@ import { AuthProvider } from "@/lib/AuthContext";
 import { PostHogProvider } from "@/lib/PostHogProvider";
 import { ThemeProvider } from "@/lib/ThemeContext";
 import { OnboardingProvider } from "@/lib/OnboardingContext";
+import { NavigationProvider } from "@/lib/NavigationContext";
 import ErrorBoundary from "./components/shared/ErrorBoundary";
 import OfflineIndicator from "./components/shared/OfflineIndicator";
 
@@ -60,8 +61,10 @@ export default function RootLayout({
             <ErrorBoundary>
               <AuthProvider>
                 <OnboardingProvider>
-                  {children}
-                  <OfflineIndicator />
+                  <NavigationProvider>
+                    {children}
+                    <OfflineIndicator />
+                  </NavigationProvider>
                 </OnboardingProvider>
               </AuthProvider>
             </ErrorBoundary>

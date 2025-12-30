@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Check, Home, Plus, ChevronLeft, ChevronRight, History, Zap, Trophy, Info } from "lucide-react";
+import { Check, ArrowLeft, Plus, ChevronLeft, ChevronRight, History, Zap, Trophy, Info } from "lucide-react";
 import { isToday } from "../shared/Calendar";
 import SyncIndicator from "../shared/SyncIndicator";
 import { Challenge, getChallengeProgress } from "./index";
@@ -147,7 +147,7 @@ export default function ChallengeDashboard({
               onClick={onBack}
               className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
             >
-              <Home className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5" />
               <span className="hidden sm:inline">Powrót</span>
             </button>
             <div className="flex items-center gap-2">
