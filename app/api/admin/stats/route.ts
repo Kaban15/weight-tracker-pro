@@ -57,8 +57,12 @@ export async function GET(request: NextRequest) {
     const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
     // Helper to check if error is "table doesn't exist"
-    const isTableNotExistError = (error: { message?: string } | null) =>
-      error?.message?.includes("does not exist") || error?.message?.includes("relation") || false;
+    const isTableNotExistError = (error: { code?: string; message?: string } | null) =>
+      error?.code === "PGRST205" ||
+      error?.code === "42P01" ||
+      error?.message?.includes("does not exist") ||
+      error?.message?.includes("relation") ||
+      false;
 
     // Fetch all user profiles
     const { data: profiles, error: profilesError } = await supabaseAdmin
