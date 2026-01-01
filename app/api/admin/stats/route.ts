@@ -132,16 +132,29 @@ export async function GET(request: NextRequest) {
     Object.keys(entriesPerUser).forEach((id) => allUserIds.add(id));
     Object.keys(challengesPerUser).forEach((id) => allUserIds.add(id));
 
+    // Fetch auth users to get emails
+    const { data: authUsersData } = await supabaseAdmin.auth.admin.listUsers({
+      perPage: 1000,
+    });
+    const authUsers = authUsersData?.users || [];
+
+    // Create a map of user_id -> email
+    const userEmails: Record<string, string> = {};
+    authUsers.forEach((u) => {
+      userEmails[u.id] = u.email || u.id.substring(0, 8) + "...";
+    });
+
     // Build user stats
     const users = Array.from(allUserIds).map((userId) => {
       const profile = (profiles || []).find((p: { user_id: string }) => p.user_id === userId);
       const goal = (goals || []).find((g: { user_id: string }) => g.user_id === userId);
+      const authUser = authUsers.find((u) => u.id === userId);
 
       return {
         id: userId,
-        email: userId.substring(0, 8) + "...",
-        createdAt: goal?.created_at || profile?.created_at || "",
-        lastSignIn: goal?.updated_at || null,
+        email: userEmails[userId] || userId.substring(0, 8) + "...",
+        createdAt: authUser?.created_at || goal?.created_at || profile?.created_at || "",
+        lastSignIn: authUser?.last_sign_in_at || goal?.updated_at || null,
         entriesCount: entriesPerUser[userId] || 0,
         challengesCount: challengesPerUser[userId] || 0,
         tasksCount: 0, // Todo tasks are in localStorage
