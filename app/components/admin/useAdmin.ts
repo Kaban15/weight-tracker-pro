@@ -36,188 +36,31 @@ export function useAdmin(userEmail: string | undefined) {
     setError(null);
 
     try {
-      const now = new Date();
-      const today = now.toISOString().split("T")[0];
-      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      // Get current session token
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
 
-      // Helper to check if error is "table doesn't exist"
-      const isTableNotExistError = (error: { message?: string } | null) =>
-        error?.message?.includes("does not exist") || error?.message?.includes("relation") || false;
-
-      // Fetch all user profiles with their stats (optional table)
-      const { data: profiles, error: profilesError } = await supabase
-        .from("user_profiles")
-        .select("*");
-
-      if (profilesError && !isTableNotExistError(profilesError)) {
-        console.warn("user_profiles error:", profilesError);
+      if (!token) {
+        throw new Error("No authentication token");
       }
 
-      // Fetch entries count per user
-      const { data: entriesCounts, error: entriesError } = await supabase
-        .from("weight_entries")
-        .select("user_id, id");
+      // Fetch statistics from API (uses service role key to bypass RLS)
+      const response = await fetch("/api/admin/stats", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      if (entriesError && !isTableNotExistError(entriesError)) {
-        throw entriesError;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
-      // Fetch challenges count per user
-      const { data: challengesCounts, error: challengesError } = await supabase
-        .from("challenges")
-        .select("user_id, id");
+      const data = await response.json();
 
-      if (challengesError && !isTableNotExistError(challengesError)) {
-        console.warn("challenges error:", challengesError);
-      }
-
-      // Note: Todo tasks are stored in localStorage only, not in Supabase
-      // The 'tasks' table is used by Planner, not Todo
-      const tasksData: { user_id: string }[] = [];
-
-      // Fetch planner tasks count per user (planner uses 'tasks' table)
-      const { data: plannerCounts, error: plannerError } = await supabase
-        .from("tasks")
-        .select("user_id, id");
-
-      if (plannerError && !isTableNotExistError(plannerError)) {
-        console.warn("tasks error:", plannerError);
-      }
-
-      // Fetch goals for user activity tracking
-      const { data: goals, error: goalsError } = await supabase
-        .from("goals")
-        .select("user_id, created_at, updated_at");
-
-      if (goalsError) throw goalsError;
-
-      // Count entries per user
-      const entriesPerUser: Record<string, number> = {};
-      (entriesCounts || []).forEach((e: { user_id: string }) => {
-        entriesPerUser[e.user_id] = (entriesPerUser[e.user_id] || 0) + 1;
-      });
-
-      // Count challenges per user
-      const challengesPerUser: Record<string, number> = {};
-      (challengesCounts || []).forEach((c: { user_id: string }) => {
-        challengesPerUser[c.user_id] = (challengesPerUser[c.user_id] || 0) + 1;
-      });
-
-      // Count tasks per user
-      const tasksPerUser: Record<string, number> = {};
-      tasksData.forEach((t: { user_id: string }) => {
-        tasksPerUser[t.user_id] = (tasksPerUser[t.user_id] || 0) + 1;
-      });
-
-      // Count planner days per user
-      const plannerPerUser: Record<string, number> = {};
-      (plannerCounts || []).forEach((p: { user_id: string }) => {
-        plannerPerUser[p.user_id] = (plannerPerUser[p.user_id] || 0) + 1;
-      });
-
-      // Get unique user IDs from all tables
-      const allUserIds = new Set<string>();
-      (profiles || []).forEach((p: { user_id: string }) => allUserIds.add(p.user_id));
-      (goals || []).forEach((g: { user_id: string }) => allUserIds.add(g.user_id));
-      Object.keys(entriesPerUser).forEach((id) => allUserIds.add(id));
-      Object.keys(challengesPerUser).forEach((id) => allUserIds.add(id));
-
-      // Build user stats
-      const userStats: UserStats[] = Array.from(allUserIds).map((userId) => {
-        const profile = (profiles || []).find((p: { user_id: string }) => p.user_id === userId);
-        const goal = (goals || []).find((g: { user_id: string }) => g.user_id === userId);
-
-        return {
-          id: userId,
-          email: userId.substring(0, 8) + "...", // Privacy - show partial ID
-          createdAt: goal?.created_at || profile?.created_at || "",
-          lastSignIn: goal?.updated_at || null,
-          entriesCount: entriesPerUser[userId] || 0,
-          challengesCount: challengesPerUser[userId] || 0,
-          tasksCount: tasksPerUser[userId] || 0,
-          plannerDaysCount: plannerPerUser[userId] || 0,
-        };
-      });
-
-      // Sort by entries count (most active first)
-      userStats.sort((a, b) => b.entriesCount - a.entriesCount);
-
-      // Calculate statistics
-      const totalUsers = userStats.length;
-      const totalEntries = Object.values(entriesPerUser).reduce((a, b) => a + b, 0);
-      const totalChallenges = Object.values(challengesPerUser).reduce((a, b) => a + b, 0);
-      const totalTasks = Object.values(tasksPerUser).reduce((a, b) => a + b, 0);
-      const totalPlannerDays = Object.values(plannerPerUser).reduce((a, b) => a + b, 0);
-
-      // Active users (those with entries in last 7/30 days)
-      const { data: recentEntries7 } = await supabase
-        .from("weight_entries")
-        .select("user_id")
-        .gte("date", weekAgo);
-
-      const { data: recentEntries30 } = await supabase
-        .from("weight_entries")
-        .select("user_id")
-        .gte("date", monthAgo);
-
-      const activeUsersLast7Days = new Set((recentEntries7 || []).map((e: { user_id: string }) => e.user_id)).size;
-      const activeUsersLast30Days = new Set((recentEntries30 || []).map((e: { user_id: string }) => e.user_id)).size;
-
-      // New users (based on first goal creation)
-      const newUsersToday = (goals || []).filter(
-        (g: { created_at: string }) => g.created_at?.startsWith(today)
-      ).length;
-      const newUsersThisWeek = (goals || []).filter(
-        (g: { created_at: string }) => g.created_at >= weekAgo
-      ).length;
-      const newUsersThisMonth = (goals || []).filter(
-        (g: { created_at: string }) => g.created_at >= monthAgo
-      ).length;
-
-      const stats: AppStatistics = {
-        totalUsers,
-        activeUsersLast7Days,
-        activeUsersLast30Days,
-        totalEntries,
-        totalChallenges,
-        totalTasks,
-        totalPlannerDays,
-        newUsersToday,
-        newUsersThisWeek,
-        newUsersThisMonth,
-        averageEntriesPerUser: totalUsers > 0 ? Math.round(totalEntries / totalUsers) : 0,
-        averageChallengesPerUser: totalUsers > 0 ? Math.round((totalChallenges / totalUsers) * 10) / 10 : 0,
-      };
-
-      // Daily activity for last 14 days
-      const dailyData: DailyActivity[] = [];
-      for (let i = 13; i >= 0; i--) {
-        const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-        const dateStr = date.toISOString().split("T")[0];
-
-        const { data: dayEntries } = await supabase
-          .from("weight_entries")
-          .select("user_id")
-          .eq("date", dateStr);
-
-        const { data: dayGoals } = await supabase
-          .from("goals")
-          .select("user_id")
-          .gte("created_at", dateStr + "T00:00:00")
-          .lt("created_at", dateStr + "T23:59:59");
-
-        dailyData.push({
-          date: dateStr,
-          newUsers: (dayGoals || []).length,
-          activeUsers: new Set((dayEntries || []).map((e: { user_id: string }) => e.user_id)).size,
-          entries: (dayEntries || []).length,
-        });
-      }
-
-      setStatistics(stats);
-      setUsers(userStats);
-      setDailyActivity(dailyData);
+      setStatistics(data.statistics);
+      setUsers(data.users);
+      setDailyActivity(data.dailyActivity);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error loading statistics");
     } finally {
