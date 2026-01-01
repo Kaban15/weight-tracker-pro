@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, Target, Activity, LogOut, Table, ArrowLeft, TrendingDown, TrendingUp, Flame, Scale, Clock, Bell, History, Footprints, Dumbbell } from 'lucide-react';
+import { Calendar, Target, LogOut, Table, ArrowLeft, TrendingDown, TrendingUp, Flame, Scale, Clock, Bell, History, Footprints, Dumbbell, Award, LineChart, Download, FileJson, AlertCircle, Trophy, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { initializeNotifications, cancelScheduledReminders } from '@/lib/notifications';
 import { useKeyboardShortcuts, KeyboardShortcut } from '@/lib/useKeyboardShortcuts';
@@ -15,11 +15,11 @@ import {
   useWeightTracker,
   EntryModal,
   GoalWizard,
-  StatsView,
   CalendarView,
   CompletionModal,
   GoalHistoryList
 } from './tracker';
+import TrendAnalysis from './tracker/TrendAnalysis';
 
 // Helper function to calculate stats for a given set of entries
 function calculateStatsForEntries(entries: Entry[], goalTargetWeight?: number): Stats & { currentWeight: number; totalWeightChange: number } {
@@ -102,7 +102,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     clearCompletionData,
   } = useWeightTracker(user?.id);
 
-  const [view, setView] = useState<'calendar' | 'stats' | 'table' | 'history'>('calendar');
+  const [view, setView] = useState<'calendar' | 'table' | 'history'>('calendar');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);
   const [showGoalModal, setShowGoalModal] = useState(false);
@@ -112,6 +112,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [chartDateRange, setChartDateRange] = useState<{ start: string; end: string } | null>(null);
   const [chartMode, setChartMode] = useState<'all' | 'current-goal'>('all');
+  const [exporting, setExporting] = useState(false);
 
   // Calculate filtered entries and stats based on chartMode
   const filteredEntries = useMemo(() => {
@@ -187,7 +188,6 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     { key: 't', description: 'Idź do dziś', action: goToToday },
     { key: '1', description: 'Kalendarz', action: () => setView('calendar') },
     { key: '2', description: 'Tabela', action: () => setView('table') },
-    { key: '3', description: 'Statystyki', action: () => setView('stats') },
     { key: 'ArrowLeft', alt: true, description: 'Poprzedni miesiąc', action: prevMonth },
     { key: 'ArrowRight', alt: true, description: 'Następny miesiąc', action: nextMonth },
     { key: 'Escape', description: 'Zamknij', action: () => {
@@ -285,6 +285,90 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     } else {
       setShowCompletionModal(false);
     }
+  };
+
+  // Export functions
+  const downloadFile = (blob: Blob, filename: string) => {
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const performCSVExport = (entriesToExport: Entry[]) => {
+    if (entriesToExport.length === 0) return;
+    const headers = ['Data', 'Waga (kg)', 'Kalorie', 'Kroki', 'Trening', 'Czas treningu (min)', 'Notatki'];
+    const rows = [...entriesToExport]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .map(entry => [
+        entry.date,
+        entry.weight.toString(),
+        entry.calories?.toString() || '',
+        entry.steps?.toString() || '',
+        entry.workout || '',
+        entry.workout_duration?.toString() || '',
+        entry.notes?.replace(/"/g, '""') || ''
+      ]);
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    downloadFile(blob, `weight-tracker-${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const performJSONExport = (entriesToExport: Entry[]) => {
+    if (entriesToExport.length === 0) return;
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      entriesCount: entriesToExport.length,
+      goal: goal || null,
+      entries: entriesToExport.map(e => ({
+        date: e.date,
+        weight: e.weight,
+        calories: e.calories || null,
+        steps: e.steps || null,
+        workout: e.workout || null,
+        workout_duration: e.workout_duration || null,
+        notes: e.notes || null,
+      }))
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    downloadFile(blob, `weight-tracker-${new Date().toISOString().split('T')[0]}.json`);
+  };
+
+  const exportToCSV = async () => {
+    if (entries.length === 0) return;
+    let entriesToExport = entries;
+    if (hasMoreEntries) {
+      setExporting(true);
+      try {
+        entriesToExport = await loadAllEntries();
+      } finally {
+        setExporting(false);
+      }
+    }
+    performCSVExport(entriesToExport);
+  };
+
+  const exportToJSON = async () => {
+    if (entries.length === 0) return;
+    let entriesToExport = entries;
+    if (hasMoreEntries) {
+      setExporting(true);
+      try {
+        entriesToExport = await loadAllEntries();
+      } finally {
+        setExporting(false);
+      }
+    }
+    performJSONExport(entriesToExport);
   };
 
   // Show goal setup screen only if no goal AND no entries (first time user)
@@ -488,7 +572,6 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
             {[
               { id: 'calendar', icon: Calendar, label: 'Kalendarz' },
               { id: 'table', icon: Table, label: 'Tabela' },
-              { id: 'stats', icon: Activity, label: 'Statystyki' },
               ...(goalHistory.length > 0 ? [{ id: 'history', icon: History, label: 'Historia' }] : []),
             ].map(({ id, icon: Icon, label }) => (
               <button
@@ -555,96 +638,219 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
 
           {/* Stats Section - below chart */}
           {filteredEntries.length > 0 && (
-            <div className="max-w-6xl mx-auto mt-6">
-              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-white">
-                    Statystyki {chartMode === 'current-goal' ? 'bieżącego celu' : 'ogólne'}
-                  </h3>
-                  <span className="text-slate-400 text-sm">
-                    {filteredStats.totalEntries} {filteredStats.totalEntries === 1 ? 'wpis' : filteredStats.totalEntries < 5 ? 'wpisy' : 'wpisów'}
-                  </span>
+            <div className="max-w-6xl mx-auto mt-6 space-y-6">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-white">
+                  Statystyki {chartMode === 'current-goal' ? 'bieżącego celu' : 'ogólne'}
+                </h3>
+                <span className="text-slate-400 text-sm">
+                  {filteredStats.totalEntries} {filteredStats.totalEntries === 1 ? 'wpis' : filteredStats.totalEntries < 5 ? 'wpisy' : 'wpisów'}
+                </span>
+              </div>
+
+              {/* Main Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-gradient-to-br from-emerald-600/20 to-emerald-600/10 rounded-xl p-6 border-2 border-emerald-500/20">
+                  <div className="text-emerald-400 text-sm mb-2 font-semibold">Aktualna waga</div>
+                  <div className="text-3xl font-bold text-white">{filteredStats.currentWeight.toFixed(1)} kg</div>
+                  <div className="text-slate-400 text-xs mt-1">
+                    {filteredStats.totalWeightChange > 0 ? '+' : ''}{filteredStats.totalWeightChange.toFixed(1)}kg od startu
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  {/* Weight Change */}
-                  <div className="bg-slate-700/50 rounded-lg p-3">
-                    <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
-                      <Scale className="w-3 h-3" />
-                      <span>Zmiana wagi</span>
-                    </div>
-                    <div className={`text-xl font-bold ${filteredStats.totalWeightChange < 0 ? 'text-emerald-400' : filteredStats.totalWeightChange > 0 ? 'text-red-400' : 'text-white'}`}>
-                      {filteredStats.totalWeightChange > 0 ? '+' : ''}{filteredStats.totalWeightChange.toFixed(1)} kg
-                    </div>
-                    <div className="text-slate-500 text-xs mt-0.5">
-                      śr. {filteredStats.avgWeight.toFixed(1)} kg
-                    </div>
+                <div className="bg-gradient-to-br from-orange-600/20 to-orange-600/10 rounded-xl p-6 border-2 border-orange-500/20">
+                  <div className="flex items-center gap-2 text-orange-400 text-sm mb-2 font-semibold">
+                    <Flame className="w-4 h-4" />Śr. kalorie
                   </div>
-
-                  {/* Avg Calories */}
-                  <div className="bg-slate-700/50 rounded-lg p-3">
-                    <div className="flex items-center gap-2 text-orange-400 text-xs mb-1">
-                      <Flame className="w-3 h-3" />
-                      <span>Śr. kalorie</span>
-                    </div>
-                    <div className="text-xl font-bold text-white">
-                      {filteredStats.avgCalories > 0 ? Math.round(filteredStats.avgCalories) : '—'}
-                    </div>
-                    {goal?.daily_calories_limit && (
-                      <div className="text-slate-500 text-xs mt-0.5">
-                        cel: {goal.daily_calories_limit}
-                      </div>
-                    )}
+                  <div className="text-3xl font-bold text-white">
+                    {filteredStats.avgCalories > 0 ? Math.round(filteredStats.avgCalories) : '—'}
                   </div>
-
-                  {/* Avg Steps */}
-                  <div className="bg-slate-700/50 rounded-lg p-3">
-                    <div className="flex items-center gap-2 text-blue-400 text-xs mb-1">
-                      <Footprints className="w-3 h-3" />
-                      <span>Śr. kroki</span>
-                    </div>
-                    <div className="text-xl font-bold text-white">
-                      {filteredStats.avgSteps > 0 ? Math.round(filteredStats.avgSteps).toLocaleString() : '—'}
-                    </div>
-                    {goal?.daily_steps_goal && (
-                      <div className="text-slate-500 text-xs mt-0.5">
-                        cel: {goal.daily_steps_goal.toLocaleString()}
-                      </div>
-                    )}
+                  {goal?.daily_calories_limit && (
+                    <div className="text-slate-400 text-xs mt-1">Cel: {goal.daily_calories_limit}/dzień</div>
+                  )}
+                </div>
+                <div className="bg-gradient-to-br from-blue-600/20 to-blue-600/10 rounded-xl p-6 border-2 border-blue-500/20">
+                  <div className="flex items-center gap-2 text-blue-400 text-sm mb-2 font-semibold">
+                    <Footprints className="w-4 h-4" />Śr. kroki
                   </div>
-
-                  {/* Workouts */}
-                  <div className="bg-slate-700/50 rounded-lg p-3">
-                    <div className="flex items-center gap-2 text-purple-400 text-xs mb-1">
-                      <Dumbbell className="w-3 h-3" />
-                      <span>Treningi</span>
-                    </div>
-                    <div className="text-xl font-bold text-white">
-                      {filteredStats.totalWorkouts}
-                    </div>
-                    {goal?.weekly_training_hours && (
-                      <div className="text-slate-500 text-xs mt-0.5">
-                        cel: {goal.weekly_training_hours}h/tydz.
-                      </div>
-                    )}
+                  <div className="text-3xl font-bold text-white">
+                    {filteredStats.avgSteps > 0 ? Math.round(filteredStats.avgSteps).toLocaleString() : '—'}
                   </div>
+                  {goal?.daily_steps_goal && (
+                    <div className="text-slate-400 text-xs mt-1">Cel: {goal.daily_steps_goal.toLocaleString()}/dzień</div>
+                  )}
+                </div>
+                <div className="bg-gradient-to-br from-purple-600/20 to-purple-600/10 rounded-xl p-6 border-2 border-purple-500/20">
+                  <div className="flex items-center gap-2 text-purple-400 text-sm mb-2 font-semibold">
+                    <Dumbbell className="w-4 h-4" />Treningi
+                  </div>
+                  <div className="text-3xl font-bold text-white">{filteredStats.totalWorkouts}</div>
+                  {goal?.weekly_training_hours && (
+                    <div className="text-slate-400 text-xs mt-1">Cel: {goal.weekly_training_hours}h/tydz.</div>
+                  )}
+                </div>
+              </div>
 
-                  {/* Best Weight */}
-                  <div className="bg-slate-700/50 rounded-lg p-3">
-                    <div className="flex items-center gap-2 text-emerald-400 text-xs mb-1">
-                      <Target className="w-3 h-3" />
-                      <span>Najlepsza waga</span>
+              {/* Streak and Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
+                  <div className="flex items-center gap-2 text-emerald-400 text-sm mb-2 font-semibold">
+                    <Award className="w-5 h-5" />Seria
+                  </div>
+                  <div className="text-5xl font-bold text-white mb-2">{filteredStats.currentStreak}</div>
+                  <div className="text-slate-400">dni z rzędu!</div>
+                </div>
+                <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
+                  <div className="flex items-center gap-2 text-emerald-400 text-sm mb-2 font-semibold">
+                    <LineChart className="w-5 h-5" />Podsumowanie
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Wszystkie wpisy:</span>
+                      <span className="text-white font-semibold">{filteredStats.totalEntries}</span>
                     </div>
-                    <div className="text-xl font-bold text-white">
-                      {filteredStats.bestWeight.toFixed(1)} kg
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Najlepsza waga:</span>
+                      <span className="text-white font-semibold">{filteredStats.bestWeight.toFixed(1)}kg</span>
                     </div>
-                    {goal && (
-                      <div className="text-slate-500 text-xs mt-0.5">
-                        cel: {goal.target_weight} kg
-                      </div>
-                    )}
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Średnia waga:</span>
+                      <span className="text-white font-semibold">{filteredStats.avgWeight.toFixed(1)}kg</span>
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* Goal Progress - only in current-goal mode */}
+              {chartMode === 'current-goal' && goal && (
+                <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-white">Postęp celu</h3>
+                    <button onClick={() => setShowGoalModal(true)} className="text-emerald-400 hover:text-emerald-300 text-sm">
+                      Edytuj
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-400">
+                        Cel: {goal.target_weight}kg do {new Date(goal.target_date).toLocaleDateString('pl-PL')}
+                      </span>
+                      <span className="text-emerald-400 font-semibold">
+                        {Math.max(0, Math.min(100, progress)).toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className="h-4 bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-500"
+                        style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-sm text-slate-400">
+                      <span>Start: {goal.current_weight}kg</span>
+                      <span>Teraz: {filteredStats.currentWeight.toFixed(1)}kg</span>
+                      <span>Cel: {goal.target_weight}kg</span>
+                    </div>
+                  </div>
+                  {goal.monitoring_method && (
+                    <div className="mt-4 pt-4 border-t border-slate-700">
+                      <p className="text-slate-400 text-sm">
+                        <strong>Metoda monitorowania:</strong> {goal.monitoring_method}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Goal History Button - only in 'all' mode */}
+              {chartMode === 'all' && goalHistory.length > 0 && (
+                <button
+                  onClick={() => setView('history')}
+                  className="w-full bg-slate-800/50 hover:bg-slate-800 rounded-xl p-6 border-2 border-slate-700 hover:border-emerald-500/50 transition-all text-left group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-slate-700 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+                        <History className="w-6 h-6 text-slate-400 group-hover:text-emerald-400 transition-colors" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-white">Historia celów</h3>
+                        <p className="text-slate-400 text-sm">
+                          {goalHistory.length} {goalHistory.length === 1 ? 'zakończony cel' :
+                            goalHistory.length < 5 ? 'zakończone cele' : 'zakończonych celów'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {goalHistory.filter(g => g.completion_type === 'target_reached').length > 0 && (
+                        <div className="flex items-center gap-1 bg-emerald-500/20 px-3 py-1 rounded-full">
+                          <Trophy className="w-4 h-4 text-emerald-400" />
+                          <span className="text-emerald-400 text-sm font-medium">
+                            {goalHistory.filter(g => g.completion_type === 'target_reached').length}
+                          </span>
+                        </div>
+                      )}
+                      <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                    </div>
+                  </div>
+                </button>
+              )}
+
+              {/* Trend Analysis */}
+              <TrendAnalysis
+                entries={filteredEntries}
+                goal={goal}
+                currentWeight={filteredStats.currentWeight}
+              />
+
+              {/* Export Section - always exports all entries */}
+              {entries.length > 0 && (
+                <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-white mb-1">Eksport danych</h3>
+                      <p className="text-slate-400 text-sm">
+                        {hasMoreEntries ? (
+                          <>Załadowano {entries.length} wpisów. Eksport pobierze wszystkie dane.</>
+                        ) : (
+                          <>Pobierz wszystkie wpisy ({entries.length}) jako plik</>
+                        )}
+                      </p>
+                      {hasMoreEntries && (
+                        <p className="text-amber-400 text-xs mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          Starsze wpisy zostaną automatycznie doładowane
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={exportToCSV}
+                        disabled={exporting || loadingMore}
+                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:cursor-wait text-white font-semibold py-3 px-5 rounded-xl transition-colors"
+                      >
+                        {exporting || loadingMore ? (
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <Download className="w-5 h-5" />
+                        )}
+                        <span>CSV</span>
+                      </button>
+                      <button
+                        onClick={exportToJSON}
+                        disabled={exporting || loadingMore}
+                        className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:cursor-wait text-white font-semibold py-3 px-5 rounded-xl transition-colors"
+                      >
+                        {exporting || loadingMore ? (
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <FileJson className="w-5 h-5" />
+                        )}
+                        <span>JSON</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </>
@@ -653,21 +859,6 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
         <div className="max-w-6xl mx-auto">
           <ProgressTable entries={entries} goal={goal} />
         </div>
-      )}
-      {view === 'stats' && (
-        <StatsView
-          stats={stats}
-          goal={goal}
-          entries={entries}
-          currentWeight={currentWeight}
-          progress={progress}
-          onEditGoal={() => setShowGoalModal(true)}
-          hasMoreEntries={hasMoreEntries}
-          loadingMore={loadingMore}
-          onLoadAllEntries={loadAllEntries}
-          goalHistory={goalHistory}
-          onViewHistory={() => setView('history')}
-        />
       )}
       {view === 'history' && (
         <GoalHistoryList
