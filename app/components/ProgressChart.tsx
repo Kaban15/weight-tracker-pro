@@ -50,15 +50,17 @@ export default function ProgressChart({ entries, goal, startDate, endDate }: Pro
 
   // Check if we should show goal line:
   // - For historical view (startDate/endDate provided): always show if goal exists
+  // - For current goal view (only startDate): always show if goal exists
   // - For main view: only show if goal is active (target date not passed)
   const isHistoricalView = startDate && endDate;
+  const isCurrentGoalView = startDate && !endDate;
   const [showGoalLine, setShowGoalLine] = useState(goal !== null);
 
   useEffect(() => {
     if (!goal) {
       setShowGoalLine(false);
-    } else if (isHistoricalView) {
-      // Historical view - always show goal line
+    } else if (isHistoricalView || isCurrentGoalView) {
+      // Historical or current goal view - always show goal line
       setShowGoalLine(true);
     } else {
       // Main view - only show if target date not passed
@@ -66,7 +68,7 @@ export default function ProgressChart({ entries, goal, startDate, endDate }: Pro
       today.setHours(0, 0, 0, 0);
       setShowGoalLine(new Date(goal.target_date) >= today);
     }
-  }, [goal, isHistoricalView]);
+  }, [goal, isHistoricalView, isCurrentGoalView]);
 
   // Sort entries by date
   const sortedEntries = [...filteredEntries].sort((a, b) =>
