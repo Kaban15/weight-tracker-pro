@@ -59,6 +59,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [chartDateRange, setChartDateRange] = useState<{ start: string; end: string } | null>(null);
+  const [chartMode, setChartMode] = useState<'all' | 'current-goal'>('all');
 
   // Show completion modal when goal is completed
   useEffect(() => {
@@ -442,10 +443,40 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
             onDateRangeChange={handleDateRangeChange}
           />
           <div className="max-w-6xl mx-auto mt-6">
+            {/* Chart Mode Toggle */}
+            <div className="flex justify-end mb-3">
+              <div className="flex bg-slate-800/50 rounded-lg p-1 border border-slate-700">
+                <button
+                  onClick={() => setChartMode('all')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    chartMode === 'all'
+                      ? 'bg-emerald-600 text-white'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Wszystkie wpisy
+                </button>
+                <button
+                  onClick={() => setChartMode('current-goal')}
+                  disabled={!goal?.start_date}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    chartMode === 'current-goal'
+                      ? 'bg-emerald-600 text-white'
+                      : 'text-slate-400 hover:text-white'
+                  } ${!goal?.start_date ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Biezacy cel
+                </button>
+              </div>
+            </div>
             <ProgressChart
-              entries={entries}
+              entries={
+                chartMode === 'current-goal' && goal?.start_date
+                  ? entries.filter(e => e.date >= goal.start_date!)
+                  : entries
+              }
               goal={goal}
-              startDate={chartDateRange?.start}
+              startDate={chartMode === 'current-goal' && goal?.start_date ? goal.start_date : chartDateRange?.start}
               endDate={chartDateRange?.end}
             />
           </div>
