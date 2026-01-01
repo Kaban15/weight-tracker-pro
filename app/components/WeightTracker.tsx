@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, Target, LogOut, Table, ArrowLeft, TrendingDown, TrendingUp, Flame, Scale, Clock, Bell, History, Footprints, Dumbbell, Award, LineChart, Download, FileJson, AlertCircle, Trophy, ChevronRight } from 'lucide-react';
+import { Calendar, Target, LogOut, Table, ArrowLeft, TrendingDown, TrendingUp, Flame, Scale, Clock, Bell, History, Footprints, Dumbbell, Award, LineChart, Download, FileJson, AlertCircle, Trophy, ChevronRight, Ruler } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { initializeNotifications, cancelScheduledReminders } from '@/lib/notifications';
 import { useKeyboardShortcuts, KeyboardShortcut } from '@/lib/useKeyboardShortcuts';
@@ -17,7 +17,8 @@ import {
   GoalWizard,
   CalendarView,
   CompletionModal,
-  GoalHistoryList
+  GoalHistoryList,
+  MeasurementsView
 } from './tracker';
 import TrendAnalysis from './tracker/TrendAnalysis';
 
@@ -102,7 +103,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     clearCompletionData,
   } = useWeightTracker(user?.id);
 
-  const [view, setView] = useState<'calendar' | 'table' | 'history'>('calendar');
+  const [view, setView] = useState<'calendar' | 'table' | 'measurements' | 'history'>('calendar');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);
   const [showGoalModal, setShowGoalModal] = useState(false);
@@ -572,6 +573,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
             {[
               { id: 'calendar', icon: Calendar, label: 'Kalendarz' },
               { id: 'table', icon: Table, label: 'Tabela' },
+              { id: 'measurements', icon: Ruler, label: 'Pomiary' },
               ...(goalHistory.length > 0 ? [{ id: 'history', icon: History, label: 'Historia' }] : []),
             ].map(({ id, icon: Icon, label }) => (
               <button
@@ -859,6 +861,9 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
         <div className="max-w-6xl mx-auto">
           <ProgressTable entries={entries} goal={goal} />
         </div>
+      )}
+      {view === 'measurements' && (
+        <MeasurementsView userId={user?.id} />
       )}
       {view === 'history' && (
         <GoalHistoryList

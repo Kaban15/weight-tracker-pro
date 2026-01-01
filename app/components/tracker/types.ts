@@ -84,6 +84,49 @@ export interface GoalCompletionData {
   finalWeight: number;
 }
 
+// Body measurements types
+export interface BodyMeasurement {
+  id: string;
+  user_id: string;
+  date: string;
+  waist?: number;
+  hips?: number;
+  chest?: number;
+  thigh_left?: number;
+  thigh_right?: number;
+  arm_left?: number;
+  arm_right?: number;
+  calf_left?: number;
+  calf_right?: number;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface MeasurementChanges {
+  waist?: number;
+  hips?: number;
+  chest?: number;
+  thigh_left?: number;
+  thigh_right?: number;
+  arm_left?: number;
+  arm_right?: number;
+  calf_left?: number;
+  calf_right?: number;
+}
+
+export const MEASUREMENT_LABELS: Record<keyof MeasurementChanges, string> = {
+  waist: 'Talia',
+  hips: 'Biodra',
+  chest: 'Klatka',
+  thigh_left: 'Udo L',
+  thigh_right: 'Udo P',
+  arm_left: 'Ramię L',
+  arm_right: 'Ramię P',
+  calf_left: 'Łydka L',
+  calf_right: 'Łydka P',
+};
+
 export function formatDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
