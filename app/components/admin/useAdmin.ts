@@ -41,37 +41,49 @@ export function useAdmin(userEmail: string | undefined) {
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-      // Fetch all user profiles with their stats
+      // Helper to check if error is "table doesn't exist"
+      const isTableNotExistError = (error: { message?: string } | null) =>
+        error?.message?.includes("does not exist") || error?.message?.includes("relation") || false;
+
+      // Fetch all user profiles with their stats (optional table)
       const { data: profiles, error: profilesError } = await supabase
         .from("user_profiles")
         .select("*");
 
-      if (profilesError) throw profilesError;
+      if (profilesError && !isTableNotExistError(profilesError)) {
+        console.warn("user_profiles error:", profilesError);
+      }
 
       // Fetch entries count per user
       const { data: entriesCounts, error: entriesError } = await supabase
         .from("weight_entries")
         .select("user_id, id");
 
-      if (entriesError) throw entriesError;
+      if (entriesError && !isTableNotExistError(entriesError)) {
+        throw entriesError;
+      }
 
       // Fetch challenges count per user
       const { data: challengesCounts, error: challengesError } = await supabase
         .from("challenges")
         .select("user_id, id");
 
-      if (challengesError) throw challengesError;
+      if (challengesError && !isTableNotExistError(challengesError)) {
+        console.warn("challenges error:", challengesError);
+      }
 
       // Note: Todo tasks are stored in localStorage only, not in Supabase
       // The 'tasks' table is used by Planner, not Todo
       const tasksData: { user_id: string }[] = [];
 
-      // Fetch planner days count per user
+      // Fetch planner tasks count per user (planner uses 'tasks' table)
       const { data: plannerCounts, error: plannerError } = await supabase
-        .from("planner_days")
+        .from("tasks")
         .select("user_id, id");
 
-      if (plannerError) throw plannerError;
+      if (plannerError && !isTableNotExistError(plannerError)) {
+        console.warn("tasks error:", plannerError);
+      }
 
       // Fetch goals for user activity tracking
       const { data: goals, error: goalsError } = await supabase
