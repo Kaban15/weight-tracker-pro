@@ -619,6 +619,14 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
               </div>
             </div>
           </div>
+          <div className="max-w-6xl mx-auto mb-6">
+            <ProgressChart
+              entries={filteredEntries}
+              goal={goal}
+              startDate={chartMode === 'current-goal' && goal?.start_date ? goal.start_date : chartDateRange?.start}
+              endDate={chartDateRange?.end}
+            />
+          </div>
           <CalendarView
             currentMonth={currentMonth}
             onMonthChange={setCurrentMonth}
@@ -629,14 +637,6 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
             goalStartDate={goal?.start_date}
             currentGoalMode={chartMode === 'current-goal'}
           />
-          <div className="max-w-6xl mx-auto mt-6">
-            <ProgressChart
-              entries={filteredEntries}
-              goal={goal}
-              startDate={chartMode === 'current-goal' && goal?.start_date ? goal.start_date : chartDateRange?.start}
-              endDate={chartDateRange?.end}
-            />
-          </div>
 
           {/* Stats Section - below chart */}
           {filteredEntries.length > 0 && (
