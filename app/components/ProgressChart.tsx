@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 interface Entry {
@@ -47,7 +48,25 @@ export default function ProgressChart({ entries, goal, startDate, endDate }: Pro
     );
   }
 
-  const hasGoal = goal !== null;
+  // Check if we should show goal line:
+  // - For historical view (startDate/endDate provided): always show if goal exists
+  // - For main view: only show if goal is active (target date not passed)
+  const isHistoricalView = startDate && endDate;
+  const [showGoalLine, setShowGoalLine] = useState(goal !== null);
+
+  useEffect(() => {
+    if (!goal) {
+      setShowGoalLine(false);
+    } else if (isHistoricalView) {
+      // Historical view - always show goal line
+      setShowGoalLine(true);
+    } else {
+      // Main view - only show if target date not passed
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      setShowGoalLine(new Date(goal.target_date) >= today);
+    }
+  }, [goal, isHistoricalView]);
 
   // Sort entries by date
   const sortedEntries = [...filteredEntries].sort((a, b) =>
@@ -59,7 +78,7 @@ export default function ProgressChart({ entries, goal, startDate, endDate }: Pro
   let goalEndDate: Date | null = null;
   let dailyWeightLoss = 0;
 
-  if (hasGoal && goal) {
+  if (showGoalLine && goal) {
     goalStartDate = goal.start_date ? new Date(goal.start_date) : new Date(sortedEntries[0].date);
     goalEndDate = new Date(goal.target_date);
     const totalDays = Math.ceil((goalEndDate.getTime() - goalStartDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -81,23 +100,27 @@ export default function ProgressChart({ entries, goal, startDate, endDate }: Pro
       actual: entry.weight,
     };
 
-    // Add target data only if goal exists
-    if (hasGoal && goal && goalStartDate) {
+    // Add target data only if goal exists and entry is within goal period
+    if (showGoalLine && goal && goalStartDate) {
       const entryDate = new Date(entry.date);
       const daysFromStart = Math.ceil((entryDate.getTime() - goalStartDate.getTime()) / (1000 * 60 * 60 * 24));
-      const targetWeight = Math.max(
-        goal.target_weight,
-        goal.current_weight - (dailyWeightLoss * daysFromStart)
-      );
-      result.target = parseFloat(targetWeight.toFixed(1));
-      result.difference = parseFloat((entry.weight - targetWeight).toFixed(1));
+
+      // Only show target weight for entries on or after goal start date
+      if (daysFromStart >= 0) {
+        const targetWeight = Math.max(
+          goal.target_weight,
+          goal.current_weight - (dailyWeightLoss * daysFromStart)
+        );
+        result.target = parseFloat(targetWeight.toFixed(1));
+        result.difference = parseFloat((entry.weight - targetWeight).toFixed(1));
+      }
     }
 
     return result;
   });
 
   // Add future target points if we haven't reached the goal date (only if goal exists and not filtering by date range)
-  if (hasGoal && goal && goalEndDate) {
+  if (showGoalLine && goal && goalEndDate) {
     const lastEntryDate = new Date(sortedEntries[sortedEntries.length - 1].date);
     if (!startDate && !endDate && lastEntryDate < goalEndDate) {
       const targetPoint = {
@@ -113,7 +136,7 @@ export default function ProgressChart({ entries, goal, startDate, endDate }: Pro
 
   // Calculate min/max weight for chart domain
   const actualWeights = chartData.map(d => d.actual).filter((w): w is number => w !== null);
-  const targetWeights = hasGoal ? chartData.map(d => d.target).filter((w): w is number => w !== undefined) : [];
+  const targetWeights = showGoalLine ? chartData.map(d => d.target).filter((w): w is number => w !== undefined) : [];
   const allWeights = [...actualWeights, ...targetWeights];
 
   const minWeight = Math.min(...allWeights) - 2;
@@ -152,7 +175,7 @@ export default function ProgressChart({ entries, goal, startDate, endDate }: Pro
               }}
               labelFormatter={(label) => `Data: ${label}`}
             />
-            {hasGoal && (
+            {showGoalLine && (
               <Legend
                 formatter={(value) => {
                   if (value === 'actual') return <span style={{ color: '#10b981' }}>Waga rzeczywista</span>;
@@ -161,7 +184,7 @@ export default function ProgressChart({ entries, goal, startDate, endDate }: Pro
                 }}
               />
             )}
-            {hasGoal && goal && (
+            {showGoalLine && goal && (
               <ReferenceLine
                 y={goal.target_weight}
                 stroke="#10b981"
@@ -169,7 +192,7 @@ export default function ProgressChart({ entries, goal, startDate, endDate }: Pro
                 label={{ value: `Cel: ${goal.target_weight}kg`, fill: '#10b981', fontSize: 12 }}
               />
             )}
-            {hasGoal && (
+            {showGoalLine && (
               <Line
                 type="monotone"
                 dataKey="target"
@@ -201,7 +224,7 @@ export default function ProgressChart({ entries, goal, startDate, endDate }: Pro
           <div className="w-4 h-1 bg-emerald-500 rounded"></div>
           <span className="text-slate-400">Twoja waga</span>
         </div>
-        {hasGoal && (
+        {showGoalLine && (
           <>
             <div className="flex items-center gap-2">
               <div className="w-4 h-1 bg-amber-500 rounded" style={{ borderStyle: 'dashed' }}></div>
@@ -213,7 +236,7 @@ export default function ProgressChart({ entries, goal, startDate, endDate }: Pro
             </div>
           </>
         )}
-        {!hasGoal && (
+        {!showGoalLine && !isHistoricalView && (
           <div className="flex items-center gap-2">
             <span className="text-slate-500 italic">Tryb wolny - brak aktywnego celu</span>
           </div>

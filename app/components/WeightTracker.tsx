@@ -5,7 +5,6 @@ import { Calendar, Target, Activity, LogOut, Table, ArrowLeft, TrendingDown, Tre
 import { useAuth } from '@/lib/AuthContext';
 import { initializeNotifications, cancelScheduledReminders } from '@/lib/notifications';
 import { useKeyboardShortcuts, KeyboardShortcut } from '@/lib/useKeyboardShortcuts';
-import { ModuleTooltip, useModuleOnboarding } from './onboarding';
 import ProgressChart from './ProgressChart';
 import ProgressTable from './ProgressTable';
 import NotificationSettings from './shared/NotificationSettings';
@@ -24,24 +23,6 @@ import {
 interface WeightTrackerProps {
   onBack?: () => void;
 }
-
-const TRACKER_TOOLTIPS = [
-  {
-    id: "stats-cards",
-    content: "Tu widzisz swoje kluczowe statystyki: aktualną wagę, postęp, streak i dni do celu.",
-    position: "bottom" as const,
-  },
-  {
-    id: "view-toggle",
-    content: "Przełączaj między widokami: Kalendarz, Tabela i Statystyki.",
-    position: "bottom" as const,
-  },
-  {
-    id: "calendar",
-    content: "Kliknij na dzień w kalendarzu, aby dodać lub edytować wpis z wagą.",
-    position: "top" as const,
-  },
-];
 
 export default function WeightTracker({ onBack }: WeightTrackerProps) {
   const { user, signOut } = useAuth();
@@ -78,8 +59,6 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [chartDateRange, setChartDateRange] = useState<{ start: string; end: string } | null>(null);
-
-  const onboarding = useModuleOnboarding("tracker", TRACKER_TOOLTIPS);
 
   // Show completion modal when goal is completed
   useEffect(() => {
@@ -311,7 +290,6 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
 
         {/* Dashboard Summary */}
         {entries.length > 0 && (
-          <ModuleTooltip {...onboarding.getTooltipProps("stats-cards")}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             {/* Current Weight */}
             <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
@@ -430,12 +408,10 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
               </div>
             )}
             </div>
-          </ModuleTooltip>
         )}
 
         {/* View Toggle */}
-        <ModuleTooltip {...onboarding.getTooltipProps("view-toggle")}>
-          <div className="flex gap-1 bg-slate-800/50 p-1 rounded-xl border-2 border-slate-700 overflow-x-auto">
+        <div className="flex gap-1 bg-slate-800/50 p-1 rounded-xl border-2 border-slate-700 overflow-x-auto">
             {[
               { id: 'calendar', icon: Calendar, label: 'Kalendarz' },
               { id: 'table', icon: Table, label: 'Tabela' },
@@ -452,8 +428,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
                 <span className="font-semibold text-sm">{label}</span>
               </button>
             ))}
-          </div>
-        </ModuleTooltip>
+        </div>
       </div>
 
       {view === 'calendar' && (
