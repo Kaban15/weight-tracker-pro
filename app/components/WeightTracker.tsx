@@ -61,6 +61,14 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
   const [chartDateRange, setChartDateRange] = useState<{ start: string; end: string } | null>(null);
   const [chartMode, setChartMode] = useState<'all' | 'current-goal'>('all');
 
+  // Switch to goal start date when entering current-goal mode
+  useEffect(() => {
+    if (chartMode === 'current-goal' && goal?.start_date) {
+      const goalStartDate = new Date(goal.start_date);
+      setCurrentMonth(new Date(goalStartDate.getFullYear(), goalStartDate.getMonth(), 1));
+    }
+  }, [chartMode, goal?.start_date]);
+
   // Show completion modal when goal is completed
   useEffect(() => {
     if (completionData && !showCompletionModal) {
@@ -434,17 +442,9 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
 
       {view === 'calendar' && (
         <>
-          <CalendarView
-            currentMonth={currentMonth}
-            onMonthChange={setCurrentMonth}
-            getEntryForDate={getEntryForDate}
-            onDayClick={handleDayClick}
-            onAddClick={() => { setSelectedDate(formatDate(new Date())); setShowAddModal(true); }}
-            onDateRangeChange={handleDateRangeChange}
-          />
-          <div className="max-w-6xl mx-auto mt-6">
-            {/* Chart Mode Toggle */}
-            <div className="flex justify-end mb-3">
+          {/* Chart Mode Toggle - above calendar */}
+          <div className="max-w-6xl mx-auto mb-4">
+            <div className="flex justify-end">
               <div className="flex bg-slate-800/50 rounded-lg p-1 border border-slate-700">
                 <button
                   onClick={() => setChartMode('all')}
@@ -469,6 +469,18 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
                 </button>
               </div>
             </div>
+          </div>
+          <CalendarView
+            currentMonth={currentMonth}
+            onMonthChange={setCurrentMonth}
+            getEntryForDate={getEntryForDate}
+            onDayClick={handleDayClick}
+            onAddClick={() => { setSelectedDate(formatDate(new Date())); setShowAddModal(true); }}
+            onDateRangeChange={handleDateRangeChange}
+            goalStartDate={goal?.start_date}
+            currentGoalMode={chartMode === 'current-goal'}
+          />
+          <div className="max-w-6xl mx-auto mt-6">
             <ProgressChart
               entries={
                 chartMode === 'current-goal' && goal?.start_date

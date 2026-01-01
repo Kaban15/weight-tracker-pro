@@ -12,6 +12,8 @@ interface CalendarViewProps {
   onDayClick: (date: string, entry?: Entry) => void;
   onAddClick: () => void;
   onDateRangeChange?: (start: string, end: string) => void;
+  goalStartDate?: string;
+  currentGoalMode?: boolean;
 }
 
 type ViewMode = 'week' | 'month';
@@ -63,10 +65,24 @@ export default function CalendarView({
   getEntryForDate,
   onDayClick,
   onAddClick,
-  onDateRangeChange
+  onDateRangeChange,
+  goalStartDate,
+  currentGoalMode = false
 }: CalendarViewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [currentWeek, setCurrentWeek] = useState(new Date());
+
+  // Helper to check if date is before goal start (for filtering in current goal mode)
+  const isBeforeGoalStart = (dateStr: string): boolean => {
+    if (!currentGoalMode || !goalStartDate) return false;
+    return dateStr < goalStartDate;
+  };
+
+  // Wrapper for getEntryForDate that filters based on goal mode
+  const getFilteredEntryForDate = (dateStr: string): Entry | undefined => {
+    if (isBeforeGoalStart(dateStr)) return undefined;
+    return getEntryForDate(dateStr);
+  };
 
   // Notify parent about date range changes
   useEffect(() => {
@@ -163,29 +179,33 @@ export default function CalendarView({
         <div className="grid grid-cols-7 gap-2">
           {weekDays.map((day) => {
             const dateStr = formatDate(day);
-            const entry = getEntryForDate(dateStr);
+            const entry = getFilteredEntryForDate(dateStr);
             const isTodayDate = isToday(day);
             const dayOfWeek = day.getDay();
+            const isDisabled = isBeforeGoalStart(dateStr);
 
             return (
               <button
                 key={dateStr}
-                onClick={() => onDayClick(dateStr, entry)}
+                onClick={() => !isDisabled && onDayClick(dateStr, entry)}
+                disabled={isDisabled}
                 className={`relative rounded-2xl p-4 transition-all min-h-[140px] flex flex-col
-                  ${isTodayDate
-                    ? 'bg-emerald-600/30 ring-2 ring-emerald-500'
-                    : entry
-                      ? 'bg-slate-800 border-2 border-emerald-500/50'
-                      : 'bg-slate-800/50 border-2 border-slate-700 hover:border-slate-600'
+                  ${isDisabled
+                    ? 'bg-slate-900/30 border-2 border-slate-800 opacity-40 cursor-not-allowed'
+                    : isTodayDate
+                      ? 'bg-emerald-600/30 ring-2 ring-emerald-500'
+                      : entry
+                        ? 'bg-slate-800 border-2 border-emerald-500/50'
+                        : 'bg-slate-800/50 border-2 border-slate-700 hover:border-slate-600'
                   }`}
               >
                 {/* Day number */}
-                <div className={`text-3xl font-bold mb-1 ${isTodayDate ? 'text-emerald-400' : 'text-white'}`}>
+                <div className={`text-3xl font-bold mb-1 ${isDisabled ? 'text-slate-600' : isTodayDate ? 'text-emerald-400' : 'text-white'}`}>
                   {day.getDate()}
                 </div>
 
                 {/* Day name */}
-                <div className={`text-xs font-semibold mb-3 ${isTodayDate ? 'text-emerald-400' : 'text-slate-400'}`}>
+                <div className={`text-xs font-semibold mb-3 ${isDisabled ? 'text-slate-600' : isTodayDate ? 'text-emerald-400' : 'text-slate-400'}`}>
                   {DAY_NAMES_SHORT[dayOfWeek]}
                 </div>
 
@@ -220,21 +240,27 @@ export default function CalendarView({
             {monthDays.map((day, index) => {
               if (!day) return <div key={`empty-${index}`} />;
               const dateStr = formatDate(day);
-              const entry = getEntryForDate(dateStr);
+              const entry = getFilteredEntryForDate(dateStr);
               const isTodayDate = isToday(day);
+              const isDisabled = isBeforeGoalStart(dateStr);
 
               return (
                 <button
                   key={dateStr}
-                  onClick={() => onDayClick(dateStr, entry)}
+                  onClick={() => !isDisabled && onDayClick(dateStr, entry)}
+                  disabled={isDisabled}
                   className={`min-h-[80px] rounded-xl p-2 transition-all flex flex-col
-                    ${isTodayDate ? 'ring-2 ring-emerald-500' : ''}
-                    ${entry
+                    ${isDisabled
+                      ? 'opacity-30 cursor-not-allowed'
+                      : ''
+                    }
+                    ${!isDisabled && isTodayDate ? 'ring-2 ring-emerald-500' : ''}
+                    ${!isDisabled && entry
                       ? 'bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30'
                       : 'bg-slate-800/50 hover:bg-slate-800 border border-transparent'
                     }`}
                 >
-                  <span className={`text-sm mb-1 ${isTodayDate ? 'text-emerald-400 font-bold' : 'text-slate-300'}`}>
+                  <span className={`text-sm mb-1 ${isDisabled ? 'text-slate-600' : isTodayDate ? 'text-emerald-400 font-bold' : 'text-slate-300'}`}>
                     {day.getDate()}
                   </span>
                   {entry && (
