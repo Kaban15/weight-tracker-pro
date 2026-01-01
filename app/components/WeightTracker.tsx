@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, Target, Activity, LogOut, Table, ArrowLeft, TrendingDown, TrendingUp, Flame, Scale, Clock, Bell, History } from 'lucide-react';
+import { Calendar, Target, Activity, LogOut, Table, ArrowLeft, TrendingDown, TrendingUp, Flame, Scale, Clock, Bell, History, Footprints, Dumbbell } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { initializeNotifications, cancelScheduledReminders } from '@/lib/notifications';
 import { useKeyboardShortcuts, KeyboardShortcut } from '@/lib/useKeyboardShortcuts';
@@ -10,6 +10,7 @@ import ProgressTable from './ProgressTable';
 import NotificationSettings from './shared/NotificationSettings';
 import {
   Entry,
+  Stats,
   formatDate,
   useWeightTracker,
   EntryModal,
@@ -19,6 +20,57 @@ import {
   CompletionModal,
   GoalHistoryList
 } from './tracker';
+
+// Helper function to calculate stats for a given set of entries
+function calculateStatsForEntries(entries: Entry[], goalTargetWeight?: number): Stats & { currentWeight: number; totalWeightChange: number } {
+  if (entries.length === 0) {
+    return {
+      totalEntries: 0, avgWeight: 0, avgCalories: 0, avgSteps: 0,
+      totalWorkouts: 0, currentStreak: 0, bestWeight: 0, totalWeightChange: 0,
+      currentWeight: 0
+    };
+  }
+
+  const sortedEntries = [...entries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const currentWeight = sortedEntries[sortedEntries.length - 1].weight;
+  const startWeight = sortedEntries[0].weight;
+  const entriesWithCalories = sortedEntries.filter(e => e.calories);
+  const entriesWithSteps = sortedEntries.filter(e => e.steps);
+  const entriesWithWorkout = sortedEntries.filter(e => e.workout);
+
+  let streak = 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (let i = 0; i < 365; i++) {
+    const checkDate = new Date(today);
+    checkDate.setDate(today.getDate() - i);
+    const dateStr = formatDate(checkDate);
+    if (entries.some(e => e.date === dateStr)) {
+      streak++;
+    } else if (i > 0) {
+      break;
+    }
+  }
+
+  const isLoosingWeight = goalTargetWeight !== undefined && goalTargetWeight < startWeight;
+
+  return {
+    totalEntries: entries.length,
+    avgWeight: sortedEntries.reduce((sum, e) => sum + e.weight, 0) / entries.length,
+    avgCalories: entriesWithCalories.length > 0
+      ? entriesWithCalories.reduce((sum, e) => sum + (e.calories || 0), 0) / entriesWithCalories.length : 0,
+    avgSteps: entriesWithSteps.length > 0
+      ? entriesWithSteps.reduce((sum, e) => sum + (e.steps || 0), 0) / entriesWithSteps.length : 0,
+    totalWorkouts: entriesWithWorkout.length,
+    currentStreak: streak,
+    bestWeight: isLoosingWeight
+      ? Math.min(...sortedEntries.map(e => e.weight))
+      : Math.max(...sortedEntries.map(e => e.weight)),
+    totalWeightChange: currentWeight - startWeight,
+    currentWeight
+  };
+}
 
 interface WeightTrackerProps {
   onBack?: () => void;
@@ -60,6 +112,18 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [chartDateRange, setChartDateRange] = useState<{ start: string; end: string } | null>(null);
   const [chartMode, setChartMode] = useState<'all' | 'current-goal'>('all');
+
+  // Calculate filtered entries and stats based on chartMode
+  const filteredEntries = useMemo(() => {
+    if (chartMode === 'current-goal' && goal?.start_date) {
+      return entries.filter(e => e.date >= goal.start_date!);
+    }
+    return entries;
+  }, [entries, chartMode, goal?.start_date]);
+
+  const filteredStats = useMemo(() => {
+    return calculateStatsForEntries(filteredEntries, goal?.target_weight);
+  }, [filteredEntries, goal?.target_weight]);
 
   // Switch to goal start date when entering current-goal mode
   useEffect(() => {
@@ -482,16 +546,107 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
           />
           <div className="max-w-6xl mx-auto mt-6">
             <ProgressChart
-              entries={
-                chartMode === 'current-goal' && goal?.start_date
-                  ? entries.filter(e => e.date >= goal.start_date!)
-                  : entries
-              }
+              entries={filteredEntries}
               goal={goal}
               startDate={chartMode === 'current-goal' && goal?.start_date ? goal.start_date : chartDateRange?.start}
               endDate={chartDateRange?.end}
             />
           </div>
+
+          {/* Stats Section - below chart */}
+          {filteredEntries.length > 0 && (
+            <div className="max-w-6xl mx-auto mt-6">
+              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">
+                    Statystyki {chartMode === 'current-goal' ? 'bieżącego celu' : 'ogólne'}
+                  </h3>
+                  <span className="text-slate-400 text-sm">
+                    {filteredStats.totalEntries} {filteredStats.totalEntries === 1 ? 'wpis' : filteredStats.totalEntries < 5 ? 'wpisy' : 'wpisów'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {/* Weight Change */}
+                  <div className="bg-slate-700/50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
+                      <Scale className="w-3 h-3" />
+                      <span>Zmiana wagi</span>
+                    </div>
+                    <div className={`text-xl font-bold ${filteredStats.totalWeightChange < 0 ? 'text-emerald-400' : filteredStats.totalWeightChange > 0 ? 'text-red-400' : 'text-white'}`}>
+                      {filteredStats.totalWeightChange > 0 ? '+' : ''}{filteredStats.totalWeightChange.toFixed(1)} kg
+                    </div>
+                    <div className="text-slate-500 text-xs mt-0.5">
+                      śr. {filteredStats.avgWeight.toFixed(1)} kg
+                    </div>
+                  </div>
+
+                  {/* Avg Calories */}
+                  <div className="bg-slate-700/50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-orange-400 text-xs mb-1">
+                      <Flame className="w-3 h-3" />
+                      <span>Śr. kalorie</span>
+                    </div>
+                    <div className="text-xl font-bold text-white">
+                      {filteredStats.avgCalories > 0 ? Math.round(filteredStats.avgCalories) : '—'}
+                    </div>
+                    {goal?.daily_calories_limit && (
+                      <div className="text-slate-500 text-xs mt-0.5">
+                        cel: {goal.daily_calories_limit}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Avg Steps */}
+                  <div className="bg-slate-700/50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-blue-400 text-xs mb-1">
+                      <Footprints className="w-3 h-3" />
+                      <span>Śr. kroki</span>
+                    </div>
+                    <div className="text-xl font-bold text-white">
+                      {filteredStats.avgSteps > 0 ? Math.round(filteredStats.avgSteps).toLocaleString() : '—'}
+                    </div>
+                    {goal?.daily_steps_goal && (
+                      <div className="text-slate-500 text-xs mt-0.5">
+                        cel: {goal.daily_steps_goal.toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Workouts */}
+                  <div className="bg-slate-700/50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-purple-400 text-xs mb-1">
+                      <Dumbbell className="w-3 h-3" />
+                      <span>Treningi</span>
+                    </div>
+                    <div className="text-xl font-bold text-white">
+                      {filteredStats.totalWorkouts}
+                    </div>
+                    {goal?.weekly_training_hours && (
+                      <div className="text-slate-500 text-xs mt-0.5">
+                        cel: {goal.weekly_training_hours}h/tydz.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Best Weight */}
+                  <div className="bg-slate-700/50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-emerald-400 text-xs mb-1">
+                      <Target className="w-3 h-3" />
+                      <span>Najlepsza waga</span>
+                    </div>
+                    <div className="text-xl font-bold text-white">
+                      {filteredStats.bestWeight.toFixed(1)} kg
+                    </div>
+                    {goal && (
+                      <div className="text-slate-500 text-xs mt-0.5">
+                        cel: {goal.target_weight} kg
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
       {view === 'table' && (
