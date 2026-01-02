@@ -11,7 +11,8 @@
       "Bash(npm run test:run:*)",
       "Bash(npx tsc:*)",
       "Bash(tree:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(find:*)"
     ]
   }
 }

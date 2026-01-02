@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 
-type ModuleName = "tracker" | "challenge" | "planner" | "todo";
+type ModuleName = "tracker" | "challenge" | "todo";
 
 interface OnboardingState {
   hasSeenWelcome: boolean;
@@ -28,7 +28,6 @@ const defaultState: OnboardingState = {
   modulesCompleted: {
     tracker: false,
     challenge: false,
-    planner: false,
     todo: false,
   },
 };

@@ -7,7 +7,6 @@ import Auth from "./components/Auth";
 import WeightTracker from "./components/WeightTracker";
 import ModeSelector from "./components/ModeSelector";
 import ChallengeMode from "./components/ChallengeMode";
-import { PlannerMode } from "./components/planner";
 import { TodoMode } from "./components/todo";
 import { ScheduleMode } from "./components/schedule";
 import { AdminMode } from "./components/admin";
@@ -41,10 +40,6 @@ export default function Home() {
 
   if (currentMode === 'challenge') {
     return <ChallengeMode onBack={goBack} />;
-  }
-
-  if (currentMode === 'planner') {
-    return <PlannerMode onBack={goBack} />;
   }
 
   if (currentMode === 'todo') {

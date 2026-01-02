@@ -6,7 +6,6 @@ export interface UserStats {
   entriesCount: number;
   challengesCount: number;
   tasksCount: number;
-  plannerDaysCount: number;
 }
 
 export interface AppStatistics {
@@ -16,7 +15,6 @@ export interface AppStatistics {
   totalEntries: number;
   totalChallenges: number;
   totalTasks: number;
-  totalPlannerDays: number;
   newUsersToday: number;
   newUsersThisWeek: number;
   newUsersThisMonth: number;

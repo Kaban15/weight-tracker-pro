@@ -57,7 +57,7 @@ export function useTasks(userId: string | undefined) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Use a unique localStorage key that won't conflict with Planner
+  // Use a unique localStorage key for todo items
   const localStorageKey = `todo_items_v1_${userId}`;
   const oldLocalStorageKey = `tasks_v1_${userId}`; // Old key for migration
 
@@ -111,7 +111,7 @@ export function useTasks(userId: string | undefined) {
     }
   }, [localStorageKey, oldLocalStorageKey, userId]);
 
-  // Initial load from localStorage only (no Supabase to avoid conflicts with Planner)
+  // Initial load from localStorage only
   useEffect(() => {
     if (!userId) {
       setIsLoading(false);

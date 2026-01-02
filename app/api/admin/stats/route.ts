@@ -91,15 +91,6 @@ export async function GET(request: NextRequest) {
       console.warn("challenges error:", challengesError);
     }
 
-    // Fetch planner tasks count per user
-    const { data: plannerCounts, error: plannerError } = await supabaseAdmin
-      .from("tasks")
-      .select("user_id, id");
-
-    if (plannerError && !isTableNotExistError(plannerError)) {
-      console.warn("tasks error:", plannerError);
-    }
-
     // Fetch goals for user activity tracking
     const { data: goals, error: goalsError } = await supabaseAdmin
       .from("goals")
@@ -117,12 +108,6 @@ export async function GET(request: NextRequest) {
     const challengesPerUser: Record<string, number> = {};
     (challengesCounts || []).forEach((c: { user_id: string }) => {
       challengesPerUser[c.user_id] = (challengesPerUser[c.user_id] || 0) + 1;
-    });
-
-    // Count planner days per user
-    const plannerPerUser: Record<string, number> = {};
-    (plannerCounts || []).forEach((p: { user_id: string }) => {
-      plannerPerUser[p.user_id] = (plannerPerUser[p.user_id] || 0) + 1;
     });
 
     // Get unique user IDs from all tables
@@ -158,7 +143,6 @@ export async function GET(request: NextRequest) {
         entriesCount: entriesPerUser[userId] || 0,
         challengesCount: challengesPerUser[userId] || 0,
         tasksCount: 0, // Todo tasks are in localStorage
-        plannerDaysCount: plannerPerUser[userId] || 0,
       };
     });
 
@@ -170,7 +154,6 @@ export async function GET(request: NextRequest) {
     const totalEntries = Object.values(entriesPerUser).reduce((a, b) => a + b, 0);
     const totalChallenges = Object.values(challengesPerUser).reduce((a, b) => a + b, 0);
     const totalTasks = 0;
-    const totalPlannerDays = Object.values(plannerPerUser).reduce((a, b) => a + b, 0);
 
     // Active users (those with entries in last 7/30 days)
     const { data: recentEntries7 } = await supabaseAdmin
@@ -204,7 +187,6 @@ export async function GET(request: NextRequest) {
       totalEntries,
       totalChallenges,
       totalTasks,
-      totalPlannerDays,
       newUsersToday,
       newUsersThisWeek,
       newUsersThisMonth,

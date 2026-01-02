@@ -9,7 +9,6 @@ import {
   Calendar,
   Target,
   ListTodo,
-  ClipboardList,
   RefreshCw,
   BarChart3,
   UserPlus,
@@ -202,13 +201,6 @@ export default function AdminMode({ onBack }: AdminModeProps) {
                   average={statistics.totalUsers > 0 ? Math.round(statistics.totalTasks / statistics.totalUsers) : 0}
                   color="rose"
                 />
-                <UsageItem
-                  icon={ClipboardList}
-                  label="Dni planera"
-                  total={statistics.totalPlannerDays}
-                  average={statistics.totalUsers > 0 ? Math.round(statistics.totalPlannerDays / statistics.totalUsers) : 0}
-                  color="violet"
-                />
               </div>
             </div>
           </div>
@@ -238,9 +230,6 @@ export default function AdminMode({ onBack }: AdminModeProps) {
                     <th className="px-4 py-3 text-center text-sm font-semibold text-slate-300">
                       <ListTodo className="w-4 h-4 inline" /> Zadania
                     </th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-300">
-                      <ClipboardList className="w-4 h-4 inline" /> Planer
-                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -269,11 +258,6 @@ export default function AdminMode({ onBack }: AdminModeProps) {
                       <td className="px-4 py-3 text-center">
                         <span className={`font-semibold ${user.tasksCount > 0 ? "text-rose-400" : "text-slate-500"}`}>
                           {user.tasksCount}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`font-semibold ${user.plannerDaysCount > 0 ? "text-violet-400" : "text-slate-500"}`}>
-                          {user.plannerDaysCount}
                         </span>
                       </td>
                     </tr>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Scale, Target, ClipboardList, ListChecks, Shield, MessageSquare, CalendarDays } from "lucide-react";
+import { Scale, Target, ListChecks, Shield, MessageSquare, CalendarDays } from "lucide-react";
 import ThemeToggle from "./shared/ThemeToggle";
 import FeedbackModal from "./shared/FeedbackModal";
 import { useAuth } from "@/lib/AuthContext";
@@ -107,22 +107,6 @@ export default function ModeSelector() {
             </h2>
             <p className="text-slate-400 text-sm">
               Śledź swoją wagę, ustalaj cele i monitoruj postępy w czasie
-            </p>
-          </button>
-
-          {/* Planner */}
-          <button
-            onClick={() => navigateTo('planner')}
-            className="group bg-slate-800/50 hover:bg-slate-800 border-2 border-slate-700 hover:border-violet-500 rounded-2xl p-6 transition-all duration-300 text-left"
-          >
-            <div className="w-14 h-14 bg-violet-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-violet-500/30 transition-colors">
-              <ClipboardList className="w-7 h-7 text-violet-400" />
-            </div>
-            <h2 className="text-xl font-semibold text-white mb-2">
-              Planer
-            </h2>
-            <p className="text-slate-400 text-sm">
-              Planuj zadania na każdy dzień i odhaczaj wykonane
             </p>
           </button>
         </div>

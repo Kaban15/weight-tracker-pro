@@ -6,7 +6,6 @@ import {
   ListChecks,
   Scale,
   Target,
-  Calendar,
   ChevronLeft,
   ChevronRight,
   X
@@ -42,11 +41,8 @@ const slides = [
     icon: Target,
     iconBg: "bg-amber-500/20",
     iconColor: "text-amber-400",
-    secondIcon: Calendar,
-    secondIconBg: "bg-violet-500/20",
-    secondIconColor: "text-violet-400",
-    title: "Nawyki & Planer",
-    description: "Twórz codzienne nawyki (pompki, burpees) i planuj zadania na każdy dzień tygodnia.",
+    title: "Nawyki",
+    description: "Twórz codzienne nawyki jak pompki czy burpees i odhaczaj je każdego dnia.",
   },
 ];
 
@@ -56,7 +52,6 @@ export default function WelcomeModal({ onComplete }: WelcomeModalProps) {
   const isLastSlide = currentSlide === slides.length - 1;
   const slide = slides[currentSlide];
   const Icon = slide.icon;
-  const SecondIcon = slide.secondIcon;
 
   const handleNext = () => {
     if (isLastSlide) {
@@ -92,16 +87,11 @@ export default function WelcomeModal({ onComplete }: WelcomeModalProps) {
 
         {/* Content */}
         <div className="px-8 pb-6 text-center">
-          {/* Icon(s) */}
-          <div className="flex justify-center gap-3 mb-6">
+          {/* Icon */}
+          <div className="flex justify-center mb-6">
             <div className={`w-20 h-20 ${slide.iconBg} rounded-2xl flex items-center justify-center`}>
               <Icon className={`w-10 h-10 ${slide.iconColor}`} />
             </div>
-            {SecondIcon && (
-              <div className={`w-20 h-20 ${slide.secondIconBg} rounded-2xl flex items-center justify-center`}>
-                <SecondIcon className={`w-10 h-10 ${slide.secondIconColor}`} />
-              </div>
-            )}
           </div>
 
           {/* Title */}
