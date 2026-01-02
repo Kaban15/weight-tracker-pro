@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useAuth } from '@/lib/AuthContext';
-import { Target, Mail, Lock, LogIn, UserPlus, Check, X } from 'lucide-react';
+import { Target, Mail, Lock, LogIn, UserPlus, Check, X, KeyRound, ArrowLeft } from 'lucide-react';
 
 // Password validation rules
 const PASSWORD_RULES = {
@@ -48,8 +48,10 @@ function PasswordRule({ passed, text }: { passed: boolean; text: string }) {
   );
 }
 
+type AuthMode = 'login' | 'signup' | 'forgot-password';
+
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -57,7 +59,9 @@ export default function Auth() {
   const [message, setMessage] = useState('');
   const [showPasswordRules, setShowPasswordRules] = useState(false);
 
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, resetPassword } = useAuth();
+  const isLogin = mode === 'login';
+  const isForgotPassword = mode === 'forgot-password';
 
   const passwordValidation = useMemo(() => validatePassword(password), [password]);
 
@@ -67,7 +71,7 @@ export default function Auth() {
     setMessage('');
 
     // Client-side password validation for signup
-    if (!isLogin && !passwordValidation.isValid) {
+    if (mode === 'signup' && !passwordValidation.isValid) {
       setError('Hasło nie spełnia wymagań bezpieczeństwa.');
       return;
     }
@@ -75,7 +79,18 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (isForgotPassword) {
+        const { error } = await resetPassword(email);
+        if (error) {
+          if (error.message.includes('rate limit')) {
+            setError('Zbyt wiele prób. Poczekaj chwilę i spróbuj ponownie.');
+          } else {
+            setError(error.message);
+          }
+        } else {
+          setMessage('Link do resetowania hasła został wysłany na podany adres email.');
+        }
+      } else if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
           // Translate common login errors
@@ -120,7 +135,11 @@ export default function Auth() {
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Weight Tracker Pro</h1>
           <p className="text-slate-400">
-            {isLogin ? 'Sign in to your account' : 'Create a new account'}
+            {isForgotPassword
+              ? 'Zresetuj swoje hasło'
+              : isLogin
+                ? 'Sign in to your account'
+                : 'Create a new account'}
           </p>
         </div>
 
@@ -140,52 +159,54 @@ export default function Auth() {
             />
           </div>
 
-          <div>
-            <label className="flex items-center gap-2 text-slate-300 mb-2 font-semibold">
-              <Lock className="w-4 h-4" />
-              Hasło
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onFocus={() => !isLogin && setShowPasswordRules(true)}
-              onBlur={() => setShowPasswordRules(false)}
-              placeholder="••••••••"
-              required
-              minLength={PASSWORD_RULES.minLength}
-              className={`w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 outline-none transition-colors ${
-                !isLogin && password && !passwordValidation.isValid
-                  ? 'border-amber-500 focus:border-amber-500'
-                  : 'border-slate-700 focus:border-emerald-500'
-              }`}
-            />
+          {!isForgotPassword && (
+            <div>
+              <label className="flex items-center gap-2 text-slate-300 mb-2 font-semibold">
+                <Lock className="w-4 h-4" />
+                Hasło
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => mode === 'signup' && setShowPasswordRules(true)}
+                onBlur={() => setShowPasswordRules(false)}
+                placeholder="••••••••"
+                required
+                minLength={PASSWORD_RULES.minLength}
+                className={`w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 outline-none transition-colors ${
+                  mode === 'signup' && password && !passwordValidation.isValid
+                    ? 'border-amber-500 focus:border-amber-500'
+                    : 'border-slate-700 focus:border-emerald-500'
+                }`}
+              />
 
-            {/* Password requirements - only show during signup */}
-            {!isLogin && (showPasswordRules || (password && !passwordValidation.isValid)) && (
-              <div className="mt-2 p-3 bg-slate-800/50 rounded-xl border border-slate-700">
-                <p className="text-xs text-slate-400 mb-2">Wymagania hasła:</p>
-                <ul className="space-y-1">
-                  <PasswordRule
-                    passed={passwordValidation.hasMinLength}
-                    text={`Minimum ${PASSWORD_RULES.minLength} znaków`}
-                  />
-                  <PasswordRule
-                    passed={passwordValidation.hasUppercase}
-                    text="Wielka litera (A-Z)"
-                  />
-                  <PasswordRule
-                    passed={passwordValidation.hasLowercase}
-                    text="Mała litera (a-z)"
-                  />
-                  <PasswordRule
-                    passed={passwordValidation.hasNumber}
-                    text="Cyfra (0-9)"
-                  />
-                </ul>
-              </div>
-            )}
-          </div>
+              {/* Password requirements - only show during signup */}
+              {mode === 'signup' && (showPasswordRules || (password && !passwordValidation.isValid)) && (
+                <div className="mt-2 p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+                  <p className="text-xs text-slate-400 mb-2">Wymagania hasła:</p>
+                  <ul className="space-y-1">
+                    <PasswordRule
+                      passed={passwordValidation.hasMinLength}
+                      text={`Minimum ${PASSWORD_RULES.minLength} znaków`}
+                    />
+                    <PasswordRule
+                      passed={passwordValidation.hasUppercase}
+                      text="Wielka litera (A-Z)"
+                    />
+                    <PasswordRule
+                      passed={passwordValidation.hasLowercase}
+                      text="Mała litera (a-z)"
+                    />
+                    <PasswordRule
+                      passed={passwordValidation.hasNumber}
+                      text="Cyfra (0-9)"
+                    />
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-500/10 border-2 border-red-500/20 rounded-xl p-3 text-red-400 text-sm">
@@ -206,6 +227,11 @@ export default function Auth() {
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : isForgotPassword ? (
+              <>
+                <KeyRound className="w-5 h-5" />
+                Wyślij link resetujący
+              </>
             ) : isLogin ? (
               <>
                 <LogIn className="w-5 h-5" />
@@ -220,17 +246,45 @@ export default function Auth() {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => {
-              setIsLogin(!isLogin);
-              setError('');
-              setMessage('');
-            }}
-            className="text-slate-400 hover:text-emerald-400 transition-colors"
-          >
-            {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
-          </button>
+        <div className="mt-6 text-center space-y-2">
+          {isForgotPassword ? (
+            <button
+              onClick={() => {
+                setMode('login');
+                setError('');
+                setMessage('');
+              }}
+              className="text-slate-400 hover:text-emerald-400 transition-colors flex items-center justify-center gap-2 mx-auto"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Wróć do logowania
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => {
+                  setMode(isLogin ? 'signup' : 'login');
+                  setError('');
+                  setMessage('');
+                }}
+                className="text-slate-400 hover:text-emerald-400 transition-colors block mx-auto"
+              >
+                {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+              </button>
+              {isLogin && (
+                <button
+                  onClick={() => {
+                    setMode('forgot-password');
+                    setError('');
+                    setMessage('');
+                  }}
+                  className="text-slate-500 hover:text-emerald-400 transition-colors text-sm block mx-auto"
+                >
+                  Zapomniałeś hasła?
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
