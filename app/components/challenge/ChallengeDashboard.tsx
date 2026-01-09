@@ -18,22 +18,21 @@ interface ChallengeDashboardProps {
   onToggleDay: (challenge: Challenge, dateStr: string) => void;
 }
 
-// Get all days of a month organized by weeks
+// Get all days of a month organized by weeks (Monday to Sunday)
 function getMonthDays(year: number, month: number): { weeks: Date[][] } {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const weeks: Date[][] = [];
 
-  // Start from first day of month
-  let currentDate = new Date(firstDay);
-
   // Find the Monday of the first week (might be in previous month)
-  const firstDayOfWeek = currentDate.getDay();
+  let currentDate = new Date(firstDay);
+  const firstDayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
   const mondayOffset = firstDayOfWeek === 0 ? -6 : 1 - firstDayOfWeek;
   currentDate.setDate(currentDate.getDate() + mondayOffset);
 
-  // Generate weeks until we pass the last day of month
-  while (currentDate <= lastDay || weeks.length === 0) {
+  // Generate weeks until we've included all days of the current month
+  // Stop when we've passed the last day AND the last week has been completed
+  while (true) {
     const week: Date[] = [];
     for (let i = 0; i < 7; i++) {
       week.push(new Date(currentDate));
@@ -41,12 +40,16 @@ function getMonthDays(year: number, month: number): { weeks: Date[][] } {
     }
     weeks.push(week);
 
-    // Stop if we've covered the whole month
-    if (currentDate > lastDay && week.some(d => d.getMonth() === month)) {
-      // Check if we need more weeks
-      if (currentDate.getMonth() !== month) break;
+    // Check if we've covered the entire month
+    // Stop if the current date (start of next week) is in a month after the target month
+    // AND we've already included the last day of the month
+    const lastDayOfWeek = week[6]; // Sunday
+    if (lastDayOfWeek >= lastDay) {
+      break;
     }
-    if (weeks.length > 6) break; // Safety limit
+
+    // Safety limit
+    if (weeks.length >= 6) break;
   }
 
   return { weeks };
