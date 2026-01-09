@@ -13,6 +13,8 @@ export interface Task {
   completed: boolean;
   createdAt: string;
   updatedAt: string;
+  duration?: number; // Duration in minutes (e.g., 30, 60, 90)
+  time?: string; // Time in HH:MM format (e.g., "09:00", "14:30")
 }
 
 export interface TaskFormData {
@@ -22,6 +24,8 @@ export interface TaskFormData {
   priority: Priority;
   status: TaskStatus;
   category: Category;
+  duration?: number;
+  time?: string;
 }
 
 export const DEFAULT_TASK_FORM: TaskFormData = {
@@ -31,7 +35,20 @@ export const DEFAULT_TASK_FORM: TaskFormData = {
   priority: 'medium',
   status: 'not_started',
   category: 'duties',
+  duration: undefined,
+  time: undefined,
 };
+
+export const DURATION_OPTIONS = [
+  { value: 15, label: '15m' },
+  { value: 30, label: '30m' },
+  { value: 45, label: '45m' },
+  { value: 60, label: '1h' },
+  { value: 90, label: '1.5h' },
+  { value: 120, label: '2h' },
+  { value: 180, label: '3h' },
+  { value: 240, label: '4h' },
+];
 
 export const PRIORITY_CONFIG: Record<Priority, { label: string; color: string; bgColor: string }> = {
   high: { label: 'Wysokie', color: 'text-red-400', bgColor: 'bg-red-500' },

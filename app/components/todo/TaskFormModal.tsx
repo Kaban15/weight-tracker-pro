@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, FileText } from "lucide-react";
+import { X, FileText, Clock } from "lucide-react";
 import {
   Task,
   TaskFormData,
@@ -9,6 +9,7 @@ import {
   PRIORITY_CONFIG,
   STATUS_CONFIG,
   CATEGORY_CONFIG,
+  DURATION_OPTIONS,
   Priority,
   TaskStatus,
   Category,
@@ -19,6 +20,7 @@ interface TaskFormModalProps {
   task?: Task | null;
   onSave: (data: TaskFormData) => void;
   onClose: () => void;
+  defaultDate?: string;
 }
 
 export default function TaskFormModal({
@@ -26,6 +28,7 @@ export default function TaskFormModal({
   task,
   onSave,
   onClose,
+  defaultDate,
 }: TaskFormModalProps) {
   const [formData, setFormData] = useState<TaskFormData>(DEFAULT_TASK_FORM);
   const [error, setError] = useState<string | null>(null);
@@ -39,15 +42,17 @@ export default function TaskFormModal({
         priority: task.priority,
         status: task.status,
         category: task.category,
+        duration: task.duration,
+        time: task.time,
       });
     } else {
       setFormData({
         ...DEFAULT_TASK_FORM,
-        deadline: new Date().toISOString().split('T')[0],
+        deadline: defaultDate || new Date().toISOString().split('T')[0],
       });
     }
     setError(null);
-  }, [task, isOpen]);
+  }, [task, isOpen, defaultDate]);
 
   const handleSubmit = () => {
     if (!formData.title.trim()) {
@@ -121,6 +126,42 @@ export default function TaskFormModal({
               onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
               className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-rose-500 focus:outline-none"
             />
+          </div>
+
+          {/* Time and Duration */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Time */}
+            <div>
+              <label className="block text-sm text-slate-400 mb-2 flex items-center gap-1.5">
+                <Clock className="w-4 h-4" />
+                Godzina
+              </label>
+              <input
+                type="time"
+                value={formData.time || ''}
+                onChange={(e) => setFormData({ ...formData, time: e.target.value || undefined })}
+                className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-rose-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Duration */}
+            <div>
+              <label className="block text-sm text-slate-400 mb-2">
+                Czas trwania
+              </label>
+              <select
+                value={formData.duration || ''}
+                onChange={(e) => setFormData({ ...formData, duration: e.target.value ? Number(e.target.value) : undefined })}
+                className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-rose-500 focus:outline-none"
+              >
+                <option value="">Brak</option>
+                {DURATION_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Priority */}
