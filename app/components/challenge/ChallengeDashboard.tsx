@@ -18,41 +18,51 @@ interface ChallengeDashboardProps {
   onToggleDay: (challenge: Challenge, dateStr: string) => void;
 }
 
-// Get all days of a month organized by weeks (Monday to Sunday)
-function getMonthDays(year: number, month: number): { weeks: Date[][] } {
+// Get all days of a month organized by weeks
+// First week starts from day 1 (no previous month days)
+// Middle weeks are Mon-Sun
+// Last week ends on last day of month
+function getMonthDays(year: number, month: number): { weeks: Date[][]; weekDayOffsets: number[] } {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const weeks: Date[][] = [];
+  const weekDayOffsets: number[] = []; // Which day of week each week starts on (0=Mon, 6=Sun)
 
-  // Find the Monday of the first week (might be in previous month)
   let currentDate = new Date(firstDay);
-  const firstDayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-  const mondayOffset = firstDayOfWeek === 0 ? -6 : 1 - firstDayOfWeek;
-  currentDate.setDate(currentDate.getDate() + mondayOffset);
 
-  // Generate weeks until we've included all days of the current month
-  // Stop when we've passed the last day AND the last week has been completed
+  // First week: starts from day 1, ends on Sunday
+  const firstWeek: Date[] = [];
+  const firstDayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  // Convert to Monday-based index (0 = Monday, 6 = Sunday)
+  const mondayBasedIndex = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+  weekDayOffsets.push(mondayBasedIndex);
+
+  // Add days until Sunday (or end of month)
   while (true) {
+    firstWeek.push(new Date(currentDate));
+    const dayOfWeek = currentDate.getDay();
+    currentDate.setDate(currentDate.getDate() + 1);
+
+    // Stop if we reached Sunday or end of month
+    if (dayOfWeek === 0 || currentDate.getMonth() !== month) {
+      break;
+    }
+  }
+  weeks.push(firstWeek);
+
+  // Middle and last weeks: Mon-Sun (or until end of month)
+  while (currentDate.getMonth() === month) {
     const week: Date[] = [];
-    for (let i = 0; i < 7; i++) {
+    weekDayOffsets.push(0); // These weeks always start on Monday
+
+    for (let i = 0; i < 7 && currentDate.getMonth() === month; i++) {
       week.push(new Date(currentDate));
       currentDate.setDate(currentDate.getDate() + 1);
     }
     weeks.push(week);
-
-    // Check if we've covered the entire month
-    // Stop if the current date (start of next week) is in a month after the target month
-    // AND we've already included the last day of the month
-    const lastDayOfWeek = week[6]; // Sunday
-    if (lastDayOfWeek >= lastDay) {
-      break;
-    }
-
-    // Safety limit
-    if (weeks.length >= 6) break;
   }
 
-  return { weeks };
+  return { weeks, weekDayOffsets };
 }
 
 export default function ChallengeDashboard({
@@ -90,9 +100,7 @@ export default function ChallengeDashboard({
     const allDaysInMonth: string[] = [];
     monthData.weeks.forEach(week => {
       week.forEach(day => {
-        if (day.getMonth() === month) {
-          allDaysInMonth.push(formatDate(day));
-        }
+        allDaysInMonth.push(formatDate(day));
       });
     });
 
@@ -386,7 +394,7 @@ function HistoryItem({ challenge, onClick }: HistoryItemProps) {
 
 interface MonthlyMatrixProps {
   challenges: Challenge[];
-  monthData: { weeks: Date[][] };
+  monthData: { weeks: Date[][]; weekDayOffsets: number[] };
   month: number;
   monthlyStats: {
     dailyStats: { [date: string]: { done: number; notDone: number; progress: number } };
@@ -419,7 +427,7 @@ function MonthlyMatrix({
               {monthData.weeks.map((week, weekIdx) => (
                 <th
                   key={weekIdx}
-                  colSpan={7}
+                  colSpan={week.length}
                   className="text-center px-1 py-2 text-xs font-medium text-slate-400 border-l border-slate-600"
                 >
                   Tydzień {weekIdx + 1}
@@ -432,9 +440,10 @@ function MonthlyMatrix({
             {/* Day names row */}
             <tr className="bg-slate-700/30 border-b border-slate-600">
               <th className="sticky left-0 bg-slate-700/30 z-10"></th>
-              {monthData.weeks.map((week, weekIdx) => (
-                week.map((day, dayIdx) => {
-                  const isCurrentMonth = day.getMonth() === month;
+              {monthData.weeks.map((week, weekIdx) => {
+                const weekOffset = monthData.weekDayOffsets[weekIdx];
+                return week.map((day, dayIdx) => {
+                  const dayNameIdx = (weekOffset + dayIdx) % 7;
                   const isCurrentDay = isToday(day.getDate(), day.getMonth(), day.getFullYear());
                   return (
                     <th
@@ -443,19 +452,18 @@ function MonthlyMatrix({
                         dayIdx === 0 ? 'border-l border-slate-600' : ''
                       } ${isCurrentDay ? 'bg-amber-500/20' : ''}`}
                     >
-                      <div className={`text-[10px] ${isCurrentMonth ? 'text-slate-400' : 'text-slate-600'}`}>
-                        {DAY_NAMES_MEDIUM[dayIdx]}
+                      <div className="text-[10px] text-slate-400">
+                        {DAY_NAMES_MEDIUM[dayNameIdx]}
                       </div>
                       <div className={`text-xs font-medium ${
-                        isCurrentDay ? 'text-amber-400' :
-                        isCurrentMonth ? 'text-slate-300' : 'text-slate-600'
+                        isCurrentDay ? 'text-amber-400' : 'text-slate-300'
                       }`}>
                         {day.getDate()}
                       </div>
                     </th>
                   );
-                })
-              ))}
+                });
+              })}
               <th className="border-l border-slate-600">
                 <div className="flex text-[10px] text-slate-400">
                   <span className="flex-1 text-center">Cel</span>
@@ -485,12 +493,11 @@ function MonthlyMatrix({
                 {monthData.weeks.map((week, weekIdx) => (
                   week.map((day, dayIdx) => {
                     const dateStr = formatDate(day);
-                    const isCurrentMonth = day.getMonth() === month;
                     const inChallenge = dateStr >= challenge.startDate && dateStr <= challenge.endDate;
                     const completed = !!challenge.completedDays[dateStr];
                     const isCurrentDay = isToday(day.getDate(), day.getMonth(), day.getFullYear());
 
-                    if (!isCurrentMonth || !inChallenge) {
+                    if (!inChallenge) {
                       return (
                         <td
                           key={`${weekIdx}-${dayIdx}`}
@@ -552,18 +559,7 @@ function MonthlyMatrix({
               {monthData.weeks.map((week, weekIdx) => (
                 week.map((day, dayIdx) => {
                   const dateStr = formatDate(day);
-                  const isCurrentMonth = day.getMonth() === month;
                   const stats = monthlyStats.dailyStats[dateStr];
-
-                  if (!isCurrentMonth) {
-                    return (
-                      <td key={`prog-${weekIdx}-${dayIdx}`} className={`text-center px-0.5 py-1 ${
-                        dayIdx === 0 ? 'border-l border-slate-600' : ''
-                      }`}>
-                        <span className="text-[10px] text-slate-600">-</span>
-                      </td>
-                    );
-                  }
 
                   return (
                     <td key={`prog-${weekIdx}-${dayIdx}`} className={`text-center px-0.5 py-1 ${
@@ -589,18 +585,7 @@ function MonthlyMatrix({
               {monthData.weeks.map((week, weekIdx) => (
                 week.map((day, dayIdx) => {
                   const dateStr = formatDate(day);
-                  const isCurrentMonth = day.getMonth() === month;
                   const stats = monthlyStats.dailyStats[dateStr];
-
-                  if (!isCurrentMonth) {
-                    return (
-                      <td key={`done-${weekIdx}-${dayIdx}`} className={`text-center px-0.5 py-1 ${
-                        dayIdx === 0 ? 'border-l border-slate-600' : ''
-                      }`}>
-                        <span className="text-[10px] text-slate-600">-</span>
-                      </td>
-                    );
-                  }
 
                   return (
                     <td key={`done-${weekIdx}-${dayIdx}`} className={`text-center px-0.5 py-1 ${
@@ -622,18 +607,7 @@ function MonthlyMatrix({
               {monthData.weeks.map((week, weekIdx) => (
                 week.map((day, dayIdx) => {
                   const dateStr = formatDate(day);
-                  const isCurrentMonth = day.getMonth() === month;
                   const stats = monthlyStats.dailyStats[dateStr];
-
-                  if (!isCurrentMonth) {
-                    return (
-                      <td key={`notdone-${weekIdx}-${dayIdx}`} className={`text-center px-0.5 py-1 ${
-                        dayIdx === 0 ? 'border-l border-slate-600' : ''
-                      }`}>
-                        <span className="text-[10px] text-slate-600">-</span>
-                      </td>
-                    );
-                  }
 
                   return (
                     <td key={`notdone-${weekIdx}-${dayIdx}`} className={`text-center px-0.5 py-1 ${
@@ -669,21 +643,19 @@ function MonthlyMatrix({
 interface ProgressChartProps {
   dailyStats: { [date: string]: { done: number; notDone: number; progress: number } };
   month: number;
-  monthData: { weeks: Date[][] };
+  monthData: { weeks: Date[][]; weekDayOffsets: number[] };
 }
 
 function ProgressChart({ dailyStats, month, monthData }: ProgressChartProps) {
-  // Collect all days in month in order
+  // Collect all days in month in order (all days in weeks are now from current month)
   const daysInMonth: { date: string; progress: number }[] = [];
   monthData.weeks.forEach(week => {
     week.forEach(day => {
-      if (day.getMonth() === month) {
-        const dateStr = formatDate(day);
-        daysInMonth.push({
-          date: dateStr,
-          progress: dailyStats[dateStr]?.progress || 0
-        });
-      }
+      const dateStr = formatDate(day);
+      daysInMonth.push({
+        date: dateStr,
+        progress: dailyStats[dateStr]?.progress || 0
+      });
     });
   });
 
