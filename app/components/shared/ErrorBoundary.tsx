@@ -24,9 +24,13 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log error to monitoring service in production
-    if (process.env.NODE_ENV === "production") {
-      // Could send to Sentry, LogRocket, etc.
+    // Always log error to console
+    console.error("ErrorBoundary caught error:", error);
+    console.error("Error info:", errorInfo);
+
+    // Log to Sentry if available
+    if (typeof window !== "undefined" && (window as unknown as { Sentry?: { captureException: (e: Error) => void } }).Sentry) {
+      (window as unknown as { Sentry: { captureException: (e: Error) => void } }).Sentry.captureException(error);
     }
   }
 
@@ -52,9 +56,9 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
             <p className="text-slate-400 text-sm mb-6">
               Przepraszamy, wystąpił nieoczekiwany błąd. Spróbuj odświeżyć stronę.
             </p>
-            {process.env.NODE_ENV !== "production" && this.state.error && (
+            {this.state.error && (
               <pre className="text-left text-xs bg-slate-900 p-3 rounded-lg mb-4 overflow-auto max-h-32 text-rose-300">
-                {this.state.error.message}
+                {this.state.error.message?.substring(0, 200) || "Unknown error"}
               </pre>
             )}
             <div className="flex gap-3">
