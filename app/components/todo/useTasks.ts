@@ -362,8 +362,8 @@ export function useTasks(userId: string | undefined) {
     const completed = tasks.filter(t => t.completed || t.status === 'done').length;
     const cancelled = tasks.filter(t => t.status === 'cancelled').length;
     const notCompleted = tasks.filter(t => !t.completed && t.status !== 'done' && t.status !== 'cancelled').length;
-    const todayTasks = tasks.filter(t => t.deadline === today && !t.completed && t.status !== 'cancelled').length;
-    const overdue = tasks.filter(t => t.deadline < today && !t.completed && t.status !== 'cancelled').length;
+    const todayTasks = tasks.filter(t => t.deadline && t.deadline === today && !t.completed && t.status !== 'cancelled').length;
+    const overdue = tasks.filter(t => t.deadline && t.deadline < today && !t.completed && t.status !== 'cancelled').length;
     const activeTotal = total - cancelled;
     const percentComplete = activeTotal > 0 ? Math.round((completed / activeTotal) * 100) : 0;
 
@@ -378,7 +378,10 @@ export function useTasks(userId: string | undefined) {
       if (aInactive !== bInactive) {
         return aInactive ? 1 : -1;
       }
-      return a.deadline.localeCompare(b.deadline);
+      // Handle null/undefined deadlines
+      const aDeadline = a.deadline || '';
+      const bDeadline = b.deadline || '';
+      return aDeadline.localeCompare(bDeadline);
     });
   }, [tasks]);
 

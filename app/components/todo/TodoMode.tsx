@@ -106,12 +106,13 @@ export default function TodoMode({ onBack }: TodoModeProps) {
     setShowDeleteConfirm(null);
   };
 
-  const isOverdue = (deadline: string, completed: boolean, status: TaskStatus) => {
-    if (completed || status === 'cancelled') return false;
+  const isOverdue = (deadline: string | undefined, completed: boolean, status: TaskStatus) => {
+    if (!deadline || completed || status === 'cancelled') return false;
     return deadline < today.toISOString().split("T")[0];
   };
 
-  const isToday = (deadline: string) => {
+  const isToday = (deadline: string | undefined) => {
+    if (!deadline) return false;
     return deadline === today.toISOString().split("T")[0];
   };
 
@@ -635,7 +636,7 @@ export default function TodoMode({ onBack }: TodoModeProps) {
                                     : "text-slate-400"
                                 } ${task.completed || isCancelled ? "line-through" : ""}`}
                               >
-                                {new Date(task.deadline).toLocaleDateString("pl-PL")}
+                                {task.deadline ? new Date(task.deadline).toLocaleDateString("pl-PL") : "—"}
                               </span>
                             </td>
 
