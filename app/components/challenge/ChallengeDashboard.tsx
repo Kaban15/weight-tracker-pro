@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Check, ArrowLeft, Plus, ChevronLeft, ChevronRight, History, Zap, Trophy, Info } from "lucide-react";
 import { isToday } from "../shared/Calendar";
 import SyncIndicator from "../shared/SyncIndicator";
@@ -414,9 +414,36 @@ function MonthlyMatrix({
   onToggleDay,
   onCreateClick
 }: MonthlyMatrixProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to today's column on mount
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    // Small delay to ensure DOM is rendered
+    const timer = setTimeout(() => {
+      const todayCell = container.querySelector('[data-today="true"]');
+      if (todayCell) {
+        const containerRect = container.getBoundingClientRect();
+        const cellRect = todayCell.getBoundingClientRect();
+
+        // Calculate scroll position to put today's cell at the right edge with some padding
+        const scrollLeft = cellRect.left - containerRect.left + container.scrollLeft - containerRect.width + cellRect.width + 60;
+
+        container.scrollTo({
+          left: Math.max(0, scrollLeft),
+          behavior: 'auto'
+        });
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [month]);
+
   return (
     <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" ref={scrollContainerRef}>
         <table className="w-full border-collapse">
           <thead>
             {/* Week headers */}
@@ -448,6 +475,7 @@ function MonthlyMatrix({
                   return (
                     <th
                       key={`${weekIdx}-${dayIdx}`}
+                      data-today={isCurrentDay ? "true" : undefined}
                       className={`text-center px-0.5 py-1 min-w-[32px] ${
                         dayIdx === 0 ? 'border-l border-slate-600' : ''
                       } ${isCurrentDay ? 'bg-amber-500/20' : ''}`}
