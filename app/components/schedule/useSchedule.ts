@@ -23,7 +23,27 @@ export function useSchedule(userId: string | undefined) {
 
   // Load custom items from Supabase
   const loadCustomItems = useCallback(async () => {
-    if (!userId || !supabase) {
+    if (!userId) {
+      setIsLoadingCustom(false);
+      return;
+    }
+
+    // Check if we're in browser
+    if (typeof window === "undefined") {
+      setIsLoadingCustom(false);
+      return;
+    }
+
+    if (!supabase) {
+      // Fallback to localStorage
+      try {
+        const stored = localStorage.getItem(`schedule_custom_${userId}`);
+        if (stored) {
+          setCustomItems(JSON.parse(stored));
+        }
+      } catch {
+        // Ignore
+      }
       setIsLoadingCustom(false);
       return;
     }
@@ -38,9 +58,13 @@ export function useSchedule(userId: string | undefined) {
       setCustomItems(data || []);
     } catch {
       // Fallback to localStorage
-      const stored = localStorage.getItem(`schedule_custom_${userId}`);
-      if (stored) {
-        setCustomItems(JSON.parse(stored));
+      try {
+        const stored = localStorage.getItem(`schedule_custom_${userId}`);
+        if (stored) {
+          setCustomItems(JSON.parse(stored));
+        }
+      } catch {
+        // Ignore
       }
     } finally {
       setIsLoadingCustom(false);
@@ -53,10 +77,14 @@ export function useSchedule(userId: string | undefined) {
 
   // Save custom items
   const saveCustomItems = useCallback(async (items: CustomScheduleItem[]) => {
-    if (!userId) return;
+    if (!userId || typeof window === "undefined") return;
 
     // Save to localStorage as backup
-    localStorage.setItem(`schedule_custom_${userId}`, JSON.stringify(items));
+    try {
+      localStorage.setItem(`schedule_custom_${userId}`, JSON.stringify(items));
+    } catch {
+      // Ignore localStorage errors
+    }
 
     // Try to save to Supabase
     if (supabase) {

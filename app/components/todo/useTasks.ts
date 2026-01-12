@@ -115,11 +115,28 @@ export function useTasks(userId: string | undefined) {
 
   // Load tasks from Supabase
   const loadTasks = useCallback(async () => {
-    if (!userId || !supabase) return;
+    if (!userId) {
+      setIsLoading(false);
+      return;
+    }
+
+    // Check if we're in browser
+    if (typeof window === "undefined") {
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
       setSyncError(null);
+
+      // If supabase is not available, just use localStorage
+      if (!supabase) {
+        const localTasks = loadFromLocalStorage();
+        setTasks(localTasks);
+        setIsLoading(false);
+        return;
+      }
 
       // Check if we need to migrate from localStorage
       const hasMigrated = localStorage.getItem(migrationKey);
@@ -128,21 +145,25 @@ export function useTasks(userId: string | undefined) {
         if (localTasks.length > 0) {
           // Migrate local tasks to Supabase
           for (const task of localTasks) {
-            await supabase.from('tasks').upsert({
-              id: task.id,
-              user_id: userId,
-              title: task.title,
-              notes: task.notes || null,
-              deadline: task.deadline,
-              priority: task.priority,
-              status: task.status,
-              category: task.category,
-              completed: task.completed,
-              duration: task.duration || null,
-              time: task.time || null,
-              created_at: task.createdAt,
-              updated_at: task.updatedAt,
-            });
+            try {
+              await supabase.from('tasks').upsert({
+                id: task.id,
+                user_id: userId,
+                title: task.title,
+                notes: task.notes || null,
+                deadline: task.deadline,
+                priority: task.priority,
+                status: task.status,
+                category: task.category,
+                completed: task.completed,
+                duration: task.duration || null,
+                time: task.time || null,
+                created_at: task.createdAt,
+                updated_at: task.updatedAt,
+              });
+            } catch {
+              // Ignore individual task migration errors
+            }
           }
         }
         localStorage.setItem(migrationKey, 'true');
