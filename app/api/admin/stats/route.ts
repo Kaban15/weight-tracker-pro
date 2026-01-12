@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkRateLimit, getRateLimitHeaders, RATE_LIMIT_CONFIGS } from "@/lib/serverRateLimiter";
 
 // Admin emails - same as in useAdmin.ts
 const ADMIN_EMAILS = process.env.NEXT_PUBLIC_ADMIN_EMAILS
@@ -12,6 +13,23 @@ function isAdmin(email: string | undefined): boolean {
 }
 
 export async function GET(request: NextRequest) {
+  // Rate limiting
+  const { allowed, remaining, resetTime } = checkRateLimit(request, RATE_LIMIT_CONFIGS.admin);
+  const rateLimitHeaders = getRateLimitHeaders(remaining, resetTime, RATE_LIMIT_CONFIGS.admin.maxRequests);
+
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: {
+          ...Object.fromEntries(rateLimitHeaders.entries()),
+          "Retry-After": Math.ceil((resetTime - Date.now()) / 1000).toString(),
+        },
+      }
+    );
+  }
+
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

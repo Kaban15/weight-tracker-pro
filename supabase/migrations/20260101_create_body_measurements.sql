@@ -30,18 +30,22 @@ CREATE INDEX IF NOT EXISTS idx_body_measurements_date ON body_measurements(user_
 ALTER TABLE body_measurements ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can only see their own measurements
+DROP POLICY IF EXISTS "Users can view own measurements" ON body_measurements;
 CREATE POLICY "Users can view own measurements" ON body_measurements
   FOR SELECT USING (auth.uid() = user_id);
 
 -- Policy: Users can insert their own measurements
+DROP POLICY IF EXISTS "Users can insert own measurements" ON body_measurements;
 CREATE POLICY "Users can insert own measurements" ON body_measurements
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Policy: Users can update their own measurements
+DROP POLICY IF EXISTS "Users can update own measurements" ON body_measurements;
 CREATE POLICY "Users can update own measurements" ON body_measurements
   FOR UPDATE USING (auth.uid() = user_id);
 
 -- Policy: Users can delete their own measurements
+DROP POLICY IF EXISTS "Users can delete own measurements" ON body_measurements;
 CREATE POLICY "Users can delete own measurements" ON body_measurements
   FOR DELETE USING (auth.uid() = user_id);
 
@@ -54,6 +58,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS body_measurements_updated_at ON body_measurements;
 CREATE TRIGGER body_measurements_updated_at
   BEFORE UPDATE ON body_measurements
   FOR EACH ROW

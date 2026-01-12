@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { X, Scale, Flame, Footprints, Dumbbell, Trash2, AlertTriangle } from 'lucide-react';
-import { Entry, Goal, formatDate } from './types';
+import { X, Scale, Flame, Footprints, Dumbbell, Trash2, AlertTriangle, Plus } from 'lucide-react';
+import { Entry, Goal, Workout, formatDate } from './types';
 
 interface EntryModalProps {
   isOpen: boolean;
@@ -23,11 +23,21 @@ export default function EntryModal({
   onDelete,
   onClose
 }: EntryModalProps) {
+  // Convert legacy single workout to workouts array
+  const getInitialWorkouts = (): Workout[] => {
+    if (entry?.workouts && entry.workouts.length > 0) {
+      return entry.workouts;
+    }
+    if (entry?.workout) {
+      return [{ type: entry.workout, duration: entry.workout_duration }];
+    }
+    return [];
+  };
+
   const [weight, setWeight] = useState(entry?.weight.toString() || '');
   const [calories, setCalories] = useState(entry?.calories?.toString() || '');
   const [steps, setSteps] = useState(entry?.steps?.toString() || '');
-  const [workout, setWorkout] = useState(entry?.workout || '');
-  const [workoutDuration, setWorkoutDuration] = useState(entry?.workout_duration?.toString() || '');
+  const [workouts, setWorkouts] = useState<Workout[]>(getInitialWorkouts());
   const [notes, setNotes] = useState(entry?.notes || '');
   const [date, setDate] = useState(entry?.date || selectedDate || formatDate(new Date()));
   const [saving, setSaving] = useState(false);
@@ -35,13 +45,37 @@ export default function EntryModal({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const addWorkout = () => {
+    setWorkouts([...workouts, { type: '', duration: undefined }]);
+  };
+
+  const updateWorkout = (index: number, field: 'type' | 'duration', value: string | number | undefined) => {
+    const updated = [...workouts];
+    if (field === 'type') {
+      updated[index].type = value as string;
+    } else {
+      updated[index].duration = value ? Number(value) : undefined;
+    }
+    setWorkouts(updated);
+  };
+
+  const removeWorkout = (index: number) => {
+    setWorkouts(workouts.filter((_, i) => i !== index));
+  };
+
   // Reset form when entry or selectedDate changes
   useEffect(() => {
     setWeight(entry?.weight.toString() || '');
     setCalories(entry?.calories?.toString() || '');
     setSteps(entry?.steps?.toString() || '');
-    setWorkout(entry?.workout || '');
-    setWorkoutDuration(entry?.workout_duration?.toString() || '');
+    // Convert legacy workout to workouts array
+    if (entry?.workouts && entry.workouts.length > 0) {
+      setWorkouts(entry.workouts);
+    } else if (entry?.workout) {
+      setWorkouts([{ type: entry.workout, duration: entry.workout_duration }]);
+    } else {
+      setWorkouts([]);
+    }
     setNotes(entry?.notes || '');
     setDate(entry?.date || selectedDate || formatDate(new Date()));
     setError(null);
@@ -89,15 +123,16 @@ export default function EntryModal({
     // Parse and validate numeric fields
     const parsedCalories = calories ? parseInt(calories) : undefined;
     const parsedSteps = steps ? parseInt(steps) : undefined;
-    const parsedDuration = workoutDuration ? parseInt(workoutDuration) : undefined;
+
+    // Filter out empty workouts and prepare workouts array
+    const validWorkouts = workouts.filter(w => w.type);
 
     const success = await onSave({
       date,
       weight: w,
       calories: parsedCalories && !isNaN(parsedCalories) ? parsedCalories : undefined,
       steps: parsedSteps && !isNaN(parsedSteps) ? parsedSteps : undefined,
-      workout: workout || undefined,
-      workout_duration: parsedDuration && !isNaN(parsedDuration) ? parsedDuration : undefined,
+      workouts: validWorkouts.length > 0 ? validWorkouts : undefined,
       notes: notes || undefined,
     }, entry?.id);
     setSaving(false);
@@ -209,29 +244,53 @@ export default function EntryModal({
           <div>
             <label className="flex items-center gap-2 text-slate-300 mb-2 font-semibold">
               <Dumbbell className="w-4 h-4 text-purple-400" />
-              Trening
+              Treningi
             </label>
-            <select value={workout} onChange={(e) => setWorkout(e.target.value)}
-              className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none">
-              <option value="">Brak</option>
-              <option value="Cardio">Cardio</option>
-              <option value="Siłowy">Siłowy</option>
-              <option value="Yoga">Yoga</option>
-              <option value="Bieganie">Bieganie</option>
-              <option value="Pływanie">Pływanie</option>
-              <option value="Rower">Rower</option>
-              <option value="HIIT">HIIT</option>
-              <option value="Inny">Inny</option>
-            </select>
-          </div>
 
-          {workout && (
-            <div>
-              <label className="block text-slate-300 mb-2 font-semibold">Czas treningu (min)</label>
-              <input type="number" value={workoutDuration} onChange={(e) => setWorkoutDuration(e.target.value)}
-                className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none" />
-            </div>
-          )}
+            {workouts.map((w, index) => (
+              <div key={index} className="flex gap-2 mb-2">
+                <select
+                  value={w.type}
+                  onChange={(e) => updateWorkout(index, 'type', e.target.value)}
+                  className="flex-1 bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none"
+                >
+                  <option value="">Wybierz typ</option>
+                  <option value="Cardio">Cardio</option>
+                  <option value="Siłowy">Siłowy</option>
+                  <option value="Yoga">Yoga</option>
+                  <option value="Bieganie">Bieganie</option>
+                  <option value="Pływanie">Pływanie</option>
+                  <option value="Rower">Rower</option>
+                  <option value="HIIT">HIIT</option>
+                  <option value="Inny">Inny</option>
+                </select>
+                <input
+                  type="number"
+                  value={w.duration || ''}
+                  onChange={(e) => updateWorkout(index, 'duration', e.target.value)}
+                  placeholder="min"
+                  className="w-20 bg-slate-800 text-white rounded-xl px-3 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeWorkout(index)}
+                  className="p-3 bg-slate-700 hover:bg-red-600/50 text-slate-400 hover:text-red-400 rounded-xl transition-colors"
+                  aria-label="Usuń trening"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={addWorkout}
+              className="w-full mt-2 py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border-2 border-dashed border-slate-600 hover:border-purple-500 transition-colors flex items-center justify-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Dodaj trening
+            </button>
+          </div>
 
           <div>
             <label className="block text-slate-300 mb-2 font-semibold">Notatki</label>

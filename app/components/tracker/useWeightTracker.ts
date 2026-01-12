@@ -345,7 +345,15 @@ export function useWeightTracker(userId: string | undefined) {
     const startWeight = sortedEntries[0].weight;
     const entriesWithCalories = sortedEntries.filter(e => e.calories);
     const entriesWithSteps = sortedEntries.filter(e => e.steps);
-    const entriesWithWorkout = sortedEntries.filter(e => e.workout);
+    // Count workouts - support both legacy (workout field) and new (workouts array) format
+    const countWorkouts = (entry: Entry): number => {
+      if (entry.workouts && entry.workouts.length > 0) {
+        return entry.workouts.filter(w => w.type).length;
+      }
+      return entry.workout ? 1 : 0;
+    };
+    const totalWorkoutsCount = sortedEntries.reduce((sum, e) => sum + countWorkouts(e), 0);
+    const entriesWithWorkout = sortedEntries.filter(e => countWorkouts(e) > 0);
 
     let streak = 0;
     const today = new Date();
@@ -369,7 +377,7 @@ export function useWeightTracker(userId: string | undefined) {
         ? entriesWithCalories.reduce((sum, e) => sum + (e.calories || 0), 0) / entriesWithCalories.length : 0,
       avgSteps: entriesWithSteps.length > 0
         ? entriesWithSteps.reduce((sum, e) => sum + (e.steps || 0), 0) / entriesWithSteps.length : 0,
-      totalWorkouts: entriesWithWorkout.length,
+      totalWorkouts: totalWorkoutsCount,
       currentStreak: streak,
       bestWeight: goal && goal.target_weight < startWeight
         ? Math.min(...sortedEntries.map(e => e.weight))

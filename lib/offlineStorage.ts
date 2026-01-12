@@ -3,13 +3,14 @@
 // IndexedDB-based offline storage for Weight Tracker
 
 const DB_NAME = "weight-tracker-offline";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 // Store names
 const STORES = {
   ENTRIES: "entries",
   GOALS: "goals",
   SYNC_QUEUE: "syncQueue",
+  FAILED_SYNC: "failedSync",
 } as const;
 
 export interface SyncQueueItem {
@@ -19,6 +20,11 @@ export interface SyncQueueItem {
   data: Record<string, unknown>;
   timestamp: number;
   retries: number;
+}
+
+export interface FailedSyncItem extends SyncQueueItem {
+  failedAt: number;
+  errorMessage?: string;
 }
 
 let db: IDBDatabase | null = null;
@@ -62,6 +68,12 @@ export async function initOfflineDB(): Promise<boolean> {
       if (!database.objectStoreNames.contains(STORES.SYNC_QUEUE)) {
         const syncStore = database.createObjectStore(STORES.SYNC_QUEUE, { keyPath: "id" });
         syncStore.createIndex("timestamp", "timestamp", { unique: false });
+      }
+
+      // Failed sync store
+      if (!database.objectStoreNames.contains(STORES.FAILED_SYNC)) {
+        const failedStore = database.createObjectStore(STORES.FAILED_SYNC, { keyPath: "id" });
+        failedStore.createIndex("failedAt", "failedAt", { unique: false });
       }
     };
   });
@@ -223,6 +235,62 @@ export const syncQueue = {
   },
 
   clear: () => clearStore(STORES.SYNC_QUEUE),
+};
+
+// Failed sync operations
+export const failedSyncStorage = {
+  getAll: () => getAllFromStore<FailedSyncItem>(STORES.FAILED_SYNC),
+
+  add: async (item: SyncQueueItem, errorMessage?: string): Promise<boolean> => {
+    const failedItem: FailedSyncItem = {
+      ...item,
+      failedAt: Date.now(),
+      errorMessage,
+    };
+    return putToStore(STORES.FAILED_SYNC, failedItem);
+  },
+
+  remove: (id: string) => deleteFromStore(STORES.FAILED_SYNC, id),
+
+  // Move item back to sync queue for retry
+  retry: async (id: string): Promise<boolean> => {
+    if (!db) return false;
+
+    return new Promise((resolve) => {
+      try {
+        const transaction = db!.transaction([STORES.FAILED_SYNC, STORES.SYNC_QUEUE], "readwrite");
+        const failedStore = transaction.objectStore(STORES.FAILED_SYNC);
+        const syncStore = transaction.objectStore(STORES.SYNC_QUEUE);
+
+        const getRequest = failedStore.get(id);
+
+        getRequest.onsuccess = () => {
+          const item = getRequest.result as FailedSyncItem;
+          if (item) {
+            // Create new sync item with reset retries
+            const syncItem: SyncQueueItem = {
+              id: crypto.randomUUID(),
+              operation: item.operation,
+              table: item.table,
+              data: item.data,
+              timestamp: Date.now(),
+              retries: 0,
+            };
+            syncStore.add(syncItem);
+            failedStore.delete(id);
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        };
+        getRequest.onerror = () => resolve(false);
+      } catch {
+        resolve(false);
+      }
+    });
+  },
+
+  clear: () => clearStore(STORES.FAILED_SYNC),
 };
 
 // Check if we're online

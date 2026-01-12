@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
-
-// Force rebuild to pick up env vars
+import { checkRateLimit, getRateLimitHeaders, RATE_LIMIT_CONFIGS } from '@/lib/serverRateLimiter';
 
 const CATEGORY_LABELS: Record<string, string> = {
   bug: 'Bug / Błąd',
@@ -12,6 +11,23 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export async function POST(request: NextRequest) {
+  // Rate limiting
+  const { allowed, remaining, resetTime } = checkRateLimit(request, RATE_LIMIT_CONFIGS.feedback);
+  const rateLimitHeaders = getRateLimitHeaders(remaining, resetTime, RATE_LIMIT_CONFIGS.feedback.maxRequests);
+
+  if (!allowed) {
+    return NextResponse.json(
+      { error: 'Zbyt wiele żądań. Spróbuj ponownie później.' },
+      {
+        status: 429,
+        headers: {
+          ...Object.fromEntries(rateLimitHeaders.entries()),
+          'Retry-After': Math.ceil((resetTime - Date.now()) / 1000).toString(),
+        },
+      }
+    );
+  }
+
   const debug = {
     supabaseConfigured: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
     resendConfigured: !!process.env.RESEND_API_KEY,

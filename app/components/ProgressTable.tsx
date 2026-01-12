@@ -2,6 +2,11 @@
 
 import { TrendingUp, TrendingDown, Minus, Check, X } from 'lucide-react';
 
+interface Workout {
+  type: string;
+  duration?: number;
+}
+
 interface Entry {
   id: string;
   date: string;
@@ -10,6 +15,7 @@ interface Entry {
   steps?: number;
   workout?: string;
   workout_duration?: number;
+  workouts?: Workout[];
 }
 
 interface Goal {
@@ -192,7 +198,15 @@ export default function ProgressTable({ entries, goal }: ProgressTableProps) {
                       </td>
                     )}
                     <td className="py-3 px-2 text-center">
-                      {entry.workout ? (
+                      {entry.workouts && entry.workouts.length > 0 ? (
+                        <div className="flex flex-col gap-1">
+                          {entry.workouts.map((w, i) => (
+                            <span key={i} className="text-purple-400">
+                              {w.type}{w.duration && ` (${w.duration}min)`}
+                            </span>
+                          ))}
+                        </div>
+                      ) : entry.workout ? (
                         <span className="text-purple-400">
                           {entry.workout}
                           {entry.workout_duration && ` (${entry.workout_duration}min)`}

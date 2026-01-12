@@ -1,17 +1,34 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { supabase } from "@/lib/supabase";
+import { isRateLimited, RATE_LIMITS } from "@/lib/rateLimiter";
 import { Task, TaskFormData, TaskStats, DEFAULT_TASK_FORM, Category, TaskStatus, CATEGORY_CONFIG, STATUS_CONFIG } from "./types";
 
-function generateId(): string {
-  return `todo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+interface TaskRow {
+  id: string;
+  user_id: string;
+  title: string;
+  notes: string | null;
+  deadline: string;
+  priority: 'high' | 'medium' | 'low' | 'optional';
+  status: TaskStatus;
+  category: Category;
+  completed: boolean;
+  duration: number | null;
+  time: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function formatDate(date: Date): string {
+  return date.toISOString().split('T')[0];
 }
 
 // Migrate old task data to new format
 function migrateTask(task: Record<string, unknown>): Task {
-  // Map old categories to new ones
   const categoryMap: Record<string, Category> = {
-    'other': 'duties', // 'other' was removed, map to 'duties'
+    'other': 'duties',
     'work': 'work',
     'money': 'money',
     'ideas': 'ideas',
@@ -23,13 +40,11 @@ function migrateTask(task: Record<string, unknown>): Task {
     'free_time': 'free_time',
   };
 
-  // Ensure category is valid
   let category = task.category as string;
   if (!category || !CATEGORY_CONFIG[category as Category]) {
     category = categoryMap[category] || 'duties';
   }
 
-  // Ensure status is valid
   let status = task.status as string;
   if (!status || !STATUS_CONFIG[status as TaskStatus]) {
     status = task.completed ? 'done' : 'not_started';
@@ -46,51 +61,51 @@ function migrateTask(task: Record<string, unknown>): Task {
     completed: task.completed as boolean,
     createdAt: task.createdAt as string,
     updatedAt: task.updatedAt as string,
+    duration: task.duration as number | undefined,
+    time: task.time as string | undefined,
   };
-}
-
-function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0];
 }
 
 export function useTasks(userId: string | undefined) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
-  // Use a unique localStorage key for todo items
+  // Ref to always have access to latest tasks
+  const tasksRef = useRef<Task[]>(tasks);
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
+
   const localStorageKey = `todo_items_v1_${userId}`;
-  const oldLocalStorageKey = `tasks_v1_${userId}`; // Old key for migration
+  const oldLocalStorageKey = `tasks_v1_${userId}`;
+  const migrationKey = `tasks_migrated_to_supabase_${userId}`;
 
-  // Migrate data from old key to new key
-  const migrateOldData = useCallback(() => {
-    if (typeof window === "undefined" || !userId) return;
-    try {
-      const oldData = localStorage.getItem(oldLocalStorageKey);
-      const newData = localStorage.getItem(localStorageKey);
+  const rowToTask = (row: TaskRow): Task => ({
+    id: row.id,
+    title: row.title,
+    notes: row.notes || undefined,
+    deadline: row.deadline,
+    priority: row.priority,
+    status: row.status,
+    category: row.category,
+    completed: row.completed,
+    duration: row.duration || undefined,
+    time: row.time || undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  });
 
-      // Only migrate if old data exists and new data doesn't
-      if (oldData && !newData) {
-        localStorage.setItem(localStorageKey, oldData);
-        // Don't delete old data, just keep both for safety
-      }
-    } catch {
-      // Migration error - ignore
-    }
-  }, [localStorageKey, oldLocalStorageKey, userId]);
-
-  // Load tasks from localStorage (try new key first, then old key)
+  // Load from localStorage (for migration)
   const loadFromLocalStorage = useCallback((): Task[] => {
     if (typeof window === "undefined" || !userId) return [];
     try {
-      // Try new key first
       let saved = localStorage.getItem(localStorageKey);
-      // If not found, try old key
       if (!saved) {
         saved = localStorage.getItem(oldLocalStorageKey);
       }
       if (!saved) return [];
-
-      // Parse and migrate tasks to ensure compatibility
       const rawTasks = JSON.parse(saved) as Record<string, unknown>[];
       return rawTasks.map(task => migrateTask(task));
     } catch {
@@ -98,94 +113,226 @@ export function useTasks(userId: string | undefined) {
     }
   }, [localStorageKey, oldLocalStorageKey, userId]);
 
-  // Save tasks to localStorage (save to both keys for safety)
-  const saveToLocalStorage = useCallback((data: Task[]) => {
-    if (typeof window === "undefined" || !userId) return;
+  // Load tasks from Supabase
+  const loadTasks = useCallback(async () => {
+    if (!userId || !supabase) return;
+
     try {
-      const json = JSON.stringify(data);
-      localStorage.setItem(localStorageKey, json);
-      // Also save to old key as backup
-      localStorage.setItem(oldLocalStorageKey, json);
-    } catch {
-      // localStorage error
-    }
-  }, [localStorageKey, oldLocalStorageKey, userId]);
+      setIsLoading(true);
+      setSyncError(null);
 
-  // Initial load from localStorage only
-  useEffect(() => {
-    if (!userId) {
+      // Check if we need to migrate from localStorage
+      const hasMigrated = localStorage.getItem(migrationKey);
+      if (!hasMigrated) {
+        const localTasks = loadFromLocalStorage();
+        if (localTasks.length > 0) {
+          // Migrate local tasks to Supabase
+          for (const task of localTasks) {
+            await supabase.from('tasks').upsert({
+              id: task.id,
+              user_id: userId,
+              title: task.title,
+              notes: task.notes || null,
+              deadline: task.deadline,
+              priority: task.priority,
+              status: task.status,
+              category: task.category,
+              completed: task.completed,
+              duration: task.duration || null,
+              time: task.time || null,
+              created_at: task.createdAt,
+              updated_at: task.updatedAt,
+            });
+          }
+        }
+        localStorage.setItem(migrationKey, 'true');
+      }
+
+      // Fetch from Supabase
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', userId)
+        .order('deadline', { ascending: true });
+
+      if (error) throw error;
+
+      setTasks((data || []).map(rowToTask));
+    } catch (err) {
+      console.error('Error loading tasks:', err);
+      setSyncError('Błąd ładowania zadań');
+      // Fallback to localStorage
+      const localTasks = loadFromLocalStorage();
+      setTasks(localTasks);
+    } finally {
       setIsLoading(false);
-      return;
     }
+  }, [userId, migrationKey, loadFromLocalStorage]);
 
-    // First, migrate any old data
-    migrateOldData();
-
-    // Then load from new key
-    const localTasks = loadFromLocalStorage();
-    setTasks(localTasks);
-    setIsLoading(false);
-  }, [userId, migrateOldData, loadFromLocalStorage]);
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
 
   // Add task
-  const addTask = useCallback((formData: TaskFormData): Task => {
+  const addTask = useCallback(async (formData: TaskFormData): Promise<Task | null> => {
+    if (!userId || !supabase) return null;
+
+    if (isRateLimited('task:create', RATE_LIMITS.create)) {
+      setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
+      return null;
+    }
+
     const now = new Date().toISOString();
     const newTask: Task = {
-      id: generateId(),
+      id: crypto.randomUUID(),
       ...formData,
-      completed: false,
+      completed: formData.status === 'done',
       createdAt: now,
       updatedAt: now,
     };
 
-    setTasks(prev => {
-      const updated = [...prev, newTask];
-      saveToLocalStorage(updated);
-      return updated;
-    });
+    // Optimistic update
+    setTasks(prev => [...prev, newTask]);
 
-    return newTask;
-  }, [saveToLocalStorage]);
+    try {
+      setIsSyncing(true);
+      const { error } = await supabase.from('tasks').insert({
+        id: newTask.id,
+        user_id: userId,
+        title: newTask.title,
+        notes: newTask.notes || null,
+        deadline: newTask.deadline,
+        priority: newTask.priority,
+        status: newTask.status,
+        category: newTask.category,
+        completed: newTask.completed,
+        duration: newTask.duration || null,
+        time: newTask.time || null,
+      });
+
+      if (error) throw error;
+      setSyncError(null);
+      return newTask;
+    } catch (err) {
+      console.error('Error adding task:', err);
+      setSyncError('Błąd dodawania zadania');
+      return newTask;
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [userId]);
 
   // Update task
-  const updateTask = useCallback((taskId: string, updates: Partial<Task>) => {
-    setTasks(prev => {
-      const updated = prev.map(task =>
-        task.id === taskId
-          ? { ...task, ...updates, updatedAt: new Date().toISOString() }
-          : task
-      );
-      saveToLocalStorage(updated);
-      return updated;
-    });
-  }, [saveToLocalStorage]);
+  const updateTask = useCallback(async (taskId: string, updates: Partial<Task>) => {
+    if (!supabase) return;
+
+    if (isRateLimited('task:update', RATE_LIMITS.write)) {
+      setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
+      return;
+    }
+
+    const now = new Date().toISOString();
+
+    // Optimistic update
+    setTasks(prev => prev.map(task =>
+      task.id === taskId
+        ? { ...task, ...updates, updatedAt: now }
+        : task
+    ));
+
+    try {
+      setIsSyncing(true);
+      const { error } = await supabase.from('tasks')
+        .update({
+          title: updates.title,
+          notes: updates.notes || null,
+          deadline: updates.deadline,
+          priority: updates.priority,
+          status: updates.status,
+          category: updates.category,
+          completed: updates.completed,
+          duration: updates.duration || null,
+          time: updates.time || null,
+        })
+        .eq('id', taskId);
+
+      if (error) throw error;
+      setSyncError(null);
+    } catch (err) {
+      console.error('Error updating task:', err);
+      setSyncError('Błąd aktualizacji zadania');
+    } finally {
+      setIsSyncing(false);
+    }
+  }, []);
 
   // Delete task
-  const deleteTask = useCallback((taskId: string) => {
-    setTasks(prev => {
-      const updated = prev.filter(task => task.id !== taskId);
-      saveToLocalStorage(updated);
-      return updated;
-    });
-  }, [saveToLocalStorage]);
+  const deleteTask = useCallback(async (taskId: string) => {
+    if (!supabase) return;
+
+    if (isRateLimited('task:delete', RATE_LIMITS.delete)) {
+      setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
+      return;
+    }
+
+    // Optimistic update
+    setTasks(prev => prev.filter(task => task.id !== taskId));
+
+    try {
+      setIsSyncing(true);
+      const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+
+      if (error) throw error;
+      setSyncError(null);
+    } catch (err) {
+      console.error('Error deleting task:', err);
+      setSyncError('Błąd usuwania zadania');
+      loadTasks(); // Reload on error
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [loadTasks]);
 
   // Toggle task completion
-  const toggleComplete = useCallback((taskId: string) => {
-    setTasks(prev => {
-      const updated = prev.map(task =>
-        task.id === taskId
-          ? {
-              ...task,
-              completed: !task.completed,
-              status: !task.completed ? 'done' : 'not_started',
-              updatedAt: new Date().toISOString(),
-            } as Task
-          : task
-      );
-      saveToLocalStorage(updated);
-      return updated;
-    });
-  }, [saveToLocalStorage]);
+  const toggleComplete = useCallback(async (taskId: string) => {
+    if (!supabase) return;
+
+    if (isRateLimited('task:toggle', RATE_LIMITS.toggle)) {
+      setSyncError('Zbyt wiele operacji. Poczekaj chwilę.');
+      return;
+    }
+
+    const currentTask = tasksRef.current.find(t => t.id === taskId);
+    if (!currentTask) return;
+
+    const newCompleted = !currentTask.completed;
+    const newStatus = newCompleted ? 'done' : 'not_started';
+
+    // Optimistic update
+    setTasks(prev => prev.map(task =>
+      task.id === taskId
+        ? { ...task, completed: newCompleted, status: newStatus, updatedAt: new Date().toISOString() }
+        : task
+    ));
+
+    try {
+      setIsSyncing(true);
+      const { error } = await supabase.from('tasks')
+        .update({
+          completed: newCompleted,
+          status: newStatus,
+        })
+        .eq('id', taskId);
+
+      if (error) throw error;
+      setSyncError(null);
+    } catch (err) {
+      console.error('Error toggling task:', err);
+      setSyncError('Błąd synchronizacji');
+    } finally {
+      setIsSyncing(false);
+    }
+  }, []);
 
   // Calculate stats
   const stats: TaskStats = useMemo(() => {
@@ -207,11 +354,9 @@ export function useTasks(userId: string | undefined) {
     return [...tasks].sort((a, b) => {
       const aInactive = a.completed || a.status === 'cancelled';
       const bInactive = b.completed || b.status === 'cancelled';
-      // Completed/cancelled tasks go to the bottom
       if (aInactive !== bInactive) {
         return aInactive ? 1 : -1;
       }
-      // Sort by deadline
       return a.deadline.localeCompare(b.deadline);
     });
   }, [tasks]);
@@ -220,8 +365,8 @@ export function useTasks(userId: string | undefined) {
     tasks: sortedTasks,
     stats,
     isLoading,
-    isSyncing: false,
-    syncError: null,
+    isSyncing,
+    syncError,
     addTask,
     updateTask,
     deleteTask,

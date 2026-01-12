@@ -1,23 +1,49 @@
 "use client";
 
-import { useState } from "react";
-import { Scale, Target, ListChecks, Shield, MessageSquare, CalendarDays } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Scale, Target, ListChecks, Shield, MessageSquare, CalendarDays, Bell, Activity } from "lucide-react";
 import ThemeToggle from "./shared/ThemeToggle";
 import FeedbackModal from "./shared/FeedbackModal";
+import NotificationSettings from "./shared/NotificationSettings";
+import HealthIntegrations from "./shared/HealthIntegrations";
+import SyncStatusIndicator from "./shared/SyncStatusIndicator";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigation } from "@/lib/NavigationContext";
 import { isAdmin } from "./admin";
+import { initializeNotifications } from "@/lib/notifications";
 
 export default function ModeSelector() {
   const { user } = useAuth();
   const { navigateTo } = useNavigation();
   const showAdmin = isAdmin(user?.email);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [healthOpen, setHealthOpen] = useState(false);
+
+  // Initialize notifications on mount
+  useEffect(() => {
+    initializeNotifications();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center p-4 relative">
       {/* Theme Toggle, Feedback & Admin */}
       <div className="absolute top-4 right-4 flex items-center gap-2">
+        <SyncStatusIndicator />
+        <button
+          onClick={() => setHealthOpen(true)}
+          className="bg-pink-600/20 hover:bg-pink-600/40 text-pink-400 p-2 rounded-lg transition-colors"
+          title="Integracje zdrowotne"
+        >
+          <Activity className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => setNotificationsOpen(true)}
+          className="bg-amber-600/20 hover:bg-amber-600/40 text-amber-400 p-2 rounded-lg transition-colors"
+          title="Powiadomienia"
+        >
+          <Bell className="w-5 h-5" />
+        </button>
         <button
           onClick={() => setFeedbackOpen(true)}
           className="bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 p-2 rounded-lg transition-colors"
@@ -113,6 +139,8 @@ export default function ModeSelector() {
       </div>
 
       <FeedbackModal isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+      <NotificationSettings isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+      <HealthIntegrations isOpen={healthOpen} onClose={() => setHealthOpen(false)} />
     </div>
   );
 }

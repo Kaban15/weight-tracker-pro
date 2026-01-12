@@ -1,3 +1,8 @@
+export interface Workout {
+  type: string;
+  duration?: number;
+}
+
 export interface Entry {
   id: string;
   date: string;
@@ -6,6 +11,7 @@ export interface Entry {
   steps?: number;
   workout?: string;
   workout_duration?: number;
+  workouts?: Workout[];
   notes?: string;
 }
 

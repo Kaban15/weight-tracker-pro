@@ -42,13 +42,16 @@ CREATE INDEX IF NOT EXISTS idx_goal_history_completed_at ON goal_history(complet
 ALTER TABLE goal_history ENABLE ROW LEVEL SECURITY;
 
 -- Users can only see their own history
+DROP POLICY IF EXISTS "Users can view own goal history" ON goal_history;
 CREATE POLICY "Users can view own goal history" ON goal_history
   FOR SELECT USING (auth.uid() = user_id);
 
 -- Users can insert their own history
+DROP POLICY IF EXISTS "Users can insert own goal history" ON goal_history;
 CREATE POLICY "Users can insert own goal history" ON goal_history
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Users can delete their own history
+DROP POLICY IF EXISTS "Users can delete own goal history" ON goal_history;
 CREATE POLICY "Users can delete own goal history" ON goal_history
   FOR DELETE USING (auth.uid() = user_id);

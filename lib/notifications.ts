@@ -1,23 +1,47 @@
 "use client";
 
 // Notification settings storage key
-const NOTIFICATION_SETTINGS_KEY = "weight-tracker-notifications";
+const NOTIFICATION_SETTINGS_KEY = "weight-tracker-notifications-v2";
 
 export interface NotificationSettings {
-  enabled: boolean;
-  reminderTime: string; // HH:MM format
-  reminderDays: number[]; // 0-6 (Sunday-Saturday)
+  // Weight reminders
+  weightEnabled: boolean;
+  weightTime: string; // HH:MM format
+  weightDays: number[]; // 0-6 (Sunday-Saturday)
+
+  // Habits reminders
+  habitsEnabled: boolean;
+  habitsTime: string; // HH:MM format
+  habitsDays: number[]; // 0-6 (Sunday-Saturday)
+
+  // General settings
+  soundEnabled: boolean;
+  vibrationEnabled: boolean;
 }
 
 export const DEFAULT_SETTINGS: NotificationSettings = {
-  enabled: false,
-  reminderTime: "08:00",
-  reminderDays: [1, 2, 3, 4, 5, 6, 0], // All days
+  weightEnabled: false,
+  weightTime: "08:00",
+  weightDays: [1, 2, 3, 4, 5, 6, 0], // All days
+
+  habitsEnabled: false,
+  habitsTime: "20:00",
+  habitsDays: [1, 2, 3, 4, 5, 6, 0], // All days
+
+  soundEnabled: true,
+  vibrationEnabled: true,
 };
+
+export const DAY_NAMES = ["Nd", "Pn", "Wt", "Sr", "Cz", "Pt", "So"];
 
 // Check if notifications are supported
 export function isNotificationSupported(): boolean {
   return typeof window !== "undefined" && "Notification" in window;
+}
+
+// Check if service worker is supported
+export function isServiceWorkerSupported(): boolean {
+  return typeof window !== "undefined" && "serviceWorker" in navigator;
 }
 
 // Get current permission status
@@ -45,7 +69,17 @@ export function loadNotificationSettings(): NotificationSettings {
   try {
     const saved = localStorage.getItem(NOTIFICATION_SETTINGS_KEY);
     if (saved) {
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+      const parsed = JSON.parse(saved);
+      // Migrate old settings format if needed
+      if ('enabled' in parsed && !('weightEnabled' in parsed)) {
+        return {
+          ...DEFAULT_SETTINGS,
+          weightEnabled: parsed.enabled,
+          weightTime: parsed.reminderTime || DEFAULT_SETTINGS.weightTime,
+          weightDays: parsed.reminderDays || DEFAULT_SETTINGS.weightDays,
+        };
+      }
+      return { ...DEFAULT_SETTINGS, ...parsed };
     }
   } catch {
     // localStorage not available
@@ -61,10 +95,9 @@ export function saveNotificationSettings(settings: NotificationSettings): void {
     localStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(settings));
 
     // Update scheduled notifications
-    if (settings.enabled) {
-      scheduleReminder(settings);
-    } else {
-      cancelScheduledReminders();
+    cancelScheduledReminders();
+    if (settings.weightEnabled || settings.habitsEnabled) {
+      scheduleAllReminders(settings);
     }
   } catch {
     // localStorage not available
@@ -72,104 +105,148 @@ export function saveNotificationSettings(settings: NotificationSettings): void {
 }
 
 // Show a notification
-export function showNotification(title: string, options?: NotificationOptions): void {
+export function showNotification(
+  title: string,
+  options?: NotificationOptions & { vibrate?: number[] }
+): void {
   if (!isNotificationSupported() || Notification.permission !== "granted") return;
 
+  const settings = loadNotificationSettings();
+
   try {
-    new Notification(title, {
-      icon: "/icons/icon-192x192.svg",
-      badge: "/icons/icon-192x192.svg",
-      ...options,
-    });
+    // Try using service worker for better reliability
+    if (isServiceWorkerSupported() && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SHOW_NOTIFICATION',
+        title,
+        options: {
+          icon: "/icons/icon-192x192.svg",
+          badge: "/icons/icon-192x192.svg",
+          vibrate: settings.vibrationEnabled ? [100, 50, 100] : undefined,
+          silent: !settings.soundEnabled,
+          ...options,
+        },
+      });
+    } else {
+      // Fallback to direct notification
+      new Notification(title, {
+        icon: "/icons/icon-192x192.svg",
+        badge: "/icons/icon-192x192.svg",
+        silent: !settings.soundEnabled,
+        ...options,
+      });
+    }
   } catch {
     // Notification failed
   }
 }
 
-// Schedule reminder using setTimeout (simple approach)
-// In production, this would use Service Worker + Push API
-let reminderTimeout: NodeJS.Timeout | null = null;
+// Scheduled reminders storage
+let weightReminderTimeout: NodeJS.Timeout | null = null;
+let habitsReminderTimeout: NodeJS.Timeout | null = null;
 
-export function scheduleReminder(settings: NotificationSettings): void {
-  cancelScheduledReminders();
+function scheduleReminder(
+  type: 'weight' | 'habits',
+  time: string,
+  days: number[],
+  enabled: boolean
+): void {
+  if (!enabled || Notification.permission !== "granted") return;
 
-  if (!settings.enabled || Notification.permission !== "granted") return;
-
-  const checkAndSchedule = () => {
+  const scheduleNext = () => {
     const now = new Date();
-    const timeParts = settings.reminderTime.split(":");
+    const timeParts = time.split(":");
     if (timeParts.length !== 2) return;
 
     const hours = parseInt(timeParts[0], 10);
     const minutes = parseInt(timeParts[1], 10);
 
-    // Validate time values
     if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
       return;
     }
 
-    // Check if today is a reminder day
-    const today = now.getDay();
-    if (!settings.reminderDays.includes(today)) {
-      // Schedule check for tomorrow
-      scheduleNextCheck();
-      return;
+    // Find next reminder time
+    let targetDate = new Date();
+    targetDate.setHours(hours, minutes, 0, 0);
+
+    // If time has passed today, start checking from tomorrow
+    if (targetDate.getTime() <= now.getTime()) {
+      targetDate.setDate(targetDate.getDate() + 1);
     }
 
-    // Calculate time until reminder
-    const reminderTime = new Date();
-    reminderTime.setHours(hours, minutes, 0, 0);
-
-    let delay = reminderTime.getTime() - now.getTime();
-
-    // If reminder time has passed today, schedule for tomorrow
-    if (delay < 0) {
-      scheduleNextCheck();
-      return;
+    // Find next valid day
+    let daysChecked = 0;
+    while (!days.includes(targetDate.getDay()) && daysChecked < 7) {
+      targetDate.setDate(targetDate.getDate() + 1);
+      daysChecked++;
     }
 
-    // Schedule the notification
-    reminderTimeout = setTimeout(() => {
-      showNotification("Czas na ważenie!", {
-        body: "Nie zapomnij zapisać dzisiejszej wagi w Weight Tracker Pro",
-        tag: "daily-reminder",
-        requireInteraction: true,
-      });
+    if (daysChecked >= 7) return; // No valid days
 
-      // Schedule for next day
-      scheduleNextCheck();
+    const delay = targetDate.getTime() - now.getTime();
+
+    const timeout = setTimeout(() => {
+      if (type === 'weight') {
+        showNotification("Czas na ważenie!", {
+          body: "Nie zapomnij zapisać dzisiejszej wagi",
+          tag: "weight-reminder",
+          requireInteraction: true,
+        });
+      } else {
+        showNotification("Sprawdź swoje nawyki!", {
+          body: "Czy wykonałeś dziś wszystkie nawyki?",
+          tag: "habits-reminder",
+          requireInteraction: true,
+        });
+      }
+      scheduleNext();
     }, delay);
+
+    if (type === 'weight') {
+      weightReminderTimeout = timeout;
+    } else {
+      habitsReminderTimeout = timeout;
+    }
   };
 
-  const scheduleNextCheck = () => {
-    // Check again in 1 hour or at midnight
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 1, 0, 0);
+  scheduleNext();
+}
 
-    const delay = Math.min(
-      tomorrow.getTime() - now.getTime(),
-      60 * 60 * 1000 // 1 hour max
-    );
-
-    reminderTimeout = setTimeout(checkAndSchedule, delay);
-  };
-
-  checkAndSchedule();
+export function scheduleAllReminders(settings: NotificationSettings): void {
+  scheduleReminder('weight', settings.weightTime, settings.weightDays, settings.weightEnabled);
+  scheduleReminder('habits', settings.habitsTime, settings.habitsDays, settings.habitsEnabled);
 }
 
 export function cancelScheduledReminders(): void {
-  if (reminderTimeout) {
-    clearTimeout(reminderTimeout);
-    reminderTimeout = null;
+  if (weightReminderTimeout) {
+    clearTimeout(weightReminderTimeout);
+    weightReminderTimeout = null;
+  }
+  if (habitsReminderTimeout) {
+    clearTimeout(habitsReminderTimeout);
+    habitsReminderTimeout = null;
   }
 }
 
 // Initialize notifications on app load
 export function initializeNotifications(): void {
   const settings = loadNotificationSettings();
-  if (settings.enabled && Notification.permission === "granted") {
-    scheduleReminder(settings);
+  if ((settings.weightEnabled || settings.habitsEnabled) && Notification.permission === "granted") {
+    scheduleAllReminders(settings);
+  }
+}
+
+// Test notification
+export function sendTestNotification(type: 'weight' | 'habits'): void {
+  if (type === 'weight') {
+    showNotification("Test: Ważenie", {
+      body: "To jest testowe powiadomienie o ważeniu",
+      tag: "test-weight",
+    });
+  } else {
+    showNotification("Test: Nawyki", {
+      body: "To jest testowe powiadomienie o nawykach",
+      tag: "test-habits",
+    });
   }
 }

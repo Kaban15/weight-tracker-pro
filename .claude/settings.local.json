@@ -12,7 +12,13 @@
       "Bash(npx tsc:*)",
       "Bash(tree:*)",
       "Bash(dir:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npx supabase projects list)",
+      "Bash(npx vercel:*)",
+      "Bash(npx supabase:*)",
+      "Bash(curl:*)",
+      "Bash(\"https://api.supabase.com/v1/projects/uomxuraktekzlipzlqps/config/auth\")",
+      "Bash(schema \")"
     ]
   }
 }
