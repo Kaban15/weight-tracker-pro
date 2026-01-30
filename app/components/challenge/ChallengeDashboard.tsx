@@ -81,6 +81,7 @@ export default function ChallengeDashboard({
   // Current month based on offset
   const currentDate = useMemo(() => {
     const d = new Date();
+    d.setDate(1); // Set to first day to avoid month overflow (e.g., Jan 31 -> Feb 31 -> Mar 3)
     d.setMonth(d.getMonth() + monthOffset);
     return d;
   }, [monthOffset]);
