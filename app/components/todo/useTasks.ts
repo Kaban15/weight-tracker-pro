@@ -22,7 +22,10 @@ interface TaskRow {
 }
 
 function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 // Migrate old task data to new format
@@ -178,9 +181,14 @@ export function useTasks(userId: string | undefined) {
 
       if (error) throw error;
 
-      setTasks((data || []).map(rowToTask));
+      const loaded = (data || []).map(rowToTask);
+      console.log('[Tasks] Loaded from Supabase:', loaded.length, 'tasks');
+      if (loaded.length === 0 && !error) {
+        console.warn('[Tasks] Supabase returned 0 tasks. If you expect data, check RLS policies on the tasks table.');
+      }
+      setTasks(loaded);
     } catch (err) {
-      console.error('Error loading tasks:', err);
+      console.error('[Tasks] Error loading tasks:', err);
       setSyncError('Błąd ładowania zadań');
       // Fallback to localStorage
       const localTasks = loadFromLocalStorage();
@@ -235,9 +243,11 @@ export function useTasks(userId: string | undefined) {
       setSyncError(null);
       return newTask;
     } catch (err) {
-      console.error('Error adding task:', err);
-      setSyncError('Błąd dodawania zadania');
-      return newTask;
+      console.error('[Tasks] Error adding task:', err);
+      setSyncError('Błąd dodawania zadania — zmiany nie zostały zapisane');
+      // Revert optimistic update - task was not saved to DB
+      setTasks(prev => prev.filter(t => t.id !== newTask.id));
+      return null;
     } finally {
       setIsSyncing(false);
     }
