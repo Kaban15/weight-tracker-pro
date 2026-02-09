@@ -10,7 +10,7 @@ interface TaskRow {
   user_id: string;
   title: string;
   notes: string | null;
-  deadline: string;
+  date: string;
   priority: 'high' | 'medium' | 'low' | 'optional';
   status: TaskStatus;
   category: Category;
@@ -85,7 +85,7 @@ export function useTasks(userId: string | undefined) {
     id: row.id,
     title: row.title,
     notes: row.notes || undefined,
-    deadline: row.deadline,
+    deadline: row.date,
     priority: row.priority,
     status: row.status,
     category: row.category,
@@ -150,7 +150,7 @@ export function useTasks(userId: string | undefined) {
                 user_id: userId,
                 title: task.title,
                 notes: task.notes || null,
-                deadline: task.deadline,
+                date: task.deadline,
                 priority: task.priority,
                 status: task.status,
                 category: task.category,
@@ -173,7 +173,7 @@ export function useTasks(userId: string | undefined) {
         .from('tasks')
         .select('*')
         .eq('user_id', userId)
-        .order('deadline', { ascending: true });
+        .order('date', { ascending: true });
 
       if (error) throw error;
 
@@ -225,7 +225,7 @@ export function useTasks(userId: string | undefined) {
       user_id: userId,
       title: newTask.title,
       notes: newTask.notes || null,
-      deadline: newTask.deadline,
+      date: newTask.deadline,
       priority: newTask.priority,
       status: newTask.status,
       category: newTask.category,
@@ -278,7 +278,7 @@ export function useTasks(userId: string | undefined) {
         .update({
           title: updates.title,
           notes: updates.notes || null,
-          deadline: updates.deadline,
+          date: updates.deadline,
           priority: updates.priority,
           status: updates.status,
           category: updates.category,
