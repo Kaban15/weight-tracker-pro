@@ -3,6 +3,14 @@ export interface Workout {
   duration?: number;
 }
 
+export type MealType = 'Śniadanie' | 'II Śniadanie' | 'Obiad' | 'Podwieczorek' | 'Kolacja' | 'Przekąska';
+
+export interface Meal {
+  type: MealType;
+  description: string;
+  calories?: number;
+}
+
 export interface Entry {
   id: string;
   date: string;
@@ -12,6 +20,7 @@ export interface Entry {
   workout?: string;
   workout_duration?: number;
   workouts?: Workout[];
+  meals?: Meal[];
   notes?: string;
 }
 

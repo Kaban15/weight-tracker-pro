@@ -21,6 +21,11 @@ export const weightEntrySchema = z.object({
     type: z.string(),
     duration: z.number().min(0).optional(),
   })).optional(),
+  meals: z.array(z.object({
+    type: z.enum(['Śniadanie', 'II Śniadanie', 'Obiad', 'Podwieczorek', 'Kolacja', 'Przekąska']),
+    description: z.string().max(200, "Opis posiłku nie może mieć więcej niż 200 znaków"),
+    calories: z.number().min(0).max(10000).optional(),
+  })).optional(),
 });
 
 export type WeightEntryInput = z.infer<typeof weightEntrySchema>;

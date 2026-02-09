@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { X, Scale, Flame, Footprints, Dumbbell, Trash2, AlertTriangle, Plus } from 'lucide-react';
-import { Entry, Goal, Workout, formatDate } from './types';
+import { X, Scale, Flame, Footprints, Dumbbell, UtensilsCrossed, Trash2, AlertTriangle, Plus } from 'lucide-react';
+import { Entry, Goal, Workout, Meal, MealType, formatDate } from './types';
 
 interface EntryModalProps {
   isOpen: boolean;
@@ -38,6 +38,7 @@ export default function EntryModal({
   const [calories, setCalories] = useState(entry?.calories?.toString() || '');
   const [steps, setSteps] = useState(entry?.steps?.toString() || '');
   const [workouts, setWorkouts] = useState<Workout[]>(getInitialWorkouts());
+  const [meals, setMeals] = useState<Meal[]>(entry?.meals || []);
   const [notes, setNotes] = useState(entry?.notes || '');
   const [date, setDate] = useState(entry?.date || selectedDate || formatDate(new Date()));
   const [saving, setSaving] = useState(false);
@@ -63,6 +64,30 @@ export default function EntryModal({
     setWorkouts(workouts.filter((_, i) => i !== index));
   };
 
+  const MEAL_TYPES: MealType[] = ['Śniadanie', 'II Śniadanie', 'Obiad', 'Podwieczorek', 'Kolacja', 'Przekąska'];
+
+  const addMeal = () => {
+    setMeals([...meals, { type: 'Śniadanie', description: '', calories: undefined }]);
+  };
+
+  const updateMeal = (index: number, field: keyof Meal, value: string | number | undefined) => {
+    const updated = [...meals];
+    if (field === 'type') {
+      updated[index] = { ...updated[index], type: value as MealType };
+    } else if (field === 'description') {
+      updated[index] = { ...updated[index], description: value as string };
+    } else if (field === 'calories') {
+      updated[index] = { ...updated[index], calories: value ? Number(value) : undefined };
+    }
+    setMeals(updated);
+  };
+
+  const removeMeal = (index: number) => {
+    setMeals(meals.filter((_, i) => i !== index));
+  };
+
+  const mealCaloriesSum = meals.reduce((sum, m) => sum + (m.calories || 0), 0);
+
   // Reset form when entry or selectedDate changes
   useEffect(() => {
     setWeight(entry?.weight.toString() || '');
@@ -76,6 +101,7 @@ export default function EntryModal({
     } else {
       setWorkouts([]);
     }
+    setMeals(entry?.meals || []);
     setNotes(entry?.notes || '');
     setDate(entry?.date || selectedDate || formatDate(new Date()));
     setError(null);
@@ -127,12 +153,16 @@ export default function EntryModal({
     // Filter out empty workouts and prepare workouts array
     const validWorkouts = workouts.filter(w => w.type);
 
+    // Filter out meals with empty description
+    const validMeals = meals.filter(m => m.description.trim());
+
     const success = await onSave({
       date,
       weight: w,
       calories: parsedCalories && !isNaN(parsedCalories) ? parsedCalories : undefined,
       steps: parsedSteps && !isNaN(parsedSteps) ? parsedSteps : undefined,
       workouts: validWorkouts.length > 0 ? validWorkouts : undefined,
+      meals: validMeals.length > 0 ? validMeals : undefined,
       notes: notes || undefined,
     }, entry?.id);
     setSaving(false);
@@ -230,6 +260,59 @@ export default function EntryModal({
             </label>
             <input type="number" value={calories} onChange={(e) => setCalories(e.target.value)}
               className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none" />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-slate-300 mb-2 font-semibold">
+              <UtensilsCrossed className="w-4 h-4 text-amber-400" />
+              Posiłki
+              {mealCaloriesSum > 0 && <span className="text-slate-500 font-normal">(suma: {mealCaloriesSum} kcal)</span>}
+            </label>
+
+            {meals.map((m, index) => (
+              <div key={index} className="flex gap-2 mb-2">
+                <select
+                  value={m.type}
+                  onChange={(e) => updateMeal(index, 'type', e.target.value)}
+                  className="w-32 bg-slate-800 text-white rounded-xl px-3 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none text-sm"
+                >
+                  {MEAL_TYPES.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={m.description}
+                  onChange={(e) => updateMeal(index, 'description', e.target.value)}
+                  placeholder="Opis posiłku"
+                  className="flex-1 bg-slate-800 text-white rounded-xl px-3 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none text-sm"
+                />
+                <input
+                  type="number"
+                  value={m.calories || ''}
+                  onChange={(e) => updateMeal(index, 'calories', e.target.value)}
+                  placeholder="kcal"
+                  className="w-20 bg-slate-800 text-white rounded-xl px-3 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeMeal(index)}
+                  className="p-3 bg-slate-700 hover:bg-red-600/50 text-slate-400 hover:text-red-400 rounded-xl transition-colors"
+                  aria-label="Usuń posiłek"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={addMeal}
+              className="w-full mt-2 py-2 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border-2 border-dashed border-slate-600 hover:border-amber-500 transition-colors flex items-center justify-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Dodaj posiłek
+            </button>
           </div>
 
           <div>
