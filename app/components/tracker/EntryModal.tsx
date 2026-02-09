@@ -214,8 +214,8 @@ export default function EntryModal({
       aria-labelledby="entry-modal-title"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-slate-900 rounded-2xl p-6 max-w-md w-full border-2 border-emerald-500/20 my-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-slate-900 rounded-2xl max-w-md w-full border-2 border-emerald-500/20 my-8 flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between p-6 pb-0 mb-6">
           <h2 id="entry-modal-title" className="text-2xl font-bold text-white">
             {entry ? 'Edytuj wpis' : 'Dodaj wpis'}
           </h2>
@@ -224,6 +224,7 @@ export default function EntryModal({
           </button>
         </div>
 
+        <div className="overflow-y-auto px-6 pb-6 flex-1">
         {targetWeight && (
           <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
             <p className="text-amber-400 text-sm">
@@ -284,9 +285,9 @@ export default function EntryModal({
             </label>
 
             {meals.length > 0 && (
-              <div className="mb-3 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
+              <div className="sticky top-0 z-10 mb-3 p-3 bg-slate-900 rounded-xl border border-slate-700/50 shadow-lg shadow-slate-950/50">
                 <div className="text-xs text-slate-500 mb-1">Suma dnia</div>
-                <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-3 text-sm flex-wrap">
                   <span className="text-orange-400 font-semibold">{macroSummary.calories} kcal</span>
                   <span className="text-blue-400">B: {macroSummary.protein}g</span>
                   <span className="text-yellow-400">W: {macroSummary.carbs}g</span>
@@ -297,18 +298,18 @@ export default function EntryModal({
 
             {meals.map((m) => (
               <div key={m.id} className="mb-3 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
-                <div className="flex gap-2 mb-2">
+                <div className="flex flex-wrap gap-2 mb-2">
                   <input
                     type="text"
                     value={m.name}
                     onChange={(e) => updateMeal(m.id, { name: e.target.value })}
                     placeholder="Nazwa posiłku"
-                    className="flex-1 bg-slate-800 text-white rounded-lg px-3 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-sm"
+                    className="flex-1 min-w-0 bg-slate-800 text-white rounded-lg px-3 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-sm"
                   />
                   <select
                     value={m.type}
                     onChange={(e) => updateMeal(m.id, { type: e.target.value as MealType })}
-                    className="bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-sm"
+                    className="bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-sm shrink-0"
                   >
                     {MEAL_TYPES.map(type => (
                       <option key={type} value={type}>{type}</option>
@@ -317,13 +318,13 @@ export default function EntryModal({
                   <button
                     type="button"
                     onClick={() => removeMeal(m.id)}
-                    className="p-2 bg-slate-700 hover:bg-red-600/50 text-slate-400 hover:text-red-400 rounded-lg transition-colors"
+                    className="p-2 bg-slate-700 hover:bg-red-600/50 text-slate-400 hover:text-red-400 rounded-lg transition-colors shrink-0"
                     aria-label="Usuń posiłek"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div>
                     <label className="text-xs text-slate-500 mb-1 block">kcal</label>
                     <input
@@ -335,7 +336,7 @@ export default function EntryModal({
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-blue-400 mb-1 block">Białko</label>
+                    <label className="text-xs text-blue-400 mb-1 block">Białko (g)</label>
                     <input
                       type="number"
                       min="0"
@@ -345,7 +346,7 @@ export default function EntryModal({
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-yellow-400 mb-1 block">Węgle</label>
+                    <label className="text-xs text-yellow-400 mb-1 block">Węgle (g)</label>
                     <input
                       type="number"
                       min="0"
@@ -355,7 +356,7 @@ export default function EntryModal({
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-red-400 mb-1 block">Tłuszcz</label>
+                    <label className="text-xs text-red-400 mb-1 block">Tłuszcz (g)</label>
                     <input
                       type="number"
                       min="0"
@@ -463,6 +464,7 @@ export default function EntryModal({
               {saving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : (entry ? 'Zapisz zmiany' : 'Dodaj wpis')}
             </button>
           </div>
+        </div>
         </div>
       </div>
 
