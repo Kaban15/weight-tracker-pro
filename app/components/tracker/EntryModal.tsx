@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { X, Scale, Flame, Footprints, Dumbbell, UtensilsCrossed, Trash2, AlertTriangle, Plus } from 'lucide-react';
 import { Entry, Goal, Workout, Meal, MealType, formatDate } from './types';
 
@@ -64,29 +64,34 @@ export default function EntryModal({
     setWorkouts(workouts.filter((_, i) => i !== index));
   };
 
-  const MEAL_TYPES: MealType[] = ['Śniadanie', 'II Śniadanie', 'Obiad', 'Podwieczorek', 'Kolacja', 'Przekąska'];
+  const MEAL_TYPES: MealType[] = ['Śniadanie', 'II Śniadanie', 'Obiad', 'Kolacja', 'Przekąska'];
 
   const addMeal = () => {
-    setMeals([...meals, { type: 'Śniadanie', description: '', calories: undefined }]);
+    setMeals([...meals, {
+      id: crypto.randomUUID(),
+      name: '',
+      type: 'Śniadanie',
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+    }]);
   };
 
-  const updateMeal = (index: number, field: keyof Meal, value: string | number | undefined) => {
-    const updated = [...meals];
-    if (field === 'type') {
-      updated[index] = { ...updated[index], type: value as MealType };
-    } else if (field === 'description') {
-      updated[index] = { ...updated[index], description: value as string };
-    } else if (field === 'calories') {
-      updated[index] = { ...updated[index], calories: value ? Number(value) : undefined };
-    }
-    setMeals(updated);
+  const updateMeal = (id: string, updates: Partial<Meal>) => {
+    setMeals(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m));
   };
 
-  const removeMeal = (index: number) => {
-    setMeals(meals.filter((_, i) => i !== index));
+  const removeMeal = (id: string) => {
+    setMeals(prev => prev.filter(m => m.id !== id));
   };
 
-  const mealCaloriesSum = meals.reduce((sum, m) => sum + (m.calories || 0), 0);
+  const macroSummary = useMemo(() => ({
+    calories: meals.reduce((s, m) => s + (m.calories || 0), 0),
+    protein: meals.reduce((s, m) => s + (m.protein || 0), 0),
+    carbs: meals.reduce((s, m) => s + (m.carbs || 0), 0),
+    fat: meals.reduce((s, m) => s + (m.fat || 0), 0),
+  }), [meals]);
 
   // Reset form when entry or selectedDate changes
   useEffect(() => {
@@ -107,6 +112,14 @@ export default function EntryModal({
     setError(null);
     setShowDeleteConfirm(false);
   }, [entry, selectedDate]);
+
+  // Auto-update calories from meals
+  useEffect(() => {
+    if (meals.length > 0) {
+      const totalCal = meals.reduce((sum, m) => sum + (m.calories || 0), 0);
+      setCalories(totalCal > 0 ? totalCal.toString() : '');
+    }
+  }, [meals]);
 
   const MIN_WEIGHT = 30;
   const MAX_WEIGHT = 300;
@@ -153,8 +166,8 @@ export default function EntryModal({
     // Filter out empty workouts and prepare workouts array
     const validWorkouts = workouts.filter(w => w.type);
 
-    // Filter out meals with empty description
-    const validMeals = meals.filter(m => m.description.trim());
+    // Filter out meals with empty name
+    const validMeals = meals.filter(m => m.name.trim());
 
     const success = await onSave({
       date,
@@ -257,51 +270,101 @@ export default function EntryModal({
             <label className="flex items-center gap-2 text-slate-300 mb-2 font-semibold">
               <Flame className="w-4 h-4 text-orange-400" />
               Kalorie {goal?.daily_calories_limit && <span className="text-slate-500 font-normal">(cel: {goal.daily_calories_limit})</span>}
+              {meals.length > 0 && <span className="text-emerald-500/70 text-xs font-normal ml-auto">auto z posiłków</span>}
             </label>
             <input type="number" value={calories} onChange={(e) => setCalories(e.target.value)}
-              className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none" />
+              readOnly={meals.length > 0}
+              className={`w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none ${meals.length > 0 ? 'opacity-60 cursor-not-allowed' : ''}`} />
           </div>
 
           <div>
             <label className="flex items-center gap-2 text-slate-300 mb-2 font-semibold">
               <UtensilsCrossed className="w-4 h-4 text-amber-400" />
               Posiłki
-              {mealCaloriesSum > 0 && <span className="text-slate-500 font-normal">(suma: {mealCaloriesSum} kcal)</span>}
             </label>
 
-            {meals.map((m, index) => (
-              <div key={index} className="flex gap-2 mb-2">
-                <select
-                  value={m.type}
-                  onChange={(e) => updateMeal(index, 'type', e.target.value)}
-                  className="w-32 bg-slate-800 text-white rounded-xl px-3 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none text-sm"
-                >
-                  {MEAL_TYPES.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  value={m.description}
-                  onChange={(e) => updateMeal(index, 'description', e.target.value)}
-                  placeholder="Opis posiłku"
-                  className="flex-1 bg-slate-800 text-white rounded-xl px-3 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none text-sm"
-                />
-                <input
-                  type="number"
-                  value={m.calories || ''}
-                  onChange={(e) => updateMeal(index, 'calories', e.target.value)}
-                  placeholder="kcal"
-                  className="w-20 bg-slate-800 text-white rounded-xl px-3 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeMeal(index)}
-                  className="p-3 bg-slate-700 hover:bg-red-600/50 text-slate-400 hover:text-red-400 rounded-xl transition-colors"
-                  aria-label="Usuń posiłek"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+            {meals.length > 0 && (
+              <div className="mb-3 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                <div className="text-xs text-slate-500 mb-1">Suma dnia</div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-orange-400 font-semibold">{macroSummary.calories} kcal</span>
+                  <span className="text-blue-400">B: {macroSummary.protein}g</span>
+                  <span className="text-yellow-400">W: {macroSummary.carbs}g</span>
+                  <span className="text-red-400">T: {macroSummary.fat}g</span>
+                </div>
+              </div>
+            )}
+
+            {meals.map((m) => (
+              <div key={m.id} className="mb-3 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={m.name}
+                    onChange={(e) => updateMeal(m.id, { name: e.target.value })}
+                    placeholder="Nazwa posiłku"
+                    className="flex-1 bg-slate-800 text-white rounded-lg px-3 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-sm"
+                  />
+                  <select
+                    value={m.type}
+                    onChange={(e) => updateMeal(m.id, { type: e.target.value as MealType })}
+                    className="bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-sm"
+                  >
+                    {MEAL_TYPES.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => removeMeal(m.id)}
+                    className="p-2 bg-slate-700 hover:bg-red-600/50 text-slate-400 hover:text-red-400 rounded-lg transition-colors"
+                    aria-label="Usuń posiłek"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  <div>
+                    <label className="text-xs text-slate-500 mb-1 block">kcal</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={m.calories || ''}
+                      onChange={(e) => updateMeal(m.id, { calories: Number(e.target.value) || 0 })}
+                      className="w-full bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-blue-400 mb-1 block">Białko</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={m.protein || ''}
+                      onChange={(e) => updateMeal(m.id, { protein: Number(e.target.value) || 0 })}
+                      className="w-full bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-yellow-400 mb-1 block">Węgle</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={m.carbs || ''}
+                      onChange={(e) => updateMeal(m.id, { carbs: Number(e.target.value) || 0 })}
+                      className="w-full bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-red-400 mb-1 block">Tłuszcz</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={m.fat || ''}
+                      onChange={(e) => updateMeal(m.id, { fat: Number(e.target.value) || 0 })}
+                      className="w-full bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-sm"
+                    />
+                  </div>
+                </div>
               </div>
             ))}
 
