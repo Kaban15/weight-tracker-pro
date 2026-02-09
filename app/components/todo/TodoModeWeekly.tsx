@@ -13,6 +13,8 @@ import {
   ChevronRight,
   LayoutDashboard,
   Calendar,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useTasks } from "./useTasks";
@@ -368,10 +370,12 @@ export default function TodoModeWeekly({ onBack }: TodoModeWeeklyProps) {
     tasks,
     stats,
     isLoading,
+    syncError,
     addTask,
     updateTask,
     deleteTask,
     toggleComplete,
+    reloadTasks,
   } = useTasks(user?.id);
 
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() =>
@@ -590,6 +594,23 @@ export default function TodoModeWeekly({ onBack }: TodoModeWeeklyProps) {
           <span className="text-white font-semibold">{stats.percentComplete}%</span>
         </div>
       </div>
+
+      {/* Sync error banner */}
+      {syncError && (
+        <div className="bg-red-900/30 border-b border-red-500/30 px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-400" />
+            <span className="text-red-400 text-sm">{syncError}</span>
+          </div>
+          <button
+            onClick={reloadTasks}
+            className="flex items-center gap-1.5 text-red-400 hover:text-red-300 text-sm font-semibold px-3 py-1 bg-red-500/20 rounded-lg hover:bg-red-500/30 transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Ponów
+          </button>
+        </div>
+      )}
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">

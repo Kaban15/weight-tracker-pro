@@ -405,6 +405,7 @@ export function useTasks(userId: string | undefined) {
     updateTask,
     deleteTask,
     toggleComplete,
+    reloadTasks: loadTasks,
     DEFAULT_TASK_FORM,
   };
 }
