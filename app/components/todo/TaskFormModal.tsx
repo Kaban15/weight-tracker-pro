@@ -13,6 +13,7 @@ import {
   Priority,
   TaskStatus,
   Category,
+  formatLocalDate,
 } from "./types";
 
 interface TaskFormModalProps {
@@ -48,7 +49,7 @@ export default function TaskFormModal({
     } else {
       setFormData({
         ...DEFAULT_TASK_FORM,
-        deadline: defaultDate || new Date().toISOString().split('T')[0],
+        deadline: defaultDate || formatLocalDate(new Date()),
       });
     }
     setError(null);

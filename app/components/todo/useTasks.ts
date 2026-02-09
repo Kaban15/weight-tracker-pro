@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { isRateLimited, RATE_LIMITS } from "@/lib/rateLimiter";
-import { Task, TaskFormData, TaskStats, DEFAULT_TASK_FORM, Category, TaskStatus, CATEGORY_CONFIG, STATUS_CONFIG } from "./types";
+import { Task, TaskFormData, TaskStats, DEFAULT_TASK_FORM, Category, TaskStatus, CATEGORY_CONFIG, STATUS_CONFIG, formatLocalDate } from "./types";
 
 interface TaskRow {
   id: string;
@@ -21,12 +21,8 @@ interface TaskRow {
   updated_at: string;
 }
 
-function formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
+// Re-use formatLocalDate from types.ts for consistent local date formatting
+const formatDate = formatLocalDate;
 
 // Migrate old task data to new format
 function migrateTask(task: Record<string, unknown>): Task {
@@ -187,9 +183,10 @@ export function useTasks(userId: string | undefined) {
         console.warn('[Tasks] Supabase returned 0 tasks. If you expect data, check RLS policies on the tasks table.');
       }
       setTasks(loaded);
-    } catch (err) {
-      console.error('[Tasks] Error loading tasks:', err);
-      setSyncError('Błąd ładowania zadań');
+    } catch (err: unknown) {
+      const e = err as { message?: string; details?: string; hint?: string; code?: string };
+      console.error('[Tasks] Error loading tasks:', { message: e.message, details: e.details, hint: e.hint, code: e.code, raw: err });
+      setSyncError(`Błąd ładowania zadań: ${e.message || 'nieznany błąd'}`);
       // Fallback to localStorage
       const localTasks = loadFromLocalStorage();
       setTasks(localTasks);
@@ -223,28 +220,32 @@ export function useTasks(userId: string | undefined) {
     // Optimistic update
     setTasks(prev => [...prev, newTask]);
 
+    const insertPayload = {
+      id: newTask.id,
+      user_id: userId,
+      title: newTask.title,
+      notes: newTask.notes || null,
+      deadline: newTask.deadline,
+      priority: newTask.priority,
+      status: newTask.status,
+      category: newTask.category,
+      completed: newTask.completed,
+      duration: newTask.duration || null,
+      time: newTask.time || null,
+    };
+
     try {
       setIsSyncing(true);
-      const { error } = await supabase.from('tasks').insert({
-        id: newTask.id,
-        user_id: userId,
-        title: newTask.title,
-        notes: newTask.notes || null,
-        deadline: newTask.deadline,
-        priority: newTask.priority,
-        status: newTask.status,
-        category: newTask.category,
-        completed: newTask.completed,
-        duration: newTask.duration || null,
-        time: newTask.time || null,
-      });
+      console.log('[Tasks] Inserting task:', insertPayload);
+      const { error } = await supabase.from('tasks').insert(insertPayload);
 
       if (error) throw error;
       setSyncError(null);
       return newTask;
-    } catch (err) {
-      console.error('[Tasks] Error adding task:', err);
-      setSyncError('Błąd dodawania zadania — zmiany nie zostały zapisane');
+    } catch (err: unknown) {
+      const e = err as { message?: string; details?: string; hint?: string; code?: string };
+      console.error('[Tasks] Error adding task:', { message: e.message, details: e.details, hint: e.hint, code: e.code, payload: insertPayload, raw: err });
+      setSyncError(`Błąd dodawania zadania: ${e.message || 'nieznany błąd'}`);
       // Revert optimistic update - task was not saved to DB
       setTasks(prev => prev.filter(t => t.id !== newTask.id));
       return null;
@@ -289,9 +290,10 @@ export function useTasks(userId: string | undefined) {
 
       if (error) throw error;
       setSyncError(null);
-    } catch (err) {
-      console.error('Error updating task:', err);
-      setSyncError('Błąd aktualizacji zadania');
+    } catch (err: unknown) {
+      const e = err as { message?: string; details?: string; hint?: string; code?: string };
+      console.error('[Tasks] Error updating task:', { message: e.message, details: e.details, hint: e.hint, code: e.code, raw: err });
+      setSyncError(`Błąd aktualizacji zadania: ${e.message || 'nieznany błąd'}`);
     } finally {
       setIsSyncing(false);
     }
@@ -315,9 +317,10 @@ export function useTasks(userId: string | undefined) {
 
       if (error) throw error;
       setSyncError(null);
-    } catch (err) {
-      console.error('Error deleting task:', err);
-      setSyncError('Błąd usuwania zadania');
+    } catch (err: unknown) {
+      const e = err as { message?: string; details?: string; hint?: string; code?: string };
+      console.error('[Tasks] Error deleting task:', { message: e.message, details: e.details, hint: e.hint, code: e.code, raw: err });
+      setSyncError(`Błąd usuwania zadania: ${e.message || 'nieznany błąd'}`);
       loadTasks(); // Reload on error
     } finally {
       setIsSyncing(false);
@@ -357,9 +360,10 @@ export function useTasks(userId: string | undefined) {
 
       if (error) throw error;
       setSyncError(null);
-    } catch (err) {
-      console.error('Error toggling task:', err);
-      setSyncError('Błąd synchronizacji');
+    } catch (err: unknown) {
+      const e = err as { message?: string; details?: string; hint?: string; code?: string };
+      console.error('[Tasks] Error toggling task:', { message: e.message, details: e.details, hint: e.hint, code: e.code, raw: err });
+      setSyncError(`Błąd synchronizacji: ${e.message || 'nieznany błąd'}`);
     } finally {
       setIsSyncing(false);
     }

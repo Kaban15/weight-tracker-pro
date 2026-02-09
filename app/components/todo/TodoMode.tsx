@@ -33,6 +33,7 @@ import {
   Priority,
   TaskStatus,
   Category,
+  formatLocalDate,
 } from "./types";
 
 interface TodoModeProps {
@@ -108,12 +109,12 @@ export default function TodoMode({ onBack }: TodoModeProps) {
 
   const isOverdue = (deadline: string | undefined, completed: boolean, status: TaskStatus) => {
     if (!deadline || completed || status === 'cancelled') return false;
-    return deadline < today.toISOString().split("T")[0];
+    return deadline < formatLocalDate(today);
   };
 
   const isToday = (deadline: string | undefined) => {
     if (!deadline) return false;
-    return deadline === today.toISOString().split("T")[0];
+    return deadline === formatLocalDate(today);
   };
 
   // Dashboard stats calculations
