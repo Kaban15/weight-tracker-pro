@@ -104,15 +104,16 @@ export type ChallengeInput = z.infer<typeof challengeSchema>;
 // Body measurements validation
 export const bodyMeasurementsSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Nieprawidłowy format daty (YYYY-MM-DD)"),
-  waist: z.number().min(30).max(300).optional().nullable(),
-  hips: z.number().min(30).max(300).optional().nullable(),
-  chest: z.number().min(30).max(300).optional().nullable(),
-  thighs: z.number().min(20).max(200).optional().nullable(),
-  arms: z.number().min(10).max(100).optional().nullable(),
-  calves: z.number().min(10).max(100).optional().nullable(),
-  neck: z.number().min(20).max(100).optional().nullable(),
-  forearms: z.number().min(10).max(60).optional().nullable(),
-  shoulders: z.number().min(50).max(200).optional().nullable(),
+  waist: z.number().min(0, "Wartość nie może być ujemna").max(300, "Wartość musi być mniejsza niż 300 cm").optional().nullable(),
+  hips: z.number().min(0, "Wartość nie może być ujemna").max(300, "Wartość musi być mniejsza niż 300 cm").optional().nullable(),
+  chest: z.number().min(0, "Wartość nie może być ujemna").max(300, "Wartość musi być mniejsza niż 300 cm").optional().nullable(),
+  thigh_left: z.number().min(0, "Wartość nie może być ujemna").max(300, "Wartość musi być mniejsza niż 300 cm").optional().nullable(),
+  thigh_right: z.number().min(0, "Wartość nie może być ujemna").max(300, "Wartość musi być mniejsza niż 300 cm").optional().nullable(),
+  arm_left: z.number().min(0, "Wartość nie może być ujemna").max(300, "Wartość musi być mniejsza niż 300 cm").optional().nullable(),
+  arm_right: z.number().min(0, "Wartość nie może być ujemna").max(300, "Wartość musi być mniejsza niż 300 cm").optional().nullable(),
+  calf_left: z.number().min(0, "Wartość nie może być ujemna").max(300, "Wartość musi być mniejsza niż 300 cm").optional().nullable(),
+  calf_right: z.number().min(0, "Wartość nie może być ujemna").max(300, "Wartość musi być mniejsza niż 300 cm").optional().nullable(),
+  notes: z.string().max(500, "Notatki nie mogą mieć więcej niż 500 znaków").optional().nullable(),
 });
 
 export type BodyMeasurementsInput = z.infer<typeof bodyMeasurementsSchema>;

@@ -26,16 +26,34 @@ interface FormData {
   notes: string;
 }
 
-const MEASUREMENT_FIELDS = [
-  { key: 'waist', label: 'Talia', icon: '📏' },
-  { key: 'hips', label: 'Biodra', icon: '📏' },
-  { key: 'chest', label: 'Klatka piersiowa', icon: '📏' },
-  { key: 'thigh_left', label: 'Udo lewe', icon: '🦵' },
-  { key: 'thigh_right', label: 'Udo prawe', icon: '🦵' },
-  { key: 'arm_left', label: 'Ramię lewe', icon: '💪' },
-  { key: 'arm_right', label: 'Ramię prawe', icon: '💪' },
-  { key: 'calf_left', label: 'Łydka lewa', icon: '🦵' },
-  { key: 'calf_right', label: 'Łydka prawa', icon: '🦵' },
+const SECTIONS = [
+  {
+    title: 'Góra ciała',
+    icon: '🫁',
+    fields: [
+      { key: 'chest', label: 'Klatka piersiowa' },
+      { key: 'waist', label: 'Talia' },
+      { key: 'hips', label: 'Biodra' },
+    ],
+  },
+  {
+    title: 'Ramiona',
+    icon: '💪',
+    fields: [
+      { key: 'arm_left', label: 'Ramię lewe' },
+      { key: 'arm_right', label: 'Ramię prawe' },
+    ],
+  },
+  {
+    title: 'Nogi',
+    icon: '🦵',
+    fields: [
+      { key: 'thigh_left', label: 'Udo lewe' },
+      { key: 'thigh_right', label: 'Udo prawe' },
+      { key: 'calf_left', label: 'Łydka lewa' },
+      { key: 'calf_right', label: 'Łydka prawa' },
+    ],
+  },
 ] as const;
 
 export default function MeasurementModal({
@@ -61,6 +79,7 @@ export default function MeasurementModal({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (measurement) {
@@ -93,6 +112,7 @@ export default function MeasurementModal({
       });
     }
     setShowDeleteConfirm(false);
+    setError(null);
   }, [measurement, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,16 +143,30 @@ export default function MeasurementModal({
       .some(([, value]) => value !== undefined);
 
     if (!hasAnyMeasurement) {
-      alert('Wprowadź przynajmniej jeden pomiar');
+      setError('Wprowadź przynajmniej jeden pomiar');
       return;
     }
 
+    // Validate ranges
+    const numericFields = Object.entries(data).filter(
+      ([key, value]) => !['date', 'notes'].includes(key) && value !== undefined
+    );
+    for (const [, value] of numericFields) {
+      if (typeof value === 'number' && (value < 0 || value > 300)) {
+        setError('Wartość pomiaru musi być między 0 a 300 cm');
+        return;
+      }
+    }
+
     setSaving(true);
+    setError(null);
     const success = await onSave(data, measurement?.id);
     setSaving(false);
 
     if (success) {
       onClose();
+    } else {
+      setError('Nie udało się zapisać pomiaru. Spróbuj ponownie.');
     }
   };
 
@@ -150,14 +184,18 @@ export default function MeasurementModal({
 
   const handleChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (error) setError(null);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-900 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border-2 border-slate-700">
-        <div className="sticky top-0 bg-slate-900 p-4 border-b border-slate-700 flex items-center justify-between">
+    <div
+      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-slate-900 rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col border-2 border-slate-700">
+        <div className="sticky top-0 bg-slate-900 p-4 border-b border-slate-700 flex items-center justify-between rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-indigo-600/20 rounded-xl flex items-center justify-center">
               <Ruler className="w-5 h-5 text-indigo-400" />
@@ -169,12 +207,13 @@ export default function MeasurementModal({
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-white transition-colors p-2"
+            aria-label="Zamknij"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="overflow-y-auto p-4 space-y-5 flex-1">
           {/* Date */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -185,36 +224,47 @@ export default function MeasurementModal({
               value={formData.date}
               onChange={(e) => handleChange('date', e.target.value)}
               max={formatDate(new Date())}
-              className="w-full bg-slate-800 border-2 border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500"
+              className="w-full bg-slate-800 border-2 border-slate-700 rounded-xl px-4 py-3 text-base text-white focus:outline-none focus:border-indigo-500"
               required
             />
           </div>
 
-          {/* Measurement fields */}
-          <div className="grid grid-cols-2 gap-3">
-            {MEASUREMENT_FIELDS.map(({ key, label }) => (
-              <div key={key}>
-                <label className="block text-sm font-medium text-slate-300 mb-1">
-                  {label}
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="20"
-                    max="200"
-                    value={formData[key as keyof FormData]}
-                    onChange={(e) => handleChange(key as keyof FormData, e.target.value)}
-                    placeholder="—"
-                    className="w-full bg-slate-800 border-2 border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500 pr-12"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
-                    cm
-                  </span>
-                </div>
+          {/* Body sections */}
+          {SECTIONS.map((section) => (
+            <div key={section.title}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-lg">{section.icon}</span>
+                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
+                  {section.title}
+                </h3>
+                <div className="flex-1 h-px bg-slate-700/50" />
               </div>
-            ))}
-          </div>
+              <div className="grid grid-cols-2 gap-3">
+                {section.fields.map(({ key, label }) => (
+                  <div key={key}>
+                    <label className="block text-sm font-medium text-slate-300 mb-1">
+                      {label}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="300"
+                        value={formData[key as keyof FormData]}
+                        onChange={(e) => handleChange(key as keyof FormData, e.target.value)}
+                        placeholder="—"
+                        className="w-full bg-slate-800 border-2 border-slate-700 rounded-xl px-4 py-2.5 text-base text-white focus:outline-none focus:border-indigo-500 pr-12"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
+                        cm
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
 
           {/* Notes */}
           <div>
@@ -226,9 +276,16 @@ export default function MeasurementModal({
               onChange={(e) => handleChange('notes', e.target.value)}
               placeholder="Dodatkowe uwagi..."
               rows={2}
-              className="w-full bg-slate-800 border-2 border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 resize-none"
+              className="w-full bg-slate-800 border-2 border-slate-700 rounded-xl px-4 py-3 text-base text-white focus:outline-none focus:border-indigo-500 resize-none"
             />
           </div>
+
+          {/* Error */}
+          {error && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">
@@ -264,6 +321,7 @@ export default function MeasurementModal({
                     type="button"
                     onClick={() => setShowDeleteConfirm(true)}
                     className="bg-slate-800 hover:bg-red-600/20 text-red-400 hover:text-red-300 p-3 rounded-xl transition-colors"
+                    aria-label="Usuń pomiar"
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>

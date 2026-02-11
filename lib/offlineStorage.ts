@@ -3,12 +3,13 @@
 // IndexedDB-based offline storage for Weight Tracker
 
 const DB_NAME = "weight-tracker-offline";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // Store names
 const STORES = {
   ENTRIES: "entries",
   GOALS: "goals",
+  MEASUREMENTS: "measurements",
   SYNC_QUEUE: "syncQueue",
   FAILED_SYNC: "failedSync",
 } as const;
@@ -56,6 +57,13 @@ export async function initOfflineDB(): Promise<boolean> {
         const entriesStore = database.createObjectStore(STORES.ENTRIES, { keyPath: "id" });
         entriesStore.createIndex("user_id", "user_id", { unique: false });
         entriesStore.createIndex("date", "date", { unique: false });
+      }
+
+      // Measurements store
+      if (!database.objectStoreNames.contains(STORES.MEASUREMENTS)) {
+        const measurementsStore = database.createObjectStore(STORES.MEASUREMENTS, { keyPath: "id" });
+        measurementsStore.createIndex("user_id", "user_id", { unique: false });
+        measurementsStore.createIndex("date", "date", { unique: false });
       }
 
       // Goals store
@@ -190,6 +198,32 @@ export const goalsStorage = {
   },
   save: (goal: Record<string, unknown> & { id: string }) => putToStore(STORES.GOALS, goal),
   delete: (id: string) => deleteFromStore(STORES.GOALS, id),
+};
+
+// Measurements operations
+export const measurementsStorage = {
+  getAll: (userId: string) => getAllFromStore<Record<string, unknown>>(STORES.MEASUREMENTS, userId),
+  save: (measurement: Record<string, unknown> & { id: string }) => putToStore(STORES.MEASUREMENTS, measurement),
+  delete: (id: string) => deleteFromStore(STORES.MEASUREMENTS, id),
+  clear: () => clearStore(STORES.MEASUREMENTS),
+
+  async saveAll(measurements: Array<Record<string, unknown> & { id: string }>): Promise<boolean> {
+    if (!db) return false;
+
+    return new Promise((resolve) => {
+      try {
+        const transaction = db!.transaction(STORES.MEASUREMENTS, "readwrite");
+        const store = transaction.objectStore(STORES.MEASUREMENTS);
+
+        measurements.forEach(m => store.put(m));
+
+        transaction.oncomplete = () => resolve(true);
+        transaction.onerror = () => resolve(false);
+      } catch {
+        resolve(false);
+      }
+    });
+  }
 };
 
 // Sync queue operations
