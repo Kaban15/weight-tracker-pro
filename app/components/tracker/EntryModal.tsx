@@ -304,12 +304,12 @@ export default function EntryModal({
                     value={m.name}
                     onChange={(e) => updateMeal(m.id, { name: e.target.value })}
                     placeholder="Nazwa posiłku"
-                    className="flex-1 min-w-0 bg-slate-800 text-white rounded-lg px-3 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-sm"
+                    className="flex-1 min-w-0 bg-slate-800 text-white rounded-lg px-3 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-base"
                   />
                   <select
                     value={m.type}
                     onChange={(e) => updateMeal(m.id, { type: e.target.value as MealType })}
-                    className="bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-sm shrink-0"
+                    className="bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-base shrink-0"
                   >
                     {MEAL_TYPES.map(type => (
                       <option key={type} value={type}>{type}</option>
@@ -318,7 +318,7 @@ export default function EntryModal({
                   <button
                     type="button"
                     onClick={() => removeMeal(m.id)}
-                    className="p-2 bg-slate-700 hover:bg-red-600/50 text-slate-400 hover:text-red-400 rounded-lg transition-colors shrink-0"
+                    className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center bg-slate-700 hover:bg-red-600/50 text-slate-400 hover:text-red-400 rounded-lg transition-colors shrink-0"
                     aria-label="Usuń posiłek"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -332,7 +332,7 @@ export default function EntryModal({
                       min="0"
                       value={m.calories || ''}
                       onChange={(e) => updateMeal(m.id, { calories: Number(e.target.value) || 0 })}
-                      className="w-full bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-sm"
+                      className="w-full bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-base"
                     />
                   </div>
                   <div>
@@ -342,7 +342,7 @@ export default function EntryModal({
                       min="0"
                       value={m.protein || ''}
                       onChange={(e) => updateMeal(m.id, { protein: Number(e.target.value) || 0 })}
-                      className="w-full bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-sm"
+                      className="w-full bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-base"
                     />
                   </div>
                   <div>
@@ -352,7 +352,7 @@ export default function EntryModal({
                       min="0"
                       value={m.carbs || ''}
                       onChange={(e) => updateMeal(m.id, { carbs: Number(e.target.value) || 0 })}
-                      className="w-full bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-sm"
+                      className="w-full bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-base"
                     />
                   </div>
                   <div>
@@ -362,7 +362,7 @@ export default function EntryModal({
                       min="0"
                       value={m.fat || ''}
                       onChange={(e) => updateMeal(m.id, { fat: Number(e.target.value) || 0 })}
-                      className="w-full bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-sm"
+                      className="w-full bg-slate-800 text-white rounded-lg px-2 py-2 border border-slate-700 focus:border-emerald-500 outline-none text-base"
                     />
                   </div>
                 </div>

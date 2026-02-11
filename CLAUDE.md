@@ -11,6 +11,7 @@ npm run lint         # ESLint (flat config, next core-web-vitals + typescript)
 npm run test         # Vitest in watch mode
 npm run test:run     # Vitest single run
 npm run test:run -- __tests__/dateUtils.test.ts  # Run a single test file
+npm run test:coverage  # Vitest with v8 coverage
 ```
 
 ## Tech Stack
@@ -71,6 +72,36 @@ Both use server-side rate limiting from `lib/serverRateLimiter.ts`.
 ### UI Language
 
 The app UI is in **Polish**. Validation messages, labels, and user-facing strings are in Polish.
+
+## Important Patterns and Gotchas
+
+### Date Formatting (Critical)
+
+**Never** use `new Date().toISOString().split('T')[0]` — it returns UTC date, which shifts to the wrong day in Poland after 23:00. Always use `formatLocalDate(date)` from `app/components/todo/types.ts` or `formatDate(date)` from `app/components/tracker/types.ts` — both use `getFullYear()/getMonth()/getDate()` for local time.
+
+### Column Name Mapping (Tasks)
+
+The `Task` TypeScript type uses `deadline`, but the Supabase `tasks` table column is `date`. Mapping happens in `useTasks.ts` (`rowToTask` for reads, insert payload for writes). Don't rename the TypeScript field — only adjust the Supabase payload.
+
+### Code Conventions
+
+- All components are `"use client"` — the entire app runs client-side
+- Always check `if (!supabase)` before Supabase operations (client is `null` when env vars are missing)
+- Guard `typeof window !== "undefined"` before accessing localStorage/navigator/window (SSR safety)
+- New UI strings must be in **Polish**
+- Dark theme is default: `slate-950/900` backgrounds, `emerald-500` accent color
+- Icons come from `lucide-react`
+- Each module has its own `types.ts` and exports through `index.ts` barrel files
+- Optimistic updates: UI state updated immediately, reverted in `catch` if Supabase fails
+- Data hooks (`useWeightTracker`, `useChallenges`, `useTasks`) have client-side rate limiting via `lib/rateLimiter.ts`
+
+### Supabase RLS
+
+All tables use Row Level Security with `auth.uid() = user_id` policies. The `tasks` table specifically requires SELECT/INSERT/UPDATE/DELETE policies — missing INSERT policy causes "new row violates row-level security policy" errors. See `supabase/migrations/20260209_fix_tasks_rls_policies.sql`.
+
+### SQL Migrations
+
+Migration files live in `supabase/migrations/`. Run them manually in Supabase Dashboard > SQL Editor or via `supabase db push`.
 
 ## Testing
 

@@ -70,7 +70,7 @@ export default function SyncStatusIndicator() {
   // Show brief "saved" state
   if (showSaved && online && !syncing && pending === 0 && failed === 0) {
     return (
-      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-900/30 text-emerald-400 border border-emerald-500/20">
+      <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-emerald-900/30 text-emerald-400 border border-emerald-500/20">
         <CheckCircle2 className="w-3.5 h-3.5" />
         <span>Zapisano</span>
       </div>
@@ -86,7 +86,7 @@ export default function SyncStatusIndicator() {
     <>
       <button
         onClick={() => failed > 0 && setShowModal(true)}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border ${
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-colors border ${
           failed > 0
             ? "bg-red-900/40 text-red-400 border-red-500/30 hover:bg-red-900/60 cursor-pointer animate-pulse"
             : !online

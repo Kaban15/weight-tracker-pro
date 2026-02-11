@@ -107,7 +107,9 @@ export default function ScheduleModeWeekly({ onBack }: ScheduleModeWeeklyProps) 
     toggleComplete,
   } = useTasks(user?.id);
 
-  const [showBacklog, setShowBacklog] = useState(true);
+  const [showBacklog, setShowBacklog] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 640 : true
+  );
   const [showFormModal, setShowFormModal] = useState(false);
   const [selectedDateForNewTask, setSelectedDateForNewTask] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -211,7 +213,7 @@ export default function ScheduleModeWeekly({ onBack }: ScheduleModeWeeklyProps) 
       <div className="flex flex-1 overflow-hidden">
         {/* Backlog sidebar */}
         {showBacklog && (
-          <div className="w-72 bg-slate-900/50 border-r border-slate-800 flex flex-col">
+          <div className="w-64 sm:w-72 bg-slate-900/50 border-r border-slate-800 flex flex-col">
             <div className="p-4 border-b border-slate-800">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="font-semibold text-white flex items-center gap-2">

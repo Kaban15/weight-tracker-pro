@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 
 export type AppMode = 'tracker' | 'challenge' | 'todo' | 'schedule' | 'admin' | null;
 export type SubView = string | null;
@@ -31,8 +31,14 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const currentSubView = currentState.subView;
   const canGoBack = history.length > 1;
 
+  // Track whether goBack was triggered by popstate to avoid double history manipulation
+  const isPopstateRef = useRef(false);
+
   const navigateTo = useCallback((mode: AppMode, subView: SubView = null) => {
     setHistory(prev => [...prev, { mode, subView }]);
+    if (typeof window !== "undefined") {
+      window.history.pushState({}, "");
+    }
   }, []);
 
   const navigateToSubView = useCallback((subView: SubView) => {
@@ -40,6 +46,9 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       const current = prev[prev.length - 1];
       return [...prev, { mode: current.mode, subView }];
     });
+    if (typeof window !== "undefined") {
+      window.history.pushState({}, "");
+    }
   }, []);
 
   const goBack = useCallback(() => {
@@ -52,6 +61,21 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const goHome = useCallback(() => {
     setHistory([{ mode: null, subView: null }]);
   }, []);
+
+  // Listen for browser back button (popstate)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handlePopstate = () => {
+      isPopstateRef.current = true;
+      goBack();
+      // Reset flag after state update
+      setTimeout(() => { isPopstateRef.current = false; }, 0);
+    };
+
+    window.addEventListener("popstate", handlePopstate);
+    return () => window.removeEventListener("popstate", handlePopstate);
+  }, [goBack]);
 
   return (
     <NavigationContext.Provider

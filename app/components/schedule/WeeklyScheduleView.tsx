@@ -222,7 +222,7 @@ function DayColumn({
   return (
     <div
       className={`
-        flex flex-col min-w-[140px] flex-1 rounded-xl transition-all
+        flex flex-col min-w-[140px] flex-1 rounded-xl transition-all snap-start
         ${isDragOver ? "bg-cyan-900/30 border-2 border-cyan-500/50 border-dashed" : "bg-slate-800/30 border border-slate-700/50"}
       `}
       onDragOver={handleDragOver}
@@ -417,7 +417,7 @@ export default function WeeklyScheduleView({
       </div>
 
       {/* Week grid */}
-      <div className="flex gap-2 flex-1 overflow-x-auto pb-4">
+      <div className="flex gap-2 flex-1 overflow-x-auto pb-4 snap-x snap-mandatory">
         {weekDates.map((date, index) => {
           const dateStr = formatDateStr(date);
           return (

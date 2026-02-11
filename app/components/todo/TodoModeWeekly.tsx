@@ -228,7 +228,7 @@ function DayColumn({
   return (
     <div
       className={`
-        flex flex-col min-w-[140px] flex-1 rounded-xl transition-all
+        flex flex-col min-w-[140px] flex-1 rounded-xl transition-all snap-start
         ${isDragOver ? "bg-rose-900/30 border-2 border-rose-500/50 border-dashed" : "bg-slate-800/30 border border-slate-700/50"}
       `}
       onDragOver={handleDragOver}
@@ -381,7 +381,9 @@ export default function TodoModeWeekly({ onBack }: TodoModeWeeklyProps) {
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() =>
     getWeekStart(new Date())
   );
-  const [showBacklog, setShowBacklog] = useState(true);
+  const [showBacklog, setShowBacklog] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 640 : true
+  );
   const [showFormModal, setShowFormModal] = useState(false);
   const [selectedDateForNewTask, setSelectedDateForNewTask] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -567,8 +569,8 @@ export default function TodoModeWeekly({ onBack }: TodoModeWeeklyProps) {
       </header>
 
       {/* Stats bar */}
-      <div className="bg-slate-800/30 border-b border-slate-800 px-4 py-2">
-        <div className="flex items-center justify-center gap-6 text-sm">
+      <div className="bg-slate-800/30 border-b border-slate-800 px-4 py-2 overflow-x-auto">
+        <div className="flex items-center justify-center gap-3 sm:gap-6 text-sm flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-slate-500">Wszystkie:</span>
             <span className="text-white font-semibold">{stats.total}</span>
@@ -585,7 +587,7 @@ export default function TodoModeWeekly({ onBack }: TodoModeWeeklyProps) {
             <span className="text-emerald-500">Ukonczone:</span>
             <span className="text-emerald-400 font-semibold">{stats.completed}</span>
           </div>
-          <div className="w-32 bg-slate-700 rounded-full h-2 overflow-hidden">
+          <div className="hidden sm:block w-32 bg-slate-700 rounded-full h-2 overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all"
               style={{ width: `${stats.percentComplete}%` }}
@@ -616,7 +618,7 @@ export default function TodoModeWeekly({ onBack }: TodoModeWeeklyProps) {
       <div className="flex flex-1 overflow-hidden">
         {/* Backlog sidebar */}
         {showBacklog && (
-          <div className="w-72 bg-slate-900/50 border-r border-slate-800 flex flex-col">
+          <div className="w-64 sm:w-72 bg-slate-900/50 border-r border-slate-800 flex flex-col">
             <div className="p-4 border-b border-slate-800">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="font-semibold text-white flex items-center gap-2">
@@ -698,7 +700,7 @@ export default function TodoModeWeekly({ onBack }: TodoModeWeeklyProps) {
           </div>
 
           {/* Week grid */}
-          <div className="flex gap-2 flex-1 overflow-x-auto pb-4">
+          <div className="flex gap-2 flex-1 overflow-x-auto pb-4 snap-x snap-mandatory">
             {weekDates.map((date, index) => {
               const dateStr = formatDateStr(date);
               return (

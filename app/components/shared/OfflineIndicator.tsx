@@ -77,13 +77,13 @@ export default function OfflineIndicator() {
   return (
     <>
       {/* Floating status indicator */}
-      <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2">
+      <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-[calc(1rem+env(safe-area-inset-right))] z-40 flex flex-col items-end gap-2">
         {/* Pending sync badge */}
         {pendingCount > 0 && (
           <button
             onClick={handleManualSync}
             disabled={!online || syncing}
-            className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-full text-sm font-medium transition-all ${
               syncing
                 ? "bg-blue-600 text-white"
                 : online
@@ -125,7 +125,7 @@ export default function OfflineIndicator() {
       {/* Status change banner */}
       {showBanner && (
         <div
-          className={`fixed top-0 left-0 right-0 z-50 py-2 px-4 text-center text-sm font-medium transition-all ${
+          className={`fixed top-0 left-0 right-0 z-50 py-2 px-4 pt-[calc(0.5rem+env(safe-area-inset-top))] text-center text-sm font-medium transition-all ${
             online
               ? "bg-emerald-600 text-white"
               : "bg-slate-800 text-slate-300 border-b border-slate-700"
