@@ -13,6 +13,7 @@ import {
   Stats,
   formatDate,
   useWeightTracker,
+  useMeasurements,
   EntryModal,
   GoalWizard,
   CalendarView,
@@ -102,6 +103,8 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     archiveGoalToHistory,
     clearCompletionData,
   } = useWeightTracker(user?.id);
+
+  const { measurements: bodyMeasurements } = useMeasurements(user?.id);
 
   const [view, setView] = useState<'calendar' | 'table' | 'measurements' | 'history'>('calendar');
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -625,6 +628,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
               goal={goal}
               startDate={chartMode === 'current-goal' && goal?.start_date ? goal.start_date : chartDateRange?.start}
               endDate={chartDateRange?.end}
+              measurements={bodyMeasurements}
             />
           </div>
           <CalendarView
