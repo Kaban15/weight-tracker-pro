@@ -121,7 +121,7 @@ export default function CalendarView({
     <div className="max-w-6xl mx-auto">
       {/* Header with navigation and view toggle */}
       <div className="bg-slate-800/50 rounded-2xl border-2 border-slate-700 p-4 mb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:justify-between">
           {/* Navigation */}
           <div className="flex items-center gap-3">
             <button
