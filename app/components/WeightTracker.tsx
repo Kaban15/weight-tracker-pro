@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, Target, LogOut, Table, ArrowLeft, TrendingDown, TrendingUp, Flame, Scale, Clock, Bell, History, Footprints, Dumbbell, Award, LineChart, Download, FileJson, AlertCircle, Trophy, ChevronRight, Ruler } from 'lucide-react';
+import { Calendar, Target, LogOut, Table, ArrowLeft, TrendingDown, TrendingUp, Flame, Scale, Clock, Bell, History, Footprints, Dumbbell, Award, LineChart, Download, FileJson, AlertCircle, Trophy, ChevronRight, Ruler, CalendarDays, SlidersHorizontal } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { initializeNotifications, cancelScheduledReminders } from '@/lib/notifications';
 import { useKeyboardShortcuts, KeyboardShortcut } from '@/lib/useKeyboardShortcuts';
@@ -21,6 +21,7 @@ import {
   GoalHistoryList,
   MeasurementsView
 } from './tracker';
+import type { ChartRange } from './tracker/types';
 import TrendAnalysis from './tracker/TrendAnalysis';
 
 // Helper function to calculate stats for a given set of entries
@@ -116,6 +117,13 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [chartDateRange, setChartDateRange] = useState<{ start: string; end: string } | null>(null);
   const [chartMode, setChartMode] = useState<'all' | 'current-goal'>('all');
+  const [chartRange, setChartRange] = useState<ChartRange>('month');
+  const [customStartDate, setCustomStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return formatDate(d);
+  });
+  const [customEndDate, setCustomEndDate] = useState(() => formatDate(new Date()));
   const [exporting, setExporting] = useState(false);
 
   // Calculate filtered entries and stats based on chartMode
@@ -129,6 +137,37 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
   const filteredStats = useMemo(() => {
     return calculateStatsForEntries(filteredEntries, goal?.target_weight);
   }, [filteredEntries, goal?.target_weight]);
+
+  // Compute effective chart date range based on chartRange selector
+  const effectiveChartDates = useMemo(() => {
+    const now = new Date();
+    switch (chartRange) {
+      case 'week': {
+        const dayOfWeek = now.getDay();
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const monday = new Date(now);
+        monday.setDate(now.getDate() + mondayOffset);
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        return { start: formatDate(monday), end: formatDate(sunday) };
+      }
+      case 'month': {
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth();
+        return {
+          start: formatDate(new Date(year, month, 1)),
+          end: formatDate(new Date(year, month + 1, 0)),
+        };
+      }
+      case 'year':
+        return {
+          start: formatDate(new Date(now.getFullYear(), 0, 1)),
+          end: formatDate(now),
+        };
+      case 'custom':
+        return { start: customStartDate, end: customEndDate };
+    }
+  }, [chartRange, currentMonth, customStartDate, customEndDate]);
 
   // Switch to goal start date when entering current-goal mode
   useEffect(() => {
@@ -594,8 +633,9 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
 
       {view === 'calendar' && (
         <>
-          {/* Chart Mode Toggle - above calendar */}
-          <div className="max-w-6xl mx-auto mb-4">
+          {/* Chart Controls - above chart */}
+          <div className="max-w-6xl mx-auto mb-4 space-y-3">
+            {/* Row 1: Data filter (all / current-goal) */}
             <div className="flex justify-end">
               <div className="flex bg-slate-800/50 rounded-lg p-1 border border-slate-700">
                 <button
@@ -621,14 +661,59 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
                 </button>
               </div>
             </div>
+
+            {/* Row 2: Chart time range selector */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex bg-slate-800/50 rounded-lg p-1 border border-slate-700">
+                {([
+                  { id: 'week' as ChartRange, icon: Calendar, label: 'Tydzień' },
+                  { id: 'month' as ChartRange, icon: Calendar, label: 'Miesiąc' },
+                  { id: 'year' as ChartRange, icon: CalendarDays, label: 'Rok' },
+                  { id: 'custom' as ChartRange, icon: SlidersHorizontal, label: 'Zakres' },
+                ]).map(({ id, icon: Icon, label }) => (
+                  <button
+                    key={id}
+                    onClick={() => setChartRange(id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      chartRange === id
+                        ? 'bg-emerald-600 text-white'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Custom date range inputs */}
+              {chartRange === 'custom' && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-1.5 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none [color-scheme:dark]"
+                  />
+                  <span className="text-slate-500 text-sm">—</span>
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-1.5 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none [color-scheme:dark]"
+                  />
+                </div>
+              )}
+            </div>
           </div>
           <div className="max-w-6xl mx-auto mb-6">
             <ProgressChart
               entries={filteredEntries}
               goal={goal}
-              startDate={chartMode === 'current-goal' && goal?.start_date ? goal.start_date : chartDateRange?.start}
-              endDate={chartDateRange?.end}
+              startDate={effectiveChartDates.start}
+              endDate={effectiveChartDates.end}
               measurements={bodyMeasurements}
+              chartRange={chartRange}
             />
           </div>
           <CalendarView

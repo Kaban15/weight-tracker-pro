@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { TrendingUp, Activity } from 'lucide-react';
-import type { BodyMeasurement } from './tracker/types';
+import type { BodyMeasurement, ChartRange } from './tracker/types';
 
 interface Entry {
   id: string;
@@ -51,14 +51,27 @@ interface ProgressChartProps {
   startDate?: string;
   endDate?: string;
   measurements?: BodyMeasurement[];
+  chartRange?: ChartRange;
 }
 
-export default function ProgressChart({ entries, goal, startDate, endDate, measurements }: ProgressChartProps) {
+const MONTH_SHORT_PL = ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip', 'Sie', 'Wrz', 'Paź', 'Lis', 'Gru'];
+
+export default function ProgressChart({ entries, goal, startDate, endDate, measurements, chartRange }: ProgressChartProps) {
   const [selectedMetric, setSelectedMetric] = useState<MetricKey>('weight');
 
   const activeMetric = METRICS.find(m => m.key === selectedMetric)!;
   const isWeightMetric = selectedMetric === 'weight';
   const hasMeasurements = measurements && measurements.length > 0;
+
+  // Determine if we should use dense (abbreviated) date formatting
+  const isDenseData = useMemo(() => {
+    if (chartRange === 'year') return true;
+    if (chartRange === 'custom' && startDate && endDate) {
+      const days = (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000;
+      return days > 60;
+    }
+    return false;
+  }, [chartRange, startDate, endDate]);
 
   // Filter weight entries by date range
   const filteredEntries = useMemo(() => {
@@ -107,10 +120,18 @@ export default function ProgressChart({ entries, goal, startDate, endDate, measu
   const weightChartData = useMemo(() => {
     if (sortedEntries.length === 0) return [];
 
+    const formatChartDate = (dateStr: string) => {
+      const d = new Date(dateStr);
+      if (isDenseData) {
+        return `${d.getDate()} ${MONTH_SHORT_PL[d.getMonth()]}`;
+      }
+      return d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' });
+    };
+
     const data: Array<{ date: string; fullDate: string; value: number | null; target?: number }> =
       sortedEntries.map(entry => {
         const point: { date: string; fullDate: string; value: number | null; target?: number } = {
-          date: new Date(entry.date).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }),
+          date: formatChartDate(entry.date),
           fullDate: entry.date,
           value: entry.weight,
         };
@@ -134,7 +155,7 @@ export default function ProgressChart({ entries, goal, startDate, endDate, measu
       const lastEntryDate = new Date(sortedEntries[sortedEntries.length - 1].date);
       if (!startDate && !endDate && lastEntryDate < goalEndDate) {
         data.push({
-          date: goalEndDate.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }),
+          date: formatChartDate(goal.target_date),
           fullDate: goal.target_date,
           value: null,
           target: goal.target_weight,
@@ -143,7 +164,7 @@ export default function ProgressChart({ entries, goal, startDate, endDate, measu
     }
 
     return data;
-  }, [sortedEntries, showGoalLine, goal, goalStartDate, goalEndDate, dailyWeightLoss, startDate, endDate]);
+  }, [sortedEntries, showGoalLine, goal, goalStartDate, goalEndDate, dailyWeightLoss, startDate, endDate, isDenseData]);
 
   // Build measurement chart data
   const measurementChartData = useMemo(() => {
@@ -153,15 +174,18 @@ export default function ProgressChart({ entries, goal, startDate, endDate, measu
       .map(m => {
         const val = activeMetric.extractValue(m);
         if (val === undefined) return null;
+        const d = new Date(m.date);
         return {
-          date: new Date(m.date).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }),
+          date: isDenseData
+            ? `${d.getDate()} ${MONTH_SHORT_PL[d.getMonth()]}`
+            : d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }),
           fullDate: m.date,
           value: val,
         };
       })
       .filter((d): d is NonNullable<typeof d> => d !== null)
       .sort((a, b) => new Date(a.fullDate).getTime() - new Date(b.fullDate).getTime());
-  }, [measurements, isWeightMetric, activeMetric]);
+  }, [measurements, isWeightMetric, activeMetric, isDenseData]);
 
   // Active chart data
   const chartData = isWeightMetric ? weightChartData : measurementChartData;
@@ -254,7 +278,8 @@ export default function ProgressChart({ entries, goal, startDate, endDate, measu
                 <XAxis
                   dataKey="date"
                   stroke="#9ca3af"
-                  tick={{ fill: '#9ca3af', fontSize: 12 }}
+                  tick={{ fill: '#9ca3af', fontSize: isDenseData ? 11 : 12 }}
+                  interval={isDenseData ? Math.max(0, Math.floor(chartData.length / 12) - 1) : undefined}
                 />
                 <YAxis
                   domain={[minY, maxY]}

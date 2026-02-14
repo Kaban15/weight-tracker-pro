@@ -63,6 +63,9 @@ export interface Profile {
 // Goal completion types
 export type CompletionType = 'target_reached' | 'date_passed' | 'manual';
 
+// Chart time range
+export type ChartRange = 'week' | 'month' | 'year' | 'custom';
+
 export interface GoalHistory {
   id: string;
   user_id: string;
