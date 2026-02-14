@@ -109,6 +109,30 @@ export async function GET(request: NextRequest) {
       console.warn("challenges error:", challengesError);
     }
 
+    // Fetch tasks with status for per-user counts and completion rate
+    const { data: tasksData, error: tasksError } = await supabaseAdmin
+      .from("tasks")
+      .select("user_id, id, status");
+
+    if (tasksError && !isTableNotExistError(tasksError)) {
+      console.warn("tasks error:", tasksError);
+    }
+
+    // Fetch entries with non-null meals for mealsUsers metric
+    let mealsEntries: { user_id: string }[] = [];
+    const { data: mealsData, error: mealsError } = await supabaseAdmin
+      .from("weight_entries")
+      .select("user_id, meals")
+      .not("meals", "is", null);
+
+    if (!mealsError) {
+      // Filter out empty arrays
+      mealsEntries = (mealsData || []).filter((e: { meals: unknown }) => {
+        if (Array.isArray(e.meals) && e.meals.length === 0) return false;
+        return true;
+      });
+    }
+
     // Fetch goals for user activity tracking
     const { data: goals, error: goalsError } = await supabaseAdmin
       .from("goals")
@@ -128,12 +152,19 @@ export async function GET(request: NextRequest) {
       challengesPerUser[c.user_id] = (challengesPerUser[c.user_id] || 0) + 1;
     });
 
+    // Count tasks per user
+    const tasksPerUser: Record<string, number> = {};
+    (tasksData || []).forEach((t: { user_id: string }) => {
+      tasksPerUser[t.user_id] = (tasksPerUser[t.user_id] || 0) + 1;
+    });
+
     // Get unique user IDs from all tables
     const allUserIds = new Set<string>();
     (profiles || []).forEach((p: { user_id: string }) => allUserIds.add(p.user_id));
     (goals || []).forEach((g: { user_id: string }) => allUserIds.add(g.user_id));
     Object.keys(entriesPerUser).forEach((id) => allUserIds.add(id));
     Object.keys(challengesPerUser).forEach((id) => allUserIds.add(id));
+    Object.keys(tasksPerUser).forEach((id) => allUserIds.add(id));
 
     // Fetch auth users to get emails
     const { data: authUsersData } = await supabaseAdmin.auth.admin.listUsers({
@@ -160,7 +191,7 @@ export async function GET(request: NextRequest) {
         lastSignIn: authUser?.last_sign_in_at || goal?.updated_at || null,
         entriesCount: entriesPerUser[userId] || 0,
         challengesCount: challengesPerUser[userId] || 0,
-        tasksCount: 0, // Todo tasks are in localStorage
+        tasksCount: tasksPerUser[userId] || 0,
       };
     });
 
@@ -171,23 +202,66 @@ export async function GET(request: NextRequest) {
     const totalUsers = users.length;
     const totalEntries = Object.values(entriesPerUser).reduce((a, b) => a + b, 0);
     const totalChallenges = Object.values(challengesPerUser).reduce((a, b) => a + b, 0);
-    const totalTasks = 0;
+    const totalTasks = (tasksData || []).length;
 
-    // Active users (those with entries in last 7/30 days)
+    // Task completion rate
+    const tasksDone = (tasksData || []).filter((t: { status: string }) => t.status === "done").length;
+    const taskCompletionRate = totalTasks > 0 ? Math.round((tasksDone / totalTasks) * 100) : 0;
+
+    // Active users last 7 days - union across entries, tasks, and challenges
     const { data: recentEntries7 } = await supabaseAdmin
       .from("weight_entries")
       .select("user_id")
       .gte("date", weekAgo);
 
+    const activeUsers7Set = new Set<string>();
+    (recentEntries7 || []).forEach((e: { user_id: string }) => activeUsers7Set.add(e.user_id));
+
+    // Tasks active in last 7 days (using date column)
+    const { data: recentTasks7, error: recentTasksError } = await supabaseAdmin
+      .from("tasks")
+      .select("user_id")
+      .gte("date", weekAgo);
+
+    if (!recentTasksError) {
+      (recentTasks7 || []).forEach((t: { user_id: string }) => activeUsers7Set.add(t.user_id));
+    }
+
+    // Challenges active in last 7 days (using date column, fallback to created_at)
+    let recentChallenges7: { user_id: string }[] = [];
+    const { data: rc7Date, error: rc7DateErr } = await supabaseAdmin
+      .from("challenges")
+      .select("user_id")
+      .gte("date", weekAgo);
+
+    if (!rc7DateErr && rc7Date) {
+      recentChallenges7 = rc7Date;
+    } else {
+      // Fallback: try created_at
+      const { data: rc7Created } = await supabaseAdmin
+        .from("challenges")
+        .select("user_id")
+        .gte("created_at", weekAgo + "T00:00:00");
+      recentChallenges7 = rc7Created || [];
+    }
+    recentChallenges7.forEach((c: { user_id: string }) => activeUsers7Set.add(c.user_id));
+
+    const activeUsersLast7Days = activeUsers7Set.size;
+
+    // Active users last 30 days (entries only, for backwards compat)
     const { data: recentEntries30 } = await supabaseAdmin
       .from("weight_entries")
       .select("user_id")
       .gte("date", monthAgo);
 
-    const activeUsersLast7Days = new Set((recentEntries7 || []).map((e: { user_id: string }) => e.user_id)).size;
     const activeUsersLast30Days = new Set((recentEntries30 || []).map((e: { user_id: string }) => e.user_id)).size;
 
-    // New users (based on first goal creation)
+    // New users from auth (last 30 days)
+    const newUsersLast30Days = authUsers.filter(
+      (u) => u.created_at && u.created_at >= monthAgo
+    ).length;
+
+    // New users (based on first goal creation - existing logic)
     const newUsersToday = (goals || []).filter(
       (g: { created_at: string }) => g.created_at?.startsWith(today)
     ).length;
@@ -198,18 +272,30 @@ export async function GET(request: NextRequest) {
       (g: { created_at: string }) => g.created_at >= monthAgo
     ).length;
 
+    // Module usage
+    const moduleUsage = {
+      trackerUsers: Object.keys(entriesPerUser).length,
+      mealsUsers: new Set(mealsEntries.map((e: { user_id: string }) => e.user_id)).size,
+      todoUsers: Object.keys(tasksPerUser).length,
+      habitsUsers: Object.keys(challengesPerUser).length,
+    };
+
     const statistics = {
       totalUsers,
       activeUsersLast7Days,
       activeUsersLast30Days,
+      newUsersLast30Days,
       totalEntries,
       totalChallenges,
       totalTasks,
+      tasksDone,
+      taskCompletionRate,
       newUsersToday,
       newUsersThisWeek,
       newUsersThisMonth,
       averageEntriesPerUser: totalUsers > 0 ? Math.round(totalEntries / totalUsers) : 0,
       averageChallengesPerUser: totalUsers > 0 ? Math.round((totalChallenges / totalUsers) * 10) / 10 : 0,
+      moduleUsage,
     };
 
     // Daily activity for last 14 days

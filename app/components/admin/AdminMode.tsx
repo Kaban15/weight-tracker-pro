@@ -2,6 +2,18 @@
 
 import { useState } from "react";
 import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import {
   ArrowLeft,
   Users,
   Activity,
@@ -13,6 +25,9 @@ import {
   BarChart3,
   UserPlus,
   Scale,
+  Utensils,
+  Zap,
+  CheckCircle2,
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useAdmin } from "./useAdmin";
@@ -57,14 +72,32 @@ export default function AdminMode({ onBack }: AdminModeProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
       </div>
     );
   }
 
+  // Chart data
+  const moduleData = statistics
+    ? [
+        { name: "Tracker", users: statistics.moduleUsage.trackerUsers, fill: "#10b981" },
+        { name: "Posiłki", users: statistics.moduleUsage.mealsUsers, fill: "#f59e0b" },
+        { name: "Zadania", users: statistics.moduleUsage.todoUsers, fill: "#f43f5e" },
+        { name: "Nawyki", users: statistics.moduleUsage.habitsUsers, fill: "#8b5cf6" },
+      ]
+    : [];
+
+  const taskPieData = statistics
+    ? [
+        { name: "Ukończone", value: statistics.tasksDone },
+        { name: "Pozostałe", value: statistics.totalTasks - statistics.tasksDone },
+      ]
+    : [];
+  const PIE_COLORS = ["#10b981", "#334155"];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -85,7 +118,7 @@ export default function AdminMode({ onBack }: AdminModeProps) {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-colors"
+            className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-colors"
           >
             <RefreshCw className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`} />
             <span className="hidden sm:inline">Odśwież</span>
@@ -110,7 +143,7 @@ export default function AdminMode({ onBack }: AdminModeProps) {
               onClick={() => setActiveTab(id as typeof activeTab)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors whitespace-nowrap ${
                 activeTab === id
-                  ? "bg-indigo-600 text-white"
+                  ? "bg-emerald-600 text-white"
                   : "bg-slate-800/50 text-slate-400 hover:text-white"
               }`}
             >
@@ -123,32 +156,139 @@ export default function AdminMode({ onBack }: AdminModeProps) {
         {/* Overview Tab */}
         {activeTab === "overview" && statistics && (
           <div className="space-y-6">
-            {/* Main Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <StatCard
                 icon={Users}
                 label="Wszyscy użytkownicy"
                 value={statistics.totalUsers}
-                color="indigo"
+                color="emerald"
               />
               <StatCard
                 icon={Activity}
                 label="Aktywni (7 dni)"
                 value={statistics.activeUsersLast7Days}
-                color="emerald"
-              />
-              <StatCard
-                icon={TrendingUp}
-                label="Aktywni (30 dni)"
-                value={statistics.activeUsersLast30Days}
+                subtitle={`${statistics.totalUsers > 0 ? Math.round((statistics.activeUsersLast7Days / statistics.totalUsers) * 100) : 0}% wszystkich`}
                 color="blue"
               />
               <StatCard
-                icon={UserPlus}
-                label="Nowi dziś"
-                value={statistics.newUsersToday}
+                icon={TrendingUp}
+                label="Nowi (30 dni)"
+                value={statistics.newUsersLast30Days}
                 color="amber"
               />
+            </div>
+
+            {/* Charts Row: Module Adoption + Task Completion */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Module Adoption Bar Chart */}
+              <div className="lg:col-span-2 bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-emerald-400" />
+                  Adopcja modułów
+                </h3>
+                {moduleData.some((d) => d.users > 0) ? (
+                  <div className="h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={moduleData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                        <XAxis
+                          dataKey="name"
+                          stroke="#9ca3af"
+                          tick={{ fill: "#9ca3af", fontSize: 13 }}
+                        />
+                        <YAxis
+                          stroke="#9ca3af"
+                          tick={{ fill: "#9ca3af", fontSize: 12 }}
+                          allowDecimals={false}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#0f172a",
+                            border: "1px solid #334155",
+                            borderRadius: "12px",
+                            color: "#fff",
+                          }}
+                          formatter={(value: number) => [`${value}`, "Użytkownicy"]}
+                        />
+                        <Bar dataKey="users" radius={[6, 6, 0, 0]}>
+                          {moduleData.map((entry, index) => (
+                            <Cell key={index} fill={entry.fill} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <p className="text-slate-500 text-center py-16">Brak danych o adopcji modułów.</p>
+                )}
+                {/* Legend */}
+                <div className="flex flex-wrap gap-4 mt-4">
+                  {moduleData.map((m) => (
+                    <div key={m.name} className="flex items-center gap-2 text-sm">
+                      <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: m.fill }} />
+                      <span className="text-slate-400">{m.name}: <span className="text-white font-semibold">{m.users}</span></span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Task Completion Donut */}
+              <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 flex flex-col items-center">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2 self-start">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  Realizacja zadań
+                </h3>
+                {statistics.totalTasks > 0 ? (
+                  <>
+                    <div className="relative h-[200px] w-[200px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={taskPieData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={90}
+                            paddingAngle={2}
+                            dataKey="value"
+                            strokeWidth={0}
+                          >
+                            {taskPieData.map((_, index) => (
+                              <Cell key={index} fill={PIE_COLORS[index]} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#0f172a",
+                              border: "1px solid #334155",
+                              borderRadius: "12px",
+                              color: "#fff",
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      {/* Center label */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-3xl font-bold text-white">{statistics.taskCompletionRate}%</span>
+                        <span className="text-slate-400 text-xs">ukończono</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-6 mt-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-sm bg-emerald-500" />
+                        <span className="text-slate-400">Ukończone: <span className="text-white font-semibold">{statistics.tasksDone}</span></span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-sm bg-slate-700" />
+                        <span className="text-slate-400">Pozostałe: <span className="text-white font-semibold">{statistics.totalTasks - statistics.tasksDone}</span></span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-slate-500 text-center py-16">Brak zadań w systemie.</p>
+                )}
+              </div>
             </div>
 
             {/* New Users Stats */}
@@ -176,7 +316,7 @@ export default function AdminMode({ onBack }: AdminModeProps) {
             {/* Usage Stats */}
             <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-indigo-400" />
+                <Zap className="w-5 h-5 text-emerald-400" />
                 Statystyki użycia
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -188,11 +328,19 @@ export default function AdminMode({ onBack }: AdminModeProps) {
                   color="emerald"
                 />
                 <UsageItem
+                  icon={Utensils}
+                  label="Posiłki"
+                  total={statistics.moduleUsage.mealsUsers}
+                  average={0}
+                  suffix="użytk."
+                  color="amber"
+                />
+                <UsageItem
                   icon={Target}
                   label="Wyzwania"
                   total={statistics.totalChallenges}
                   average={statistics.averageChallengesPerUser}
-                  color="amber"
+                  color="violet"
                 />
                 <UsageItem
                   icon={ListTodo}
@@ -273,7 +421,7 @@ export default function AdminMode({ onBack }: AdminModeProps) {
           <div className="space-y-6">
             <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-indigo-400" />
+                <Calendar className="w-5 h-5 text-emerald-400" />
                 Aktywność dzienna (ostatnie 14 dni)
               </h3>
               <div className="overflow-x-auto">
@@ -291,13 +439,13 @@ export default function AdminMode({ onBack }: AdminModeProps) {
                     {dailyActivity.map((day) => {
                       const maxEntries = Math.max(...dailyActivity.map((d) => d.entries), 1);
                       const barWidth = (day.entries / maxEntries) * 100;
-                      const isToday = day.date === new Date().toISOString().split("T")[0];
+                      const isTodayRow = day.date === new Date().toISOString().split("T")[0];
 
                       return (
                         <tr
                           key={day.date}
                           className={`border-t border-slate-700/50 ${
-                            isToday ? "bg-indigo-950/30" : ""
+                            isTodayRow ? "bg-emerald-950/30" : ""
                           }`}
                         >
                           <td className="px-4 py-2 text-white text-sm">
@@ -306,8 +454,8 @@ export default function AdminMode({ onBack }: AdminModeProps) {
                               day: "numeric",
                               month: "short",
                             })}
-                            {isToday && (
-                              <span className="ml-2 text-xs bg-indigo-600 px-2 py-0.5 rounded">
+                            {isTodayRow && (
+                              <span className="ml-2 text-xs bg-emerald-600 px-2 py-0.5 rounded">
                                 dziś
                               </span>
                             )}
@@ -323,14 +471,14 @@ export default function AdminMode({ onBack }: AdminModeProps) {
                             </span>
                           </td>
                           <td className="px-4 py-2 text-center">
-                            <span className={`font-semibold ${day.entries > 0 ? "text-indigo-400" : "text-slate-500"}`}>
+                            <span className={`font-semibold ${day.entries > 0 ? "text-emerald-400" : "text-slate-500"}`}>
                               {day.entries}
                             </span>
                           </td>
                           <td className="px-4 py-2 w-48">
                             <div className="h-4 bg-slate-700 rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 transition-all"
+                                className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all"
                                 style={{ width: `${barWidth}%` }}
                               />
                             </div>
@@ -354,15 +502,16 @@ function StatCard({
   icon: Icon,
   label,
   value,
+  subtitle,
   color,
 }: {
   icon: React.ElementType;
   label: string;
   value: number;
-  color: "indigo" | "emerald" | "blue" | "amber" | "rose" | "violet";
+  subtitle?: string;
+  color: "emerald" | "blue" | "amber" | "rose" | "violet";
 }) {
   const colors = {
-    indigo: "bg-indigo-500/20 text-indigo-400",
     emerald: "bg-emerald-500/20 text-emerald-400",
     blue: "bg-blue-500/20 text-blue-400",
     amber: "bg-amber-500/20 text-amber-400",
@@ -371,12 +520,13 @@ function StatCard({
   };
 
   return (
-    <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+    <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
       <div className={`w-10 h-10 rounded-lg ${colors[color]} flex items-center justify-center mb-3`}>
         <Icon className="w-5 h-5" />
       </div>
       <div className="text-3xl font-bold text-white mb-1">{value}</div>
       <div className="text-slate-400 text-sm">{label}</div>
+      {subtitle && <div className="text-slate-500 text-xs mt-1">{subtitle}</div>}
     </div>
   );
 }
@@ -386,12 +536,14 @@ function UsageItem({
   label,
   total,
   average,
+  suffix,
   color,
 }: {
   icon: React.ElementType;
   label: string;
   total: number;
   average: number;
+  suffix?: string;
   color: "emerald" | "amber" | "rose" | "violet";
 }) {
   const colors = {
@@ -406,9 +558,11 @@ function UsageItem({
       <Icon className={`w-6 h-6 ${colors[color]} mx-auto mb-2`} />
       <div className="text-2xl font-bold text-white">{total}</div>
       <div className="text-slate-400 text-xs mb-1">{label}</div>
-      <div className="text-slate-500 text-xs">
-        śr. {average}/użytkownika
-      </div>
+      {average > 0 && (
+        <div className="text-slate-500 text-xs">
+          śr. {average}/{suffix || "użytkownika"}
+        </div>
+      )}
     </div>
   );
 }
