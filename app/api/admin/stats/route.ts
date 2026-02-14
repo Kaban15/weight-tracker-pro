@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
       error?.message?.includes("relation") ||
       false;
 
-    // Fetch all user profiles (try both table names for compatibility)
+    // Fetch user profiles from user_profiles (may be a view or separate table)
     let profiles: { user_id: string; last_active_at?: string; created_at?: string }[] | null = null;
     const { data: profilesData, error: profilesError } = await supabaseAdmin
       .from("user_profiles")
@@ -93,7 +93,13 @@ export async function GET(request: NextRequest) {
     }
     profiles = profilesData;
 
-    // Also try 'profiles' table for heartbeat data (last_active_at)
+    // Always fetch from 'profiles' table for heartbeat data (last_active_at)
+    // This is the table the client writes to — may differ from user_profiles
+    const { data: heartbeatProfiles } = await supabaseAdmin
+      .from("profiles")
+      .select("user_id, last_active_at");
+
+    // If user_profiles failed, use profiles as fallback for general profile data
     if (!profiles || profilesError) {
       const { data: altProfiles } = await supabaseAdmin
         .from("profiles")
@@ -101,9 +107,9 @@ export async function GET(request: NextRequest) {
       if (altProfiles) profiles = altProfiles;
     }
 
-    // Build map of user_id -> last_active_at from profiles heartbeat
+    // Build map of user_id -> last_active_at from heartbeat
     const heartbeatPerUser: Record<string, string> = {};
-    (profiles || []).forEach((p: { user_id: string; last_active_at?: string }) => {
+    (heartbeatProfiles || []).forEach((p: { user_id: string; last_active_at?: string }) => {
       if (p.last_active_at) {
         heartbeatPerUser[p.user_id] = p.last_active_at;
       }
