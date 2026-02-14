@@ -91,28 +91,28 @@ export async function GET(request: NextRequest) {
       console.warn("user_profiles error:", profilesError);
     }
 
-    // Fetch entries count per user
+    // Fetch entries count per user (with date for last-activity tracking)
     const { data: entriesCounts, error: entriesError } = await supabaseAdmin
       .from("weight_entries")
-      .select("user_id, id");
+      .select("user_id, id, date");
 
     if (entriesError && !isTableNotExistError(entriesError)) {
       throw entriesError;
     }
 
-    // Fetch challenges count per user
+    // Fetch challenges count per user (with date for last-activity tracking)
     const { data: challengesCounts, error: challengesError } = await supabaseAdmin
       .from("challenges")
-      .select("user_id, id");
+      .select("user_id, id, date");
 
     if (challengesError && !isTableNotExistError(challengesError)) {
       console.warn("challenges error:", challengesError);
     }
 
-    // Fetch tasks with status for per-user counts and completion rate
+    // Fetch tasks with status for per-user counts and completion rate (with date)
     const { data: tasksData, error: tasksError } = await supabaseAdmin
       .from("tasks")
-      .select("user_id, id, status");
+      .select("user_id, id, status, date");
 
     if (tasksError && !isTableNotExistError(tasksError)) {
       console.warn("tasks error:", tasksError);
@@ -158,6 +158,25 @@ export async function GET(request: NextRequest) {
       tasksPerUser[t.user_id] = (tasksPerUser[t.user_id] || 0) + 1;
     });
 
+    // Compute last activity date per user (max date across entries, tasks, challenges)
+    const lastActivityPerUser: Record<string, string> = {};
+    const updateLastActivity = (userId: string, dateStr: string | undefined | null) => {
+      if (!dateStr) return;
+      const normalized = dateStr.includes("T") ? dateStr.split("T")[0] : dateStr;
+      if (!lastActivityPerUser[userId] || normalized > lastActivityPerUser[userId]) {
+        lastActivityPerUser[userId] = normalized;
+      }
+    };
+    (entriesCounts || []).forEach((e: { user_id: string; date?: string }) => {
+      updateLastActivity(e.user_id, e.date);
+    });
+    (tasksData || []).forEach((t: { user_id: string; date?: string }) => {
+      updateLastActivity(t.user_id, t.date);
+    });
+    (challengesCounts || []).forEach((c: { user_id: string; date?: string }) => {
+      updateLastActivity(c.user_id, c.date);
+    });
+
     // Get unique user IDs from all tables
     const allUserIds = new Set<string>();
     (profiles || []).forEach((p: { user_id: string }) => allUserIds.add(p.user_id));
@@ -188,7 +207,8 @@ export async function GET(request: NextRequest) {
         id: userId,
         email: userEmails[userId] || userId.substring(0, 8) + "...",
         createdAt: authUser?.created_at || goal?.created_at || profile?.created_at || "",
-        lastSignIn: authUser?.last_sign_in_at || goal?.updated_at || null,
+        lastSignIn: authUser?.last_sign_in_at || null,
+        lastActivityAt: lastActivityPerUser[userId] || null,
         entriesCount: entriesPerUser[userId] || 0,
         challengesCount: challengesPerUser[userId] || 0,
         tasksCount: tasksPerUser[userId] || 0,

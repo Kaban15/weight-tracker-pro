@@ -3,6 +3,7 @@ export interface UserStats {
   email: string;
   createdAt: string;
   lastSignIn: string | null;
+  lastActivityAt: string | null;
   entriesCount: number;
   challengesCount: number;
   tasksCount: number;

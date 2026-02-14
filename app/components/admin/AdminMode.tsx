@@ -36,6 +36,48 @@ interface AdminModeProps {
   onBack: () => void;
 }
 
+/** Pick the most recent date between lastSignIn and lastActivityAt */
+function getEffectiveActivity(lastSignIn: string | null, lastActivityAt: string | null): string | null {
+  if (!lastSignIn && !lastActivityAt) return null;
+  if (!lastSignIn) return lastActivityAt;
+  if (!lastActivityAt) return lastSignIn;
+  // Compare: lastSignIn is ISO datetime, lastActivityAt is YYYY-MM-DD
+  const signInDate = lastSignIn.split("T")[0];
+  return signInDate > lastActivityAt ? lastSignIn : lastActivityAt;
+}
+
+/** Format a date as Polish relative time string */
+function formatRelativeTime(dateStr: string | null): string {
+  if (!dateStr) return "Nigdy";
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const date = new Date(dateStr);
+  date.setHours(0, 0, 0, 0);
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 0) return "Dzisiaj";
+  if (diffDays === 1) return "Wczoraj";
+  if (diffDays < 7) return `${diffDays} dni temu`;
+  if (diffDays < 14) return "Tydzień temu";
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} tyg. temu`;
+  if (diffDays < 60) return "Miesiąc temu";
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)} mies. temu`;
+  const years = Math.floor(diffDays / 365);
+  return `${years} ${years === 1 ? "rok" : years < 5 ? "lata" : "lat"} temu`;
+}
+
+/** Return Tailwind dot color class based on recency */
+function getActivityDotClass(dateStr: string | null): string {
+  if (!dateStr) return "bg-slate-600";
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  if (diffDays < 1) return "bg-emerald-500";
+  if (diffDays < 7) return "bg-amber-500";
+  return "bg-slate-500";
+}
+
 export default function AdminMode({ onBack }: AdminModeProps) {
   const { user } = useAuth();
   const { isAdmin, statistics, users, dailyActivity, isLoading, error, refresh } = useAdmin(user?.email);
@@ -369,6 +411,7 @@ export default function AdminMode({ onBack }: AdminModeProps) {
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300">#</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300">ID</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300">Dołączył</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300">Ostatnia aktywność</th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-slate-300">
                       <Scale className="w-4 h-4 inline" /> Wpisy
                     </th>
@@ -392,6 +435,19 @@ export default function AdminMode({ onBack }: AdminModeProps) {
                         {user.createdAt
                           ? new Date(user.createdAt).toLocaleDateString("pl-PL")
                           : "-"}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {(() => {
+                          const effective = getEffectiveActivity(user.lastSignIn, user.lastActivityAt);
+                          const dotClass = getActivityDotClass(effective);
+                          const label = formatRelativeTime(effective);
+                          return (
+                            <span className="flex items-center gap-2">
+                              <span className={`w-2 h-2 rounded-full ${dotClass} inline-block shrink-0`} />
+                              <span className={effective ? "text-slate-300" : "text-slate-500"}>{label}</span>
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`font-semibold ${user.entriesCount > 0 ? "text-emerald-400" : "text-slate-500"}`}>
