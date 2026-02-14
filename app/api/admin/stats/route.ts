@@ -82,14 +82,32 @@ export async function GET(request: NextRequest) {
       error?.message?.includes("relation") ||
       false;
 
-    // Fetch all user profiles
-    const { data: profiles, error: profilesError } = await supabaseAdmin
+    // Fetch all user profiles (try both table names for compatibility)
+    let profiles: { user_id: string; last_active_at?: string; created_at?: string }[] | null = null;
+    const { data: profilesData, error: profilesError } = await supabaseAdmin
       .from("user_profiles")
       .select("*");
 
     if (profilesError && !isTableNotExistError(profilesError)) {
       console.warn("user_profiles error:", profilesError);
     }
+    profiles = profilesData;
+
+    // Also try 'profiles' table for heartbeat data (last_active_at)
+    if (!profiles || profilesError) {
+      const { data: altProfiles } = await supabaseAdmin
+        .from("profiles")
+        .select("*");
+      if (altProfiles) profiles = altProfiles;
+    }
+
+    // Build map of user_id -> last_active_at from profiles heartbeat
+    const heartbeatPerUser: Record<string, string> = {};
+    (profiles || []).forEach((p: { user_id: string; last_active_at?: string }) => {
+      if (p.last_active_at) {
+        heartbeatPerUser[p.user_id] = p.last_active_at;
+      }
+    });
 
     // Fetch entries count per user (with date for last-activity tracking)
     const { data: entriesCounts, error: entriesError } = await supabaseAdmin
@@ -158,15 +176,45 @@ export async function GET(request: NextRequest) {
       tasksPerUser[t.user_id] = (tasksPerUser[t.user_id] || 0) + 1;
     });
 
-    // Compute last activity date per user (max date across entries, tasks, challenges)
+    // Fetch auth users to get emails and last_sign_in_at
+    const { data: authUsersData } = await supabaseAdmin.auth.admin.listUsers({
+      perPage: 1000,
+    });
+    const authUsers = authUsersData?.users || [];
+
+    // Create a map of user_id -> email
+    const userEmails: Record<string, string> = {};
+    authUsers.forEach((u) => {
+      userEmails[u.id] = u.email || u.id.substring(0, 8) + "...";
+    });
+
+    // Extract last_sign_in_at for activity tracking
+    const authUserSignIns: [string, string][] = authUsers
+      .filter((u) => u.last_sign_in_at)
+      .map((u) => [u.id, u.last_sign_in_at!]);
+
+    // Compute last activity per user (max across heartbeat, last_sign_in, entries, tasks, challenges)
+    // Uses full ISO timestamps for heartbeat/signIn, date strings for data tables
     const lastActivityPerUser: Record<string, string> = {};
     const updateLastActivity = (userId: string, dateStr: string | undefined | null) => {
       if (!dateStr) return;
-      const normalized = dateStr.includes("T") ? dateStr.split("T")[0] : dateStr;
-      if (!lastActivityPerUser[userId] || normalized > lastActivityPerUser[userId]) {
-        lastActivityPerUser[userId] = normalized;
+      // Keep full ISO for comparison (timestamps sort correctly as strings)
+      if (!lastActivityPerUser[userId] || dateStr > lastActivityPerUser[userId]) {
+        lastActivityPerUser[userId] = dateStr;
       }
     };
+
+    // Heartbeat signal (primary - full ISO timestamp from profiles.last_active_at)
+    Object.entries(heartbeatPerUser).forEach(([userId, ts]) => {
+      updateLastActivity(userId, ts);
+    });
+
+    // Auth last_sign_in_at signal (full ISO timestamp)
+    authUserSignIns.forEach(([userId, ts]) => {
+      updateLastActivity(userId, ts);
+    });
+
+    // Data-based signals (date strings like "2026-02-14")
     (entriesCounts || []).forEach((e: { user_id: string; date?: string }) => {
       updateLastActivity(e.user_id, e.date);
     });
@@ -184,18 +232,6 @@ export async function GET(request: NextRequest) {
     Object.keys(entriesPerUser).forEach((id) => allUserIds.add(id));
     Object.keys(challengesPerUser).forEach((id) => allUserIds.add(id));
     Object.keys(tasksPerUser).forEach((id) => allUserIds.add(id));
-
-    // Fetch auth users to get emails
-    const { data: authUsersData } = await supabaseAdmin.auth.admin.listUsers({
-      perPage: 1000,
-    });
-    const authUsers = authUsersData?.users || [];
-
-    // Create a map of user_id -> email
-    const userEmails: Record<string, string> = {};
-    authUsers.forEach((u) => {
-      userEmails[u.id] = u.email || u.id.substring(0, 8) + "...";
-    });
 
     // Build user stats
     const users = Array.from(allUserIds).map((userId) => {
@@ -265,6 +301,12 @@ export async function GET(request: NextRequest) {
       recentChallenges7 = rc7Created || [];
     }
     recentChallenges7.forEach((c: { user_id: string }) => activeUsers7Set.add(c.user_id));
+
+    // Heartbeat-active users in last 7 days
+    const weekAgoISO = weekAgo + "T00:00:00";
+    Object.entries(heartbeatPerUser).forEach(([userId, ts]) => {
+      if (ts >= weekAgoISO) activeUsers7Set.add(userId);
+    });
 
     const activeUsersLast7Days = activeUsers7Set.size;
 
