@@ -171,3 +171,5 @@ export const RATE_LIMIT_CONFIGS = {
   // File upload routes
   upload: { maxRequests: 10, windowMs: 60000 }, // 10/min
 } as const;
+
+export const MEALS_RATE_LIMIT = { maxRequests: 30, windowMs: 86400000 } as const; // 30/day
