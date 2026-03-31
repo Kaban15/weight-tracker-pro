@@ -25,6 +25,7 @@ export interface MealPreferences {
   cuisines: string[];
   custom_tdee: number | null;
   onboarding_completed: boolean;
+  has_thermomix: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -46,6 +47,7 @@ export interface MealPlan {
   status: MealPlanStatus;
   rating: number | null;
   rating_comment: string | null;
+  is_favorite: boolean;
   created_at: string;
   updated_at: string;
 }
