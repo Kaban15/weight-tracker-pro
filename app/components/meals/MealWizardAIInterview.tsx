@@ -24,6 +24,7 @@ export default function MealWizardAIInterview({ onComplete }: MealWizardAIInterv
   const { sendMessage, isLoading, error } = useMealAI({
     preferences: null,
     recentMeals: [],
+    favoriteMeals: [],
     pantryItems: [],
     usePantryMode: false,
   });
