@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Star, RefreshCw, Check, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Star, RefreshCw, Check, X, Heart } from 'lucide-react';
 import { MealPlan } from './types';
 
 interface MealCardProps {
@@ -12,9 +12,10 @@ interface MealCardProps {
   onAccept: (id: string) => void;
   onReject: (id: string) => void;
   onMarkEaten: (id: string) => void;
+  onToggleFavorite: (id: string) => void;
 }
 
-export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, onMarkEaten }: MealCardProps) {
+export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, onMarkEaten, onToggleFavorite }: MealCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [rating, setRating] = useState(meal.rating || 5);
@@ -92,6 +93,15 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
               <Star className="w-3 h-3" /> Oceń
             </button>
           )}
+          <button onClick={() => onToggleFavorite(meal.id)}
+            className={`flex items-center gap-1 px-3 py-1 text-xs rounded-lg ${
+              meal.is_favorite
+                ? 'bg-pink-600/20 text-pink-400 hover:bg-pink-600/30'
+                : 'bg-slate-600/20 text-slate-400 hover:bg-slate-600/30'
+            }`}>
+            <Heart className={`w-3 h-3 ${meal.is_favorite ? 'fill-pink-400' : ''}`} />
+            {meal.is_favorite ? 'Ulubiony' : 'Polub'}
+          </button>
           <button onClick={() => onReplace(meal)}
             className="flex items-center gap-1 px-3 py-1 text-xs bg-slate-600/20 text-slate-400 rounded-lg hover:bg-slate-600/30">
             <RefreshCw className="w-3 h-3" /> Zamień
