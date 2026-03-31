@@ -8,8 +8,8 @@ import {
   Target,
   ChevronLeft,
   ChevronRight,
-  X
 } from "lucide-react";
+import Modal from "../shared/Modal";
 
 interface WelcomeModalProps {
   onComplete: () => void;
@@ -67,83 +67,84 @@ export default function WelcomeModal({ onComplete }: WelcomeModalProps) {
     }
   };
 
-  const handleSkip = () => {
-    onComplete();
-  };
-
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-800 rounded-2xl border-2 border-slate-700 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-        {/* Header with skip button */}
-        <div className="flex justify-end p-3">
+    <Modal
+      isOpen={true}
+      onClose={onComplete}
+      title={undefined}
+      size="max-w-md"
+      showClose={false}
+      className="!p-0 overflow-hidden animate-in fade-in zoom-in-95 duration-300"
+    >
+      {/* Skip button */}
+      <div className="flex justify-end p-3 border-b border-slate-700">
+        <button
+          onClick={onComplete}
+          className="text-sm text-slate-500 hover:text-slate-300 hover:bg-slate-700/50 rounded-lg px-3 py-1.5 transition-colors"
+          title="Pomiń wprowadzenie"
+        >
+          Pomiń
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="px-8 py-6 text-center">
+        {/* Icon */}
+        <div className="flex justify-center mb-6">
+          <div className={`w-20 h-20 ${slide.iconBg} rounded-2xl flex items-center justify-center`}>
+            <Icon className={`w-10 h-10 ${slide.iconColor}`} />
+          </div>
+        </div>
+
+        {/* Title */}
+        <h2 className="text-2xl font-bold text-white mb-3">
+          {slide.title}
+        </h2>
+
+        {/* Description */}
+        <p className="text-slate-400 leading-relaxed mb-8">
+          {slide.description}
+        </p>
+
+        {/* Dots indicator */}
+        <div className="flex justify-center gap-2 mb-6">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`w-2.5 h-2.5 rounded-full transition-all ${
+                index === currentSlide
+                  ? "bg-violet-500 w-6"
+                  : "bg-slate-600 hover:bg-slate-500"
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Navigation buttons */}
+        <div className="flex gap-3">
+          {currentSlide > 0 && (
+            <button
+              onClick={handlePrev}
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              Wstecz
+            </button>
+          )}
           <button
-            onClick={handleSkip}
-            className="p-1.5 text-slate-500 hover:text-slate-300 hover:bg-slate-700/50 rounded-lg transition-colors"
-            title="Pomiń wprowadzenie"
+            onClick={handleNext}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition-colors font-semibold ${
+              isLastSlide
+                ? "bg-violet-600 hover:bg-violet-500 text-white"
+                : "bg-slate-700 hover:bg-slate-600 text-white"
+            }`}
           >
-            <X className="w-5 h-5" />
+            {isLastSlide ? "Zaczynamy!" : "Dalej"}
+            {!isLastSlide && <ChevronRight className="w-5 h-5" />}
           </button>
         </div>
-
-        {/* Content */}
-        <div className="px-8 pb-6 text-center">
-          {/* Icon */}
-          <div className="flex justify-center mb-6">
-            <div className={`w-20 h-20 ${slide.iconBg} rounded-2xl flex items-center justify-center`}>
-              <Icon className={`w-10 h-10 ${slide.iconColor}`} />
-            </div>
-          </div>
-
-          {/* Title */}
-          <h2 className="text-2xl font-bold text-white mb-3">
-            {slide.title}
-          </h2>
-
-          {/* Description */}
-          <p className="text-slate-400 leading-relaxed mb-8">
-            {slide.description}
-          </p>
-
-          {/* Dots indicator */}
-          <div className="flex justify-center gap-2 mb-6">
-            {slides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`w-2.5 h-2.5 rounded-full transition-all ${
-                  index === currentSlide
-                    ? "bg-violet-500 w-6"
-                    : "bg-slate-600 hover:bg-slate-500"
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Navigation buttons */}
-          <div className="flex gap-3">
-            {currentSlide > 0 && (
-              <button
-                onClick={handlePrev}
-                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-                Wstecz
-              </button>
-            )}
-            <button
-              onClick={handleNext}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition-colors font-semibold ${
-                isLastSlide
-                  ? "bg-violet-600 hover:bg-violet-500 text-white"
-                  : "bg-slate-700 hover:bg-slate-600 text-white"
-              }`}
-            >
-              {isLastSlide ? "Zaczynamy!" : "Dalej"}
-              {!isLastSlide && <ChevronRight className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 }

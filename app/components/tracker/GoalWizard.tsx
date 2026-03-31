@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from 'react';
-import { X, Scale, Target, TrendingDown, Clock, Flame, Footprints, Dumbbell, FileText, RotateCcw, Trash2, AlertTriangle } from 'lucide-react';
+import { Scale, Target, TrendingDown, Clock, Flame, Footprints, Dumbbell, FileText, RotateCcw, Trash2, AlertTriangle } from 'lucide-react';
+import Modal from '../shared/Modal';
 import { Goal, Profile, formatDate } from './types';
 
 interface GoalWizardProps {
@@ -43,7 +44,6 @@ export default function GoalWizard({
   const [activityLevel, setActivityLevel] = useState(profile?.activity_level?.toString() || '1.2');
   const [dateError, setDateError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
 
   // Validate dates
   const validateDates = (): boolean => {
@@ -156,19 +156,18 @@ export default function GoalWizard({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-slate-900 rounded-2xl p-6 max-w-lg w-full border-2 border-emerald-500/20 my-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">
-            {step === 1 && 'Krok 1: Cel wagowy'}
-            {step === 2 && 'Krok 2: Plan tygodniowy'}
-            {step === 3 && 'Krok 3: Zasady dzienne'}
-            {step === 4 && 'Krok 4: Monitorowanie'}
-          </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        step === 1 ? 'Krok 1: Cel wagowy' :
+        step === 2 ? 'Krok 2: Plan tygodniowy' :
+        step === 3 ? 'Krok 3: Zasady dzienne' :
+        'Krok 4: Monitorowanie'
+      }
+      size="max-w-lg"
+    >
+      <div className="flex flex-col">{/* wrapper for flex structure */}
 
         <div className="flex gap-2 mb-6">
           {[1, 2, 3, 4].map(s => (
@@ -464,6 +463,6 @@ export default function GoalWizard({
           </div>
         )}
       </div>
-    </div>
+    </Modal>
   );
 }

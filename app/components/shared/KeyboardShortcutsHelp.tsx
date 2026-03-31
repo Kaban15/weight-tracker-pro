@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Keyboard } from "lucide-react";
+import Modal from "./Modal";
 import { SHORTCUTS } from "@/lib/useKeyboardShortcuts";
 
 interface KeyboardShortcutsHelpProps {
@@ -41,34 +41,17 @@ function KeyBadge({ children }: { children: React.ReactNode }) {
 }
 
 export default function KeyboardShortcutsHelp({ isOpen, onClose }: KeyboardShortcutsHelpProps) {
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="shortcuts-title"
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Skróty klawiszowe"
+      size="max-w-lg"
+      className="border-2 border-emerald-500/20"
     >
-      <div className="bg-slate-900 rounded-2xl p-6 max-w-lg w-full border-2 border-emerald-500/20 max-h-[80vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 id="shortcuts-title" className="text-xl font-bold text-white flex items-center gap-2">
-            <Keyboard className="w-5 h-5 text-emerald-400" />
-            Skróty klawiszowe
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white p-1"
-            aria-label="Zamknij"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        <div className="space-y-6">
-          {/* Global shortcuts */}
-          <div>
+      <div className="space-y-6">
+        {/* Global shortcuts */}
+        <div>
             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
               Ogólne
             </h3>
@@ -89,10 +72,10 @@ export default function KeyboardShortcutsHelp({ isOpen, onClose }: KeyboardShort
                 </div>
               ))}
             </div>
-          </div>
+        </div>
 
-          {/* Calendar shortcuts */}
-          <div>
+        {/* Calendar shortcuts */}
+        <div>
             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
               Kalendarz
             </h3>
@@ -113,15 +96,14 @@ export default function KeyboardShortcutsHelp({ isOpen, onClose }: KeyboardShort
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-
-        <div className="mt-6 pt-4 border-t border-slate-700">
-          <p className="text-slate-500 text-sm text-center">
-            Naciśnij <KeyBadge>Esc</KeyBadge> aby zamknąć
-          </p>
         </div>
       </div>
-    </div>
+
+      <div className="mt-6 pt-4 border-t border-slate-700">
+        <p className="text-slate-500 text-sm text-center">
+          Naciśnij <KeyBadge>Esc</KeyBadge> aby zamknąć
+        </p>
+      </div>
+    </Modal>
   );
 }

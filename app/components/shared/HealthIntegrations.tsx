@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Activity, X, Link, Unlink, AlertCircle, CheckCircle, Smartphone, RefreshCw } from "lucide-react";
+import { Link, Unlink, AlertCircle, CheckCircle, Smartphone, RefreshCw } from "lucide-react";
+import Modal from "./Modal";
 import {
   HealthIntegrationSettings,
   DEFAULT_HEALTH_SETTINGS,
@@ -51,28 +52,16 @@ export default function HealthIntegrations({ isOpen, onClose, onImportData }: He
     saveHealthSettings(newSettings);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-700">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Activity className="w-5 h-5 text-emerald-400" />
-            Integracje zdrowotne
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-slate-400" />
-          </button>
-        </div>
-
-        <div className="p-4 space-y-6">
-          {/* Google Fit */}
-          <div className="space-y-4">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Integracje zdrowotne"
+      size="max-w-lg"
+      className="space-y-6"
+    >
+      {/* Google Fit */}
+      <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center">
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
@@ -141,12 +130,12 @@ export default function HealthIntegrations({ isOpen, onClose, onImportData }: He
                 Połącz z Google Fit
               </button>
             )}
-          </div>
+      </div>
 
-          <div className="border-t border-slate-700" />
+      <div className="border-t border-slate-700" />
 
-          {/* Apple Health */}
-          <div className="space-y-4">
+      {/* Apple Health */}
+      <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-pink-500/20 rounded-xl flex items-center justify-center">
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
@@ -177,14 +166,14 @@ export default function HealthIntegrations({ isOpen, onClose, onImportData }: He
                 </div>
               </div>
             </div>
-          </div>
+      </div>
 
-          {settings.googleFit.connected && (
-            <>
-              <div className="border-t border-slate-700" />
+      {settings.googleFit.connected && (
+        <>
+          <div className="border-t border-slate-700" />
 
-              {/* Auto import settings */}
-              <div className="space-y-4">
+          {/* Auto import settings */}
+          <div className="space-y-4">
                 <h3 className="font-medium text-white">Automatyczny import</h3>
 
                 <div className="flex items-center justify-between">
@@ -220,9 +209,7 @@ export default function HealthIntegrations({ isOpen, onClose, onImportData }: He
                 </div>
               </div>
             </>
-          )}
-        </div>
-      </div>
-    </div>
+        )}
+    </Modal>
   );
 }

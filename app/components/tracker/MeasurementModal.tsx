@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { X, Ruler, Trash2 } from 'lucide-react';
+import { Ruler, Trash2 } from 'lucide-react';
+import Modal from '../shared/Modal';
 import { BodyMeasurement, formatDate } from './types';
 
 interface MeasurementModalProps {
@@ -187,33 +188,16 @@ export default function MeasurementModal({
     if (error) setError(null);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={measurement ? 'Edytuj pomiary' : 'Nowe pomiary'}
+      size="max-w-lg"
     >
-      <div className="bg-slate-900 rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col border-2 border-slate-700">
-        <div className="sticky top-0 bg-slate-900 p-4 border-b border-slate-700 flex items-center justify-between rounded-t-2xl">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600/20 rounded-xl flex items-center justify-center">
-              <Ruler className="w-5 h-5 text-indigo-400" />
-            </div>
-            <h2 className="text-xl font-bold text-white">
-              {measurement ? 'Edytuj pomiary' : 'Nowe pomiary'}
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors p-2"
-            aria-label="Zamknij"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+      <div className="flex flex-col">{/* wrapper for modal content */}
 
-        <form onSubmit={handleSubmit} className="overflow-y-auto p-4 space-y-5 flex-1">
+        <form onSubmit={handleSubmit} className="overflow-y-auto p-4 space-y-5 flex-1 -m-6 p-6 mt-0 pt-4">{/* adjust margins to offset Modal padding */}
           {/* Date */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -344,6 +328,6 @@ export default function MeasurementModal({
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 }

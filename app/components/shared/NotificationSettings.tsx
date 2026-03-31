@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell, BellOff, Volume2, VolumeX, Vibrate, TestTube, X } from "lucide-react";
+import { Bell, BellOff, Volume2, VolumeX, Vibrate, TestTube } from "lucide-react";
+import Modal from "./Modal";
 import {
   NotificationSettings as NotificationSettingsType,
   DEFAULT_SETTINGS,
@@ -50,28 +51,16 @@ export default function NotificationSettings({ isOpen, onClose }: NotificationSe
     handleSettingChange(key, newDays);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-700">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Bell className="w-5 h-5 text-amber-400" />
-            Powiadomienia
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-slate-400" />
-          </button>
-        </div>
-
-        <div className="p-4 space-y-6">
-          {/* Permission status */}
-          {!isSupported ? (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Powiadomienia"
+      size="max-w-lg"
+      className="space-y-6"
+    >
+      {/* Permission status */}
+      {!isSupported ? (
             <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 text-red-300">
               Twoja przeglądarka nie wspiera powiadomień.
             </div>
@@ -91,10 +80,10 @@ export default function NotificationSettings({ isOpen, onClose }: NotificationSe
                 Zezwól na powiadomienia
               </button>
             </div>
-          ) : null}
+      ) : null}
 
-          {/* Weight reminders */}
-          <div className="space-y-4">
+      {/* Weight reminders */}
+      <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {settings.weightEnabled ? (
@@ -157,12 +146,12 @@ export default function NotificationSettings({ isOpen, onClose }: NotificationSe
                 </button>
               </div>
             )}
-          </div>
+      </div>
 
-          <div className="border-t border-slate-700" />
+      <div className="border-t border-slate-700" />
 
-          {/* Habits reminders */}
-          <div className="space-y-4">
+      {/* Habits reminders */}
+      <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {settings.habitsEnabled ? (
@@ -225,12 +214,12 @@ export default function NotificationSettings({ isOpen, onClose }: NotificationSe
                 </button>
               </div>
             )}
-          </div>
+      </div>
 
-          <div className="border-t border-slate-700" />
+      <div className="border-t border-slate-700" />
 
-          {/* General settings */}
-          <div className="space-y-4">
+      {/* General settings */}
+      <div className="space-y-4">
             <h3 className="font-medium text-white">Ustawienia ogólne</h3>
 
             <div className="flex items-center justify-between">
@@ -275,8 +264,6 @@ export default function NotificationSettings({ isOpen, onClose }: NotificationSe
               </button>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
