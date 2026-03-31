@@ -11,6 +11,7 @@ import {
   Clock,
 } from "lucide-react";
 import { Task, PRIORITY_CONFIG } from "../todo/types";
+import { formatDate as formatDateStr, getWeekStart } from "../shared/dateUtils";
 
 interface WeeklyScheduleViewProps {
   tasks: Task[];
@@ -18,19 +19,6 @@ interface WeeklyScheduleViewProps {
   onUpdateTaskDate: (taskId: string, newDate: string) => void;
   onDeleteTask: (taskId: string) => void;
   onAddTask: (date: string) => void;
-}
-
-// Get week start (Monday) for a given date
-function getWeekStart(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-  return new Date(d.setDate(diff));
-}
-
-// Format date to YYYY-MM-DD
-function formatDateStr(date: Date): string {
-  return date.toISOString().split("T")[0];
 }
 
 // Format duration to display string

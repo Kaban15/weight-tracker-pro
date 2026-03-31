@@ -149,12 +149,8 @@ export const MEASUREMENT_LABELS: Record<keyof MeasurementChanges, string> = {
   calf_right: 'Łydka P',
 };
 
-export function formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
+// Re-export from shared for backwards compatibility
+export { formatDate } from '../shared/dateUtils';
 
 export function getDaysInMonth(date: Date): (Date | null)[] {
   const year = date.getFullYear();

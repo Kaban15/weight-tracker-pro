@@ -1,23 +1,16 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { formatDate as formatDateStr, MONTH_NAMES, DAY_NAMES_MEDIUM as DAY_NAMES } from "./dateUtils";
+
+// Re-export for backwards compatibility
+export { formatDateStr };
 
 interface CalendarProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   renderDay: (day: number, dateStr: string) => React.ReactNode;
   className?: string;
-}
-
-const MONTH_NAMES = [
-  "Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec",
-  "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień"
-];
-
-const DAY_NAMES = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Nd"];
-
-export function formatDateStr(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 export function isToday(day: number, month: number, year: number): boolean;
@@ -91,5 +84,3 @@ export default function Calendar({ currentDate, onDateChange, renderDay, classNa
     </div>
   );
 }
-
-export { MONTH_NAMES, DAY_NAMES };

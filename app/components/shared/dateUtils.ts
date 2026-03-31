@@ -25,6 +25,16 @@ export function getWeekNumber(d: Date): number {
 }
 
 /**
+ * Get the Monday of the week containing the given date
+ */
+export function getWeekStart(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(d.setDate(diff));
+}
+
+/**
  * Get array of 7 dates for a week, starting from Monday
  * @param offset - Week offset from current week (0 = current, -1 = last week, 1 = next week)
  */

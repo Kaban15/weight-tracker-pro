@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { isRateLimited, RATE_LIMITS } from "@/lib/rateLimiter";
-import { Task, TaskFormData, TaskStats, DEFAULT_TASK_FORM, Category, TaskStatus, CATEGORY_CONFIG, STATUS_CONFIG, formatLocalDate } from "./types";
+import { Task, TaskFormData, TaskStats, DEFAULT_TASK_FORM, Category, TaskStatus, CATEGORY_CONFIG, STATUS_CONFIG } from "./types";
+import { formatDate } from "../shared/dateUtils";
 
 interface TaskRow {
   id: string;
@@ -20,9 +21,6 @@ interface TaskRow {
   created_at: string;
   updated_at: string;
 }
-
-// Re-use formatLocalDate from types.ts for consistent local date formatting
-const formatDate = formatLocalDate;
 
 // Migrate old task data to new format
 function migrateTask(task: Record<string, unknown>): Task {
