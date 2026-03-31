@@ -44,6 +44,7 @@ export interface MealPlan {
   fat: number;
   recipe_steps: string[];
   estimated_cost: number | null;
+  ingredient_costs: Record<string, number | null> | null;
   status: MealPlanStatus;
   rating: number | null;
   rating_comment: string | null;
@@ -128,7 +129,6 @@ export const aiMealSchema = z.object({
     carbs: z.number(),
     fat: z.number(),
     recipe_steps: z.array(z.string()),
-    estimated_cost: z.number().nullable(),
   })),
 });
 

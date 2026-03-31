@@ -77,10 +77,17 @@ export function usePantry(userId: string | undefined) {
     if (error) await loadItems();
   }, [loadItems]);
 
-  const deductIngredients = useCallback(async (ingredients: MealIngredient[]): Promise<number> => {
-    if (!supabase) return 0;
+  /**
+   * Deduct ingredients from pantry and return cost breakdown.
+   * Ingredients not found in pantry get cost: null (user had them already).
+   */
+  const deductIngredients = useCallback(async (
+    ingredients: MealIngredient[]
+  ): Promise<{ costs: Map<string, number | null>; totalCost: number }> => {
+    if (!supabase) return { costs: new Map(), totalCost: 0 };
 
     let totalCost = 0;
+    const costs = new Map<string, number | null>();
 
     for (const ing of ingredients) {
       const pantryItem = items.find(p =>
@@ -92,15 +99,18 @@ export function usePantry(userId: string | undefined) {
       if (pantryItem) {
         const deductAmount = Math.min(ing.amount, pantryItem.quantity_remaining);
         const costPerUnit = pantryItem.price / pantryItem.quantity_total;
-        const ingredientCost = deductAmount * costPerUnit;
+        const ingredientCost = Math.round(deductAmount * costPerUnit * 100) / 100;
         totalCost += ingredientCost;
+        costs.set(ing.name, ingredientCost);
 
         const newRemaining = pantryItem.quantity_remaining - deductAmount;
         await updateItem(pantryItem.id, { quantity_remaining: newRemaining });
+      } else {
+        costs.set(ing.name, null);
       }
     }
 
-    return Math.round(totalCost * 100) / 100;
+    return { costs, totalCost: Math.round(totalCost * 100) / 100 };
   }, [items, updateItem]);
 
   useEffect(() => {

@@ -70,7 +70,7 @@ function buildSystemPrompt(options: UseMealAIOptions): string {
     '## Zasady',
     '- Zawsze podaj dokładne ilości składników w gramach/ml/szt',
     '- Wylicz kalorie i makro (białko, węgle, tłuszcze) dla każdego składnika',
-    '- Podaj szacunkowy koszt posiłku jeśli to możliwe',
+    '- NIE podawaj szacunkowego kosztu posiłku — koszt jest wyliczany automatycznie ze spiżarni',
     '- Podaj przepis krok po kroku',
     preferences.has_thermomix ? '- Dla przepisów Thermomix podaj: czas, temperaturę, prędkość ostrzy dla każdego kroku' : '',
     `- Dopasuj posiłek do limitu kalorycznego: ${preferences.target_calories} kcal/dzień`,

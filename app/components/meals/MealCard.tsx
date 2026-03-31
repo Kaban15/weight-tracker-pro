@@ -2,8 +2,8 @@
 "use client";
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Star, RefreshCw, Check, X, Heart } from 'lucide-react';
-import { MealPlan } from './types';
+import { ChevronDown, ChevronUp, Star, RefreshCw, Check, X, Heart, Pencil } from 'lucide-react';
+import { MealPlan, MealIngredient } from './types';
 
 interface MealCardProps {
   meal: MealPlan;
@@ -13,11 +13,14 @@ interface MealCardProps {
   onReject: (id: string) => void;
   onMarkEaten: (id: string) => void;
   onToggleFavorite: (id: string) => void;
+  onUpdateIngredients: (id: string, ingredients: MealIngredient[]) => void;
 }
 
-export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, onMarkEaten, onToggleFavorite }: MealCardProps) {
+export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, onMarkEaten, onToggleFavorite, onUpdateIngredients }: MealCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showRating, setShowRating] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editedIngredients, setEditedIngredients] = useState<MealIngredient[]>(meal.ingredients);
   const [rating, setRating] = useState(meal.rating || 5);
   const [comment, setComment] = useState(meal.rating_comment || '');
 
@@ -33,6 +36,38 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
     accepted: 'Zaakceptowany',
     eaten: 'Zjedzony',
     rejected: 'Odrzucony',
+  };
+
+  const costs = meal.ingredient_costs || {};
+  const totalCost = Object.values(costs).reduce((s: number, c) => s + (c || 0), 0);
+
+  const handleAmountChange = (index: number, newAmount: number) => {
+    const original = meal.ingredients[index];
+    if (!original || original.amount === 0) return;
+    const ratio = newAmount / original.amount;
+
+    const updated = editedIngredients.map((ing, i) => {
+      if (i !== index) return ing;
+      return {
+        ...ing,
+        amount: newAmount,
+        calories: Math.round(original.calories * ratio * 10) / 10,
+        protein: Math.round(original.protein * ratio * 10) / 10,
+        carbs: Math.round(original.carbs * ratio * 10) / 10,
+        fat: Math.round(original.fat * ratio * 10) / 10,
+      };
+    });
+    setEditedIngredients(updated);
+  };
+
+  const handleSaveEdit = () => {
+    onUpdateIngredients(meal.id, editedIngredients);
+    setEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditedIngredients(meal.ingredients);
+    setEditing(false);
   };
 
   return (
@@ -62,13 +97,13 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
           <span className="text-blue-400">B: {Math.round(meal.protein)}g</span>
           <span className="text-amber-400">W: {Math.round(meal.carbs)}g</span>
           <span className="text-red-400">T: {Math.round(meal.fat)}g</span>
-          {meal.estimated_cost !== null && (
-            <span className="text-slate-400 ml-auto">{meal.estimated_cost.toFixed(2)} zł</span>
+          {totalCost > 0 && (
+            <span className="text-slate-400 ml-auto">{totalCost.toFixed(2)} zł</span>
           )}
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-2 mt-3">
+        <div className="flex gap-2 mt-3 flex-wrap">
           {meal.status === 'planned' && (
             <>
               <button onClick={() => onAccept(meal.id)}
@@ -82,10 +117,16 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
             </>
           )}
           {meal.status === 'accepted' && (
-            <button onClick={() => onMarkEaten(meal.id)}
-              className="flex items-center gap-1 px-3 py-1 text-xs bg-violet-600/20 text-violet-400 rounded-lg hover:bg-violet-600/30">
-              <Check className="w-3 h-3" /> Zjedzony
-            </button>
+            <>
+              <button onClick={() => onMarkEaten(meal.id)}
+                className="flex items-center gap-1 px-3 py-1 text-xs bg-violet-600/20 text-violet-400 rounded-lg hover:bg-violet-600/30">
+                <Check className="w-3 h-3" /> Zjedzony
+              </button>
+              <button onClick={() => { setExpanded(true); setEditing(true); }}
+                className="flex items-center gap-1 px-3 py-1 text-xs bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30">
+                <Pencil className="w-3 h-3" /> Edytuj skład
+              </button>
+            </>
           )}
           {(meal.status === 'eaten' && !meal.rating) && (
             <button onClick={() => setShowRating(true)}
@@ -134,19 +175,64 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
         </div>
       )}
 
-      {/* Expanded: recipe */}
+      {/* Expanded: ingredients + recipe */}
       {expanded && (
         <div className="px-4 pb-4 border-t border-slate-700 pt-3 space-y-3">
           <div>
-            <h4 className="text-sm font-medium text-slate-300 mb-2">Składniki</h4>
-            <ul className="space-y-1">
-              {meal.ingredients.map((ing, i) => (
-                <li key={i} className="flex justify-between text-xs text-slate-400">
-                  <span>{ing.name} — {ing.amount} {ing.unit}</span>
-                  <span>{Math.round(ing.calories)} kcal</span>
-                </li>
-              ))}
-            </ul>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-medium text-slate-300">Składniki</h4>
+              {!editing && meal.status === 'accepted' && (
+                <button onClick={() => setEditing(true)} className="text-xs text-blue-400 hover:text-blue-300">
+                  Edytuj
+                </button>
+              )}
+            </div>
+
+            {editing ? (
+              <div className="space-y-2">
+                {editedIngredients.map((ing, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs">
+                    <span className="text-slate-300 flex-1">{ing.name}</span>
+                    <input
+                      type="number"
+                      value={ing.amount}
+                      onChange={e => handleAmountChange(i, parseFloat(e.target.value) || 0)}
+                      className="w-16 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-center"
+                    />
+                    <span className="text-slate-500 w-6">{ing.unit}</span>
+                    <span className="text-emerald-400 w-14 text-right">{Math.round(ing.calories)} kcal</span>
+                  </div>
+                ))}
+                <div className="flex gap-2 mt-2">
+                  <button onClick={handleSaveEdit}
+                    className="px-3 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg">
+                    Zapisz zmiany
+                  </button>
+                  <button onClick={handleCancelEdit}
+                    className="px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg">
+                    Anuluj
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <ul className="space-y-1">
+                {meal.ingredients.map((ing, i) => (
+                  <li key={i} className="flex justify-between text-xs text-slate-400">
+                    <span>{ing.name} — {ing.amount} {ing.unit}</span>
+                    <span className="flex items-center gap-3">
+                      <span>{Math.round(ing.calories)} kcal</span>
+                      <span className="w-16 text-right">
+                        {costs[ing.name] !== undefined
+                          ? costs[ing.name] !== null
+                            ? `${(costs[ing.name] as number).toFixed(2)} zł`
+                            : '—'
+                          : ''}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <div>
             <h4 className="text-sm font-medium text-slate-300 mb-2">Przygotowanie</h4>

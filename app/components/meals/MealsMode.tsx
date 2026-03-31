@@ -30,7 +30,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
   const {
     preferences, mealPlans, isLoading,
     savePreferences, acceptMeals, updateMealPlan, getDaySummary,
-    toggleFavorite, reeatFavorite, getFavorites,
+    toggleFavorite, reeatFavorite, getFavorites, updateIngredients, syncToTracker,
   } = useMeals(user?.id);
 
   const pantry = usePantry(user?.id);
@@ -82,10 +82,27 @@ export default function MealsMode({ onBack }: MealsModeProps) {
 
   const handleAcceptMeals = async (date: string, meals: AIGeneratedMeal[]) => {
     await acceptMeals(date, meals);
-    // Deduct from pantry if any
-    for (const meal of meals) {
-      await pantry.deductIngredients(meal.ingredients as MealIngredient[]);
-    }
+  };
+
+  const handleMarkEaten = async (id: string) => {
+    const meal = mealPlans.find(m => m.id === id);
+    if (!meal) return;
+
+    // 1. Deduct from pantry and get cost breakdown
+    const { costs, totalCost } = await pantry.deductIngredients(meal.ingredients as MealIngredient[]);
+
+    // 2. Save costs and mark as eaten
+    const costObj: Record<string, number | null> = {};
+    costs.forEach((v, k) => { costObj[k] = v; });
+    await updateMealPlan(id, {
+      status: 'eaten',
+      estimated_cost: totalCost,
+      ingredient_costs: costObj,
+    });
+
+    // 3. Sync to progress tracker
+    const updatedMeal = { ...meal, calories: meal.calories, protein: meal.protein, carbs: meal.carbs, fat: meal.fat };
+    await syncToTracker(updatedMeal);
   };
 
   if (resolvedView === 'loading' || isLoading) {
@@ -136,6 +153,8 @@ export default function MealsMode({ onBack }: MealsModeProps) {
             onAcceptMeals={handleAcceptMeals}
             onUpdateMeal={updateMealPlan}
             onToggleFavorite={toggleFavorite}
+            onUpdateIngredients={updateIngredients}
+            onMarkEaten={handleMarkEaten}
             onNavigate={(v) => setView(v as View)}
           />
         )}

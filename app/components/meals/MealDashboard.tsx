@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, Sparkles, ShoppingCart, Package, BarChart3, ToggleLeft, ToggleRight, Heart } from 'lucide-react';
-import { MealPlan, MealPreferences, PantryItem, ChatMessage, AIGeneratedMeal, formatDate } from './types';
+import { MealPlan, MealPreferences, MealIngredient, PantryItem, ChatMessage, AIGeneratedMeal, formatDate } from './types';
 import { useMealAI } from './useMealAI';
 import MealCard from './MealCard';
 import MealChat from './MealChat';
@@ -15,6 +15,8 @@ interface MealDashboardProps {
   onAcceptMeals: (date: string, meals: AIGeneratedMeal[]) => void;
   onUpdateMeal: (id: string, updates: Partial<MealPlan>) => void;
   onToggleFavorite: (id: string) => void;
+  onUpdateIngredients: (id: string, ingredients: MealIngredient[]) => void;
+  onMarkEaten: (id: string) => void;
   favoriteMeals: MealPlan[];
   onNavigate: (view: 'pantry' | 'shopping' | 'calendar' | 'settings' | 'favorites' | 'preferences') => void;
 }
@@ -28,6 +30,8 @@ export default function MealDashboard({
   onAcceptMeals,
   onUpdateMeal,
   onToggleFavorite,
+  onUpdateIngredients,
+  onMarkEaten,
   favoriteMeals,
   onNavigate,
 }: MealDashboardProps) {
@@ -219,8 +223,9 @@ export default function MealDashboard({
             onReplace={handleReplace}
             onAccept={id => onUpdateMeal(id, { status: 'accepted' })}
             onReject={id => onUpdateMeal(id, { status: 'rejected' })}
-            onMarkEaten={id => onUpdateMeal(id, { status: 'eaten' })}
+            onMarkEaten={onMarkEaten}
             onToggleFavorite={onToggleFavorite}
+            onUpdateIngredients={onUpdateIngredients}
           />
         ))}
       </div>

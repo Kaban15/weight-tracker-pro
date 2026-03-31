@@ -3,7 +3,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { MealPreferences, MealPlan, DaySummary, AIGeneratedMeal, formatDate } from './types';
+import { MealPreferences, MealPlan, MealIngredient, DaySummary, AIGeneratedMeal, formatDate } from './types';
+import type { MealType } from '../tracker/types';
+
+const MEAL_TYPE_MAP: Record<string, MealType> = {
+  'Śniadanie': 'Śniadanie',
+  'II Śniadanie': 'II Śniadanie',
+  'Obiad': 'Obiad',
+  'Kolacja': 'Kolacja',
+  'Przekąska': 'Przekąska',
+};
 
 export function useMeals(userId: string | undefined) {
   const [preferences, setPreferences] = useState<MealPreferences | null>(null);
@@ -115,7 +124,8 @@ export function useMeals(userId: string | undefined) {
       carbs: m.carbs,
       fat: m.fat,
       recipe_steps: m.recipe_steps,
-      estimated_cost: m.estimated_cost,
+      estimated_cost: null,
+      ingredient_costs: null,
       status: 'accepted' as const,
       is_favorite: false,
     }));
@@ -248,6 +258,78 @@ export function useMeals(userId: string | undefined) {
     };
   }, [mealPlans, preferences?.target_calories]);
 
+  // ── Update ingredients (inline edit of amounts, auto-recalc macros) ──
+  const updateIngredients = useCallback(async (id: string, newIngredients: MealIngredient[]) => {
+    if (!supabase) return;
+
+    const totalCalories = newIngredients.reduce((s, i) => s + i.calories, 0);
+    const totalProtein = newIngredients.reduce((s, i) => s + i.protein, 0);
+    const totalCarbs = newIngredients.reduce((s, i) => s + i.carbs, 0);
+    const totalFat = newIngredients.reduce((s, i) => s + i.fat, 0);
+
+    const updates: Partial<MealPlan> = {
+      ingredients: newIngredients,
+      calories: totalCalories,
+      protein: totalProtein,
+      carbs: totalCarbs,
+      fat: totalFat,
+    };
+
+    setMealPlans(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m));
+
+    const { error } = await supabase
+      .from('meal_plans')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) await loadMealPlans();
+  }, [loadMealPlans]);
+
+  // ── Sync eaten meal to tracker entries ──
+  const syncToTracker = useCallback(async (meal: MealPlan) => {
+    if (!userId || !supabase) return;
+
+    const mealType: MealType = MEAL_TYPE_MAP[meal.meal_slot] || 'Przekąska';
+    const trackerMeal = {
+      id: crypto.randomUUID(),
+      name: meal.name,
+      type: mealType,
+      calories: Math.round(meal.calories),
+      protein: Math.round(meal.protein),
+      carbs: Math.round(meal.carbs),
+      fat: Math.round(meal.fat),
+    };
+
+    // Check if entry exists for this date
+    const { data: existing } = await supabase
+      .from('entries')
+      .select('id, meals, calories')
+      .eq('user_id', userId)
+      .eq('date', meal.date)
+      .single();
+
+    if (existing) {
+      const currentMeals = (existing.meals as Array<Record<string, unknown>>) || [];
+      const updatedMeals = [...currentMeals, trackerMeal];
+      const totalCalories = updatedMeals.reduce((s, m) => s + ((m.calories as number) || 0), 0);
+
+      await supabase
+        .from('entries')
+        .update({ meals: updatedMeals, calories: totalCalories, updated_at: new Date().toISOString() })
+        .eq('id', existing.id);
+    } else {
+      await supabase
+        .from('entries')
+        .insert({
+          user_id: userId,
+          date: meal.date,
+          weight: 0, // placeholder — user fills in manually
+          calories: Math.round(meal.calories),
+          meals: [trackerMeal],
+        });
+    }
+  }, [userId]);
+
   // ── Initial load ──
   useEffect(() => {
     async function init() {
@@ -273,5 +355,7 @@ export function useMeals(userId: string | undefined) {
     reeatFavorite,
     getFavorites,
     clearPendingForDate,
+    updateIngredients,
+    syncToTracker,
   };
 }
