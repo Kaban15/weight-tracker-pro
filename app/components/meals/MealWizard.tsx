@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { calculateBMR, calculateTDEE, calculateTargetCalories, ACTIVITY_LEVELS, GOAL_TYPES } from '@/lib/tdee';
 import { DIET_TYPES, DEFAULT_MEAL_NAMES, MEALS_PER_DAY_OPTIONS } from './constants';

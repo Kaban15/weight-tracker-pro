@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Settings, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { MealPreferences, AIGeneratedMeal, MealPlan } from './types';
+import { MealPreferences, AIGeneratedMeal, MealIngredient } from './types';
 import { useMeals } from './useMeals';
 import { usePantry } from './usePantry';
 import { useShoppingList } from './useShoppingList';
@@ -27,7 +27,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
   const { user } = useAuth();
   const {
     preferences, mealPlans, isLoading,
-    savePreferences, acceptMeals, updateMealPlan, deleteMealPlan, getDaySummary, loadMealPlans,
+    savePreferences, acceptMeals, updateMealPlan, getDaySummary,
   } = useMeals(user?.id);
 
   const pantry = usePantry(user?.id);
@@ -61,16 +61,10 @@ export default function MealsMode({ onBack }: MealsModeProps) {
     fetchProfile();
   }, [user?.id]);
 
-  // Update view when loading completes
-  useEffect(() => {
-    if (!isLoading && view === 'loading') {
-      if (!preferences || !preferences.onboarding_completed) {
-        setView('wizard');
-      } else {
-        setView('dashboard');
-      }
-    }
-  }, [isLoading, preferences, view]);
+  // Derive initial view from loading state
+  const resolvedView = view === 'loading' && !isLoading
+    ? (!preferences || !preferences.onboarding_completed ? 'wizard' : 'dashboard')
+    : view;
 
   const handleWizardComplete = (data: Partial<MealPreferences>) => {
     setWizardData(data);
@@ -87,11 +81,11 @@ export default function MealsMode({ onBack }: MealsModeProps) {
     await acceptMeals(date, meals);
     // Deduct from pantry if any
     for (const meal of meals) {
-      await pantry.deductIngredients(meal.ingredients as any);
+      await pantry.deductIngredients(meal.ingredients as MealIngredient[]);
     }
   };
 
-  if (view === 'loading' || isLoading) {
+  if (resolvedView === 'loading' || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
@@ -103,13 +97,13 @@ export default function MealsMode({ onBack }: MealsModeProps) {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-4">
       <div className="max-w-4xl mx-auto">
         {/* Header — only on main views */}
-        {(view === 'wizard' || view === 'interview' || view === 'dashboard') && (
+        {(resolvedView === 'wizard' || resolvedView === 'interview' || resolvedView === 'dashboard') && (
           <div className="flex items-center justify-between mb-6">
             <button onClick={onBack}
               className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
               <ArrowLeft className="w-5 h-5" /> Powrót
             </button>
-            {view === 'dashboard' && preferences && (
+            {resolvedView === 'dashboard' && preferences && (
               <button onClick={() => setView('settings')}
                 className="p-2 text-slate-400 hover:text-white" title="Ustawienia diety">
                 <Settings className="w-5 h-5" />
@@ -118,7 +112,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
           </div>
         )}
 
-        {view === 'wizard' && (
+        {resolvedView === 'wizard' && (
           <MealWizard
             existingProfile={profile}
             currentWeight={latestWeight}
@@ -126,23 +120,22 @@ export default function MealsMode({ onBack }: MealsModeProps) {
           />
         )}
 
-        {view === 'interview' && (
+        {resolvedView === 'interview' && (
           <MealWizardAIInterview onComplete={handleInterviewComplete} />
         )}
 
-        {view === 'dashboard' && preferences && (
+        {resolvedView === 'dashboard' && preferences && (
           <MealDashboard
             preferences={preferences}
             mealPlans={mealPlans}
             pantryItems={pantry.items}
             onAcceptMeals={handleAcceptMeals}
             onUpdateMeal={updateMealPlan}
-            onDeleteMeal={deleteMealPlan}
             onNavigate={(v) => setView(v as View)}
           />
         )}
 
-        {view === 'pantry' && (
+        {resolvedView === 'pantry' && (
           <PantryManager
             items={pantry.items}
             onAdd={pantry.addItem}
@@ -151,7 +144,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
           />
         )}
 
-        {view === 'shopping' && (
+        {resolvedView === 'shopping' && (
           <ShoppingList
             items={shopping.items}
             mealPlans={mealPlans}
@@ -165,7 +158,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
           />
         )}
 
-        {view === 'calendar' && preferences && (
+        {resolvedView === 'calendar' && preferences && (
           <MealCalendar
             mealPlans={mealPlans}
             getDaySummary={getDaySummary}
@@ -175,7 +168,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
           />
         )}
 
-        {view === 'charts' && preferences && (
+        {resolvedView === 'charts' && preferences && (
           <MealSummaryCharts
             mealPlans={mealPlans}
             getDaySummary={getDaySummary}
@@ -184,7 +177,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
           />
         )}
 
-        {view === 'settings' && (
+        {resolvedView === 'settings' && (
           <MealWizard
             existingProfile={profile}
             currentWeight={latestWeight}

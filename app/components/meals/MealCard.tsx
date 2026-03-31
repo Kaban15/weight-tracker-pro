@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Star, RefreshCw, Trash2, Check, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Star, RefreshCw, Check, X } from 'lucide-react';
 import { MealPlan } from './types';
 
 interface MealCardProps {

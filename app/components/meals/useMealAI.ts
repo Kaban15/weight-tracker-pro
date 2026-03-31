@@ -3,7 +3,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/lib/AuthContext';
-import { ChatMessage, MealPreferences, MealPlan, PantryItem, AIGeneratedMeal } from './types';
+import { MealPreferences, MealPlan, PantryItem } from './types';
 
 interface UseMealAIOptions {
   preferences: MealPreferences | null;

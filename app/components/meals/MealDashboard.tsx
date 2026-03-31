@@ -1,7 +1,7 @@
 // app/components/meals/MealDashboard.tsx
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, Sparkles, ShoppingCart, Package, BarChart3, ToggleLeft, ToggleRight } from 'lucide-react';
 import { MealPlan, MealPreferences, PantryItem, ChatMessage, AIGeneratedMeal, formatDate } from './types';
 import { useMealAI } from './useMealAI';
@@ -14,7 +14,6 @@ interface MealDashboardProps {
   pantryItems: PantryItem[];
   onAcceptMeals: (date: string, meals: AIGeneratedMeal[]) => void;
   onUpdateMeal: (id: string, updates: Partial<MealPlan>) => void;
-  onDeleteMeal: (id: string) => void;
   onNavigate: (view: 'pantry' | 'shopping' | 'calendar' | 'settings') => void;
 }
 
@@ -26,7 +25,6 @@ export default function MealDashboard({
   pantryItems,
   onAcceptMeals,
   onUpdateMeal,
-  onDeleteMeal,
   onNavigate,
 }: MealDashboardProps) {
   const [selectedDate, setSelectedDate] = useState(formatDate(new Date()));
@@ -81,8 +79,10 @@ export default function MealDashboard({
 
       // Auto-save generated meals as 'planned'
       if (response.meals?.length > 0) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
         const targetDate = scope === 'tomorrow'
-          ? formatDate(new Date(Date.now() + 86400000))
+          ? formatDate(tomorrow)
           : selectedDate;
         onAcceptMeals(targetDate, response.meals);
       }

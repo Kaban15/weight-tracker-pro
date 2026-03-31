@@ -6,9 +6,13 @@ import { checkRateLimit, getRateLimitHeaders, MEALS_RATE_LIMIT } from '@/lib/ser
 import { aiMealSchema, aiInterviewSchema } from '@/app/components/meals/types';
 import { zodResponseFormat } from 'openai/helpers/zod';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY is not configured');
+  }
+  return new OpenAI({ apiKey });
+}
 
 export async function POST(request: NextRequest) {
   // Rate limiting
@@ -54,6 +58,8 @@ export async function POST(request: NextRequest) {
     }
 
     const schema = mode === 'interview' ? aiInterviewSchema : aiMealSchema;
+
+    const openai = getOpenAIClient();
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
