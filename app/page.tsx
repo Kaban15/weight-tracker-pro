@@ -10,6 +10,7 @@ import ChallengeMode from "./components/ChallengeMode";
 import { TodoModeWeekly } from "./components/todo";
 import { ScheduleModeWeekly } from "./components/schedule";
 import { AdminMode } from "./components/admin";
+import { MealsMode } from "./components/meals";
 import WelcomeModal from "./components/onboarding/WelcomeModal";
 
 export default function Home() {
@@ -52,6 +53,10 @@ export default function Home() {
 
   if (currentMode === 'admin') {
     return <AdminMode onBack={goBack} />;
+  }
+
+  if (currentMode === 'meals') {
+    return <MealsMode onBack={goBack} />;
   }
 
   return <WeightTracker onBack={goBack} />;

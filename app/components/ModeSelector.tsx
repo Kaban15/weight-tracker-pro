@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Scale, Target, ListChecks, Shield, MessageSquare, CalendarDays, Bell, Activity } from "lucide-react";
+import { Scale, Target, ListChecks, Shield, MessageSquare, CalendarDays, Bell, Activity, UtensilsCrossed } from "lucide-react";
 import ThemeToggle from "./shared/ThemeToggle";
 import FeedbackModal from "./shared/FeedbackModal";
 import NotificationSettings from "./shared/NotificationSettings";
@@ -133,6 +133,22 @@ export default function ModeSelector() {
             </h2>
             <p className="text-slate-400 text-sm">
               Śledź swoją wagę, ustalaj cele i monitoruj postępy w czasie
+            </p>
+          </button>
+
+          {/* Co zjem? */}
+          <button
+            onClick={() => navigateTo('meals')}
+            className="group bg-slate-800/50 hover:bg-slate-800 border-2 border-slate-700 hover:border-violet-500 rounded-2xl p-6 transition-all duration-300 text-left"
+          >
+            <div className="w-14 h-14 bg-violet-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-violet-500/30 transition-colors">
+              <UtensilsCrossed className="w-7 h-7 text-violet-400" />
+            </div>
+            <h2 className="text-xl font-semibold text-white mb-2">
+              Co zjem?
+            </h2>
+            <p className="text-slate-400 text-sm">
+              AI planuje posiłki, śledzi kalorie, makro i koszty
             </p>
           </button>
         </div>

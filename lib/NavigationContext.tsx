@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 
-export type AppMode = 'tracker' | 'challenge' | 'todo' | 'schedule' | 'admin' | null;
+export type AppMode = 'tracker' | 'challenge' | 'todo' | 'schedule' | 'meals' | 'admin' | null;
 export type SubView = string | null;
 
 interface NavigationState {
