@@ -2,8 +2,8 @@
 "use client";
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Star, RefreshCw, Check, X, Heart, Pencil } from 'lucide-react';
-import { MealPlan, MealIngredient } from './types';
+import { ChevronDown, ChevronUp, Star, RefreshCw, Check, X, Heart, Pencil, Plus, Trash2 } from 'lucide-react';
+import { MealPlan, MealIngredient, PantryUnit } from './types';
 
 interface MealCardProps {
   meal: MealPlan;
@@ -60,8 +60,26 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
     setEditedIngredients(updated);
   };
 
+  const updateIngredientField = (index: number, field: keyof MealIngredient, value: string | number) => {
+    setEditedIngredients(prev => prev.map((ing, i) =>
+      i === index ? { ...ing, [field]: value } : ing
+    ));
+  };
+
+  const addIngredient = () => {
+    setEditedIngredients(prev => [...prev, {
+      name: '', amount: 0, unit: 'g' as PantryUnit,
+      calories: 0, protein: 0, carbs: 0, fat: 0, cost: null,
+    }]);
+  };
+
+  const removeIngredient = (index: number) => {
+    if (editedIngredients.length <= 1) return;
+    setEditedIngredients(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSaveEdit = () => {
-    onUpdateIngredients(meal.id, editedIngredients);
+    onUpdateIngredients(meal.id, editedIngredients.filter(ing => ing.name.trim()));
     setEditing(false);
   };
 
@@ -190,20 +208,52 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
 
             {editing ? (
               <div className="space-y-2">
+                {/* Header */}
+                <div className="grid grid-cols-[1fr_55px_40px_50px_40px_40px_40px_20px] gap-1 text-[10px] text-slate-500">
+                  <span>Nazwa</span><span>Ilość</span><span>Jdn.</span>
+                  <span>kcal</span><span className="text-blue-400">B</span>
+                  <span className="text-amber-400">W</span><span className="text-red-400">T</span><span></span>
+                </div>
+
                 {editedIngredients.map((ing, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs">
-                    <span className="text-slate-300 flex-1">{ing.name}</span>
-                    <input
-                      type="number"
-                      value={ing.amount}
-                      onChange={e => handleAmountChange(i, parseFloat(e.target.value) || 0)}
-                      className="w-16 bg-slate-900 border border-slate-600 rounded px-2 py-1 text-white text-center"
-                    />
-                    <span className="text-slate-500 w-6">{ing.unit}</span>
-                    <span className="text-emerald-400 w-14 text-right">{Math.round(ing.calories)} kcal</span>
+                  <div key={i} className="grid grid-cols-[1fr_55px_40px_50px_40px_40px_40px_20px] gap-1 items-center">
+                    <input value={ing.name} onChange={e => updateIngredientField(i, 'name', e.target.value)}
+                      placeholder="Składnik"
+                      className="bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-white text-xs" />
+                    <input type="number" value={ing.amount || ''} onChange={e => handleAmountChange(i, parseFloat(e.target.value) || 0)}
+                      className="bg-slate-900 border border-slate-700 rounded px-1 py-1 text-white text-xs text-center" />
+                    <select value={ing.unit} onChange={e => updateIngredientField(i, 'unit', e.target.value)}
+                      className="bg-slate-900 border border-slate-700 rounded px-0 py-1 text-white text-[10px]">
+                      <option value="g">g</option><option value="ml">ml</option><option value="szt">szt</option>
+                    </select>
+                    <input type="number" value={Math.round(ing.calories) || ''} onChange={e => updateIngredientField(i, 'calories', parseFloat(e.target.value) || 0)}
+                      className="bg-slate-900 border border-slate-700 rounded px-1 py-1 text-emerald-300 text-xs text-center" />
+                    <input type="number" value={Math.round(ing.protein) || ''} onChange={e => updateIngredientField(i, 'protein', parseFloat(e.target.value) || 0)}
+                      className="bg-slate-900 border border-slate-700 rounded px-1 py-1 text-blue-300 text-xs text-center" />
+                    <input type="number" value={Math.round(ing.carbs) || ''} onChange={e => updateIngredientField(i, 'carbs', parseFloat(e.target.value) || 0)}
+                      className="bg-slate-900 border border-slate-700 rounded px-1 py-1 text-amber-300 text-xs text-center" />
+                    <input type="number" value={Math.round(ing.fat) || ''} onChange={e => updateIngredientField(i, 'fat', parseFloat(e.target.value) || 0)}
+                      className="bg-slate-900 border border-slate-700 rounded px-1 py-1 text-red-300 text-xs text-center" />
+                    <button onClick={() => removeIngredient(i)} className="text-slate-500 hover:text-red-400">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
                   </div>
                 ))}
+
+                {/* Totals */}
+                <div className="flex gap-3 text-[10px] text-slate-400 pt-1 border-t border-slate-700">
+                  <span>Suma:</span>
+                  <span className="text-emerald-400">{Math.round(editedIngredients.reduce((s, i) => s + i.calories, 0))} kcal</span>
+                  <span className="text-blue-400">B: {Math.round(editedIngredients.reduce((s, i) => s + i.protein, 0))}g</span>
+                  <span className="text-amber-400">W: {Math.round(editedIngredients.reduce((s, i) => s + i.carbs, 0))}g</span>
+                  <span className="text-red-400">T: {Math.round(editedIngredients.reduce((s, i) => s + i.fat, 0))}g</span>
+                </div>
+
                 <div className="flex gap-2 mt-2">
+                  <button onClick={addIngredient}
+                    className="flex items-center gap-1 px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg">
+                    <Plus className="w-3 h-3" /> Dodaj składnik
+                  </button>
                   <button onClick={handleSaveEdit}
                     className="px-3 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg">
                     Zapisz zmiany
