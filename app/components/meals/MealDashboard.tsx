@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Sparkles, ShoppingCart, Package, BarChart3, ToggleLeft, ToggleRight } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Sparkles, ShoppingCart, Package, BarChart3, ToggleLeft, ToggleRight, Heart } from 'lucide-react';
 import { MealPlan, MealPreferences, PantryItem, ChatMessage, AIGeneratedMeal, formatDate } from './types';
 import { useMealAI } from './useMealAI';
 import MealCard from './MealCard';
@@ -14,7 +14,9 @@ interface MealDashboardProps {
   pantryItems: PantryItem[];
   onAcceptMeals: (date: string, meals: AIGeneratedMeal[]) => void;
   onUpdateMeal: (id: string, updates: Partial<MealPlan>) => void;
-  onNavigate: (view: 'pantry' | 'shopping' | 'calendar' | 'settings') => void;
+  onToggleFavorite: (id: string) => void;
+  favoriteMeals: MealPlan[];
+  onNavigate: (view: 'pantry' | 'shopping' | 'calendar' | 'settings' | 'favorites' | 'preferences') => void;
 }
 
 type GenerateScope = 'today' | 'tomorrow' | '3days' | 'week';
@@ -25,6 +27,8 @@ export default function MealDashboard({
   pantryItems,
   onAcceptMeals,
   onUpdateMeal,
+  onToggleFavorite,
+  favoriteMeals,
   onNavigate,
 }: MealDashboardProps) {
   const [selectedDate, setSelectedDate] = useState(formatDate(new Date()));
@@ -36,6 +40,7 @@ export default function MealDashboard({
   const { sendMessage, isLoading, error } = useMealAI({
     preferences,
     recentMeals,
+    favoriteMeals,
     pantryItems,
     usePantryMode,
   });
@@ -153,6 +158,10 @@ export default function MealDashboard({
             {usePantryMode ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
             Z tego co mam
           </button>
+          <button onClick={() => onNavigate('favorites')}
+            className="p-2 text-slate-400 hover:text-white" title="Ulubione">
+            <Heart className="w-4 h-4" />
+          </button>
           <button onClick={() => onNavigate('pantry')}
             className="p-2 text-slate-400 hover:text-white" title="Spiżarnia">
             <Package className="w-4 h-4" />
@@ -211,6 +220,7 @@ export default function MealDashboard({
             onAccept={id => onUpdateMeal(id, { status: 'accepted' })}
             onReject={id => onUpdateMeal(id, { status: 'rejected' })}
             onMarkEaten={id => onUpdateMeal(id, { status: 'eaten' })}
+            onToggleFavorite={onToggleFavorite}
           />
         ))}
       </div>
