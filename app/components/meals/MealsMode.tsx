@@ -16,18 +16,21 @@ import PantryManager from './PantryManager';
 import ShoppingList from './ShoppingList';
 import MealCalendar from './MealCalendar';
 import MealSummaryCharts from './MealSummaryCharts';
+import FavoriteMeals from './FavoriteMeals';
+import PreferencesEditor from './PreferencesEditor';
 
 interface MealsModeProps {
   onBack: () => void;
 }
 
-type View = 'loading' | 'wizard' | 'interview' | 'dashboard' | 'pantry' | 'shopping' | 'calendar' | 'charts' | 'settings';
+type View = 'loading' | 'wizard' | 'interview' | 'dashboard' | 'pantry' | 'shopping' | 'calendar' | 'charts' | 'settings' | 'favorites' | 'preferences' | 'preferences-interview';
 
 export default function MealsMode({ onBack }: MealsModeProps) {
   const { user } = useAuth();
   const {
     preferences, mealPlans, isLoading,
     savePreferences, acceptMeals, updateMealPlan, getDaySummary,
+    toggleFavorite, reeatFavorite, getFavorites,
   } = useMeals(user?.id);
 
   const pantry = usePantry(user?.id);
@@ -129,8 +132,10 @@ export default function MealsMode({ onBack }: MealsModeProps) {
             preferences={preferences}
             mealPlans={mealPlans}
             pantryItems={pantry.items}
+            favoriteMeals={getFavorites()}
             onAcceptMeals={handleAcceptMeals}
             onUpdateMeal={updateMealPlan}
+            onToggleFavorite={toggleFavorite}
             onNavigate={(v) => setView(v as View)}
           />
         )}
@@ -158,6 +163,31 @@ export default function MealsMode({ onBack }: MealsModeProps) {
           />
         )}
 
+        {resolvedView === 'favorites' && (
+          <FavoriteMeals
+            favorites={getFavorites()}
+            onReeat={reeatFavorite}
+            onToggleFavorite={toggleFavorite}
+            onBack={() => setView('dashboard')}
+          />
+        )}
+
+        {resolvedView === 'preferences' && preferences && (
+          <PreferencesEditor
+            preferences={preferences}
+            onSave={async (updates) => { await savePreferences(updates); }}
+            onStartInterview={() => setView('preferences-interview')}
+            onBack={() => setView('dashboard')}
+          />
+        )}
+
+        {resolvedView === 'preferences-interview' && (
+          <MealWizardAIInterview onComplete={async (data) => {
+            await savePreferences(data);
+            setView('dashboard');
+          }} />
+        )}
+
         {resolvedView === 'calendar' && preferences && (
           <MealCalendar
             mealPlans={mealPlans}
@@ -178,14 +208,23 @@ export default function MealsMode({ onBack }: MealsModeProps) {
         )}
 
         {resolvedView === 'settings' && (
-          <MealWizard
-            existingProfile={profile}
-            currentWeight={latestWeight}
-            onComplete={async (data) => {
-              await savePreferences(data);
-              setView('dashboard');
-            }}
-          />
+          <div className="space-y-4 max-w-lg mx-auto">
+            <button onClick={() => setView('dashboard')}
+              className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+              <ArrowLeft className="w-4 h-4" /> Powrót
+            </button>
+            <h2 className="text-xl font-semibold text-white">Ustawienia</h2>
+            <button onClick={() => setView('wizard' as View)}
+              className="w-full bg-slate-800/50 hover:bg-slate-800 border-2 border-slate-700 hover:border-violet-500 rounded-xl p-4 text-left transition-colors">
+              <p className="text-white font-medium">Dane dietetyczne</p>
+              <p className="text-xs text-slate-400 mt-1">Waga, wzrost, aktywność, cel kaloryczny, typ diety</p>
+            </button>
+            <button onClick={() => setView('preferences')}
+              className="w-full bg-slate-800/50 hover:bg-slate-800 border-2 border-slate-700 hover:border-violet-500 rounded-xl p-4 text-left transition-colors">
+              <p className="text-white font-medium">Preferencje kulinarne</p>
+              <p className="text-xs text-slate-400 mt-1">Alergie, ulubione kuchnie, Thermomix, wywiad AI</p>
+            </button>
+          </div>
         )}
       </div>
     </div>
