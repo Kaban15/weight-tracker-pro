@@ -35,22 +35,22 @@ export function getWeekStart(date: Date): Date {
 }
 
 /**
- * Get array of 7 dates for a week, starting from Monday
- * @param offset - Week offset from current week (0 = current, -1 = last week, 1 = next week)
+ * Get array of 7 dates starting from a given Monday
  */
-export function getWeekDays(offset: number = 0): Date[] {
-  const today = new Date();
-  const dayOfWeek = today.getDay();
-  // Monday = 1, Sunday = 0 (converted to 7)
-  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  const monday = new Date(today);
-  monday.setDate(today.getDate() + mondayOffset + (offset * 7));
-
+export function getWeekDaysFrom(monday: Date): Date[] {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     return d;
   });
+}
+
+/**
+ * Get array of 7 dates for a week, starting from Monday
+ * @param offset - Week offset from current week (0 = current, -1 = last week, 1 = next week)
+ */
+export function getWeekDays(offset: number = 0): Date[] {
+  return getWeekDaysFrom(getWeekStart(new Date(offset === 0 ? Date.now() : new Date().setDate(new Date().getDate() + offset * 7))));
 }
 
 /**

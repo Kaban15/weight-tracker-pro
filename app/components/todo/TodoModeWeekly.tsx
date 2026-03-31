@@ -19,7 +19,7 @@ import {
 import { useAuth } from "@/lib/AuthContext";
 import { useTasks } from "./useTasks";
 import { Task, TaskFormData, PRIORITY_CONFIG, CATEGORY_CONFIG } from "./types";
-import { formatDate as formatDateStr, getWeekStart } from "../shared/dateUtils";
+import { formatDate as formatDateStr, getWeekStart, getWeekDaysFrom } from "../shared/dateUtils";
 import TaskFormModal from "./TaskFormModal";
 
 interface TodoModeWeeklyProps {
@@ -374,16 +374,7 @@ export default function TodoModeWeekly({ onBack }: TodoModeWeeklyProps) {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
 
-  // Generate array of dates for current week
-  const weekDates = useMemo(() => {
-    const dates: Date[] = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(currentWeekStart);
-      date.setDate(currentWeekStart.getDate() + i);
-      dates.push(date);
-    }
-    return dates;
-  }, [currentWeekStart]);
+  const weekDates = useMemo(() => getWeekDaysFrom(currentWeekStart), [currentWeekStart]);
 
   // Group tasks by date
   const tasksByDate = useMemo(() => {

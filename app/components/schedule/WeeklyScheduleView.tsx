@@ -11,7 +11,7 @@ import {
   Clock,
 } from "lucide-react";
 import { Task, PRIORITY_CONFIG } from "../todo/types";
-import { formatDate as formatDateStr, getWeekStart } from "../shared/dateUtils";
+import { formatDate as formatDateStr, getWeekStart, getWeekDaysFrom } from "../shared/dateUtils";
 
 interface WeeklyScheduleViewProps {
   tasks: Task[];
@@ -284,16 +284,7 @@ export default function WeeklyScheduleView({
   );
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
 
-  // Generate array of dates for current week
-  const weekDates = useMemo(() => {
-    const dates: Date[] = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(currentWeekStart);
-      date.setDate(currentWeekStart.getDate() + i);
-      dates.push(date);
-    }
-    return dates;
-  }, [currentWeekStart]);
+  const weekDates = useMemo(() => getWeekDaysFrom(currentWeekStart), [currentWeekStart]);
 
   // Group tasks by date
   const tasksByDate = useMemo(() => {

@@ -1,7 +1,8 @@
 "use client";
 
-import { X, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { DaySummary } from './types';
+import Modal from '../shared/Modal';
 
 interface MealDaySummaryProps {
   summary: DaySummary;
@@ -14,13 +15,7 @@ export default function MealDaySummary({ summary, targetCalories, onClose }: Mea
   const calColor = calPercent > 110 ? 'text-red-400' : calPercent > 90 ? 'text-emerald-400' : 'text-amber-400';
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-white">{summary.date}</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-        </div>
-
+    <Modal isOpen={true} onClose={onClose} title={summary.date} size="max-w-md">
         {/* Totals */}
         <div className="bg-slate-800/50 rounded-xl p-4 mb-4 space-y-2">
           <div className="flex justify-between">
@@ -78,7 +73,6 @@ export default function MealDaySummary({ summary, targetCalories, onClose }: Mea
             <p className="text-slate-500 text-sm text-center py-4">Brak posiłków w tym dniu.</p>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

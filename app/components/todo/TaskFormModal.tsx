@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, FileText, Clock } from "lucide-react";
+import Modal from "../shared/Modal";
 import {
   Task,
   TaskFormData,
@@ -69,21 +70,14 @@ export default function TaskFormModal({
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-800 rounded-xl border-2 border-slate-700 p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">
-            {task ? "Edytuj zadanie" : "Nowe zadanie"}
-          </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="space-y-4">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={task ? "Edytuj zadanie" : "Nowe zadanie"}
+      size="max-w-md"
+    >
+      <div className="space-y-4">
           {/* Title */}
           <div>
             <label className="block text-sm text-slate-400 mb-2">
@@ -248,8 +242,7 @@ export default function TaskFormModal({
               {task ? "Zapisz" : "Dodaj"}
             </button>
           </div>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 }

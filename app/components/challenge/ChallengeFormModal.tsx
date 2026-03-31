@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import Modal from "../shared/Modal";
 import { ChallengeFormData, GOAL_UNITS } from "./types";
 import ChallengeTemplatesModal from "./ChallengeTemplatesModal";
 import { ChallengeTemplate } from "./challengeTemplates";
@@ -68,21 +69,14 @@ export default function ChallengeFormModal({
     onSubmit();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-800 rounded-xl border-2 border-slate-700 p-6 w-full max-w-md">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">
-            {isEdit ? 'Edytuj nawyk' : 'Nowy nawyk'}
-          </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="space-y-4">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEdit ? 'Edytuj nawyk' : 'Nowy nawyk'}
+      size="max-w-md"
+    >
+      <div className="space-y-4">
           {/* Template selector button - only for new challenges */}
           {!isEdit && (
             <button
@@ -290,7 +284,6 @@ export default function ChallengeFormModal({
               Utwórz nawyk
             </button>
           )}
-        </div>
       </div>
 
       {/* Templates Modal */}
@@ -299,6 +292,6 @@ export default function ChallengeFormModal({
         onClose={() => setShowTemplates(false)}
         onSelect={handleTemplateSelect}
       />
-    </div>
+    </Modal>
   );
 }
