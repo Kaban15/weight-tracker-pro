@@ -1,3 +1,18 @@
 export { default as MealsMode } from './MealsMode';
+export { default as MealWizard } from './MealWizard';
+export { default as MealWizardAIInterview } from './MealWizardAIInterview';
+export { default as MealDashboard } from './MealDashboard';
+export { default as MealCard } from './MealCard';
+export { default as MealChat } from './MealChat';
+export { default as MealCalendar } from './MealCalendar';
+export { default as MealDaySummary } from './MealDaySummary';
+export { default as MealSummaryCharts } from './MealSummaryCharts';
+export { default as PantryManager } from './PantryManager';
+export { default as PantryItemModal } from './PantryItemModal';
+export { default as ShoppingList } from './ShoppingList';
+export { useMeals } from './useMeals';
+export { usePantry } from './usePantry';
+export { useShoppingList } from './useShoppingList';
+export { useMealAI } from './useMealAI';
 export * from './types';
 export * from './constants';
