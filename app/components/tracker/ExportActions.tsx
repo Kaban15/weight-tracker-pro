@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Download, FileJson, AlertCircle } from 'lucide-react';
-import { Entry, Goal } from './types';
+import { Entry, Goal, formatDate } from './types';
 
 interface ExportActionsProps {
   entries: Entry[];
@@ -47,7 +47,7 @@ export default function ExportActions({ entries, goal, hasMoreEntries, loadAllEn
     ].join('\n');
     const BOM = '\uFEFF';
     const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-    downloadFile(blob, `weight-tracker-${new Date().toISOString().split('T')[0]}.csv`);
+    downloadFile(blob, `weight-tracker-${formatDate(new Date())}.csv`);
   };
 
   const performJSONExport = (entriesToExport: Entry[]) => {
@@ -67,7 +67,7 @@ export default function ExportActions({ entries, goal, hasMoreEntries, loadAllEn
       }))
     };
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    downloadFile(blob, `weight-tracker-${new Date().toISOString().split('T')[0]}.json`);
+    downloadFile(blob, `weight-tracker-${formatDate(new Date())}.json`);
   };
 
   const exportToCSV = async () => {

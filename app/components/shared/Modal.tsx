@@ -14,6 +14,8 @@ interface ModalProps {
   showClose?: boolean;
   /** Additional classes for the content container */
   className?: string;
+  /** Disable default overflow-y-auto (for custom scroll layouts) */
+  noScroll?: boolean;
 }
 
 export default function Modal({
@@ -24,8 +26,8 @@ export default function Modal({
   children,
   showClose = true,
   className = "",
+  noScroll = false,
 }: ModalProps) {
-  // Close on Escape key
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -49,7 +51,7 @@ export default function Modal({
       }}
     >
       <div
-        className={`bg-slate-800 rounded-xl border-2 border-slate-700 p-6 w-full ${size} max-h-[90vh] overflow-y-auto ${className}`}
+        className={`bg-slate-800 rounded-xl border-2 border-slate-700 p-6 w-full ${size} max-h-[90vh] ${noScroll ? '' : 'overflow-y-auto'} ${className}`}
       >
         {(title || showClose) && (
           <div className="flex items-center justify-between mb-4">

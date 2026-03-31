@@ -31,7 +31,7 @@ export function calculateStatsForEntries(entries: Entry[], goalTargetWeight?: nu
     }
   }
 
-  const isLoosingWeight = goalTargetWeight !== undefined && goalTargetWeight < startWeight;
+  const isLosingWeight = goalTargetWeight !== undefined && goalTargetWeight < startWeight;
 
   return {
     totalEntries: entries.length,
@@ -42,7 +42,7 @@ export function calculateStatsForEntries(entries: Entry[], goalTargetWeight?: nu
       ? entriesWithSteps.reduce((sum, e) => sum + (e.steps || 0), 0) / entriesWithSteps.length : 0,
     totalWorkouts: entriesWithWorkout.length,
     currentStreak: streak,
-    bestWeight: isLoosingWeight
+    bestWeight: isLosingWeight
       ? Math.min(...sortedEntries.map(e => e.weight))
       : Math.max(...sortedEntries.map(e => e.weight)),
     totalWeightChange: currentWeight - startWeight,

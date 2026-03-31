@@ -48,6 +48,7 @@ export default function ChallengeTemplatesModal({
       onClose={onClose}
       title="Wybierz szablon wyzwania"
       size="max-w-2xl"
+      noScroll
       className="!p-0 !border-amber-500/20 flex flex-col max-h-[85vh]"
     >
       {/* Header with search and categories */}

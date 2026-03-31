@@ -1,6 +1,7 @@
 "use client";
 
 import { Calendar } from "lucide-react";
+import { formatDate } from "../shared/dateUtils";
 import type { DailyActivity } from "./types";
 
 interface AdminActivityTabProps {
@@ -9,7 +10,7 @@ interface AdminActivityTabProps {
 
 export default function AdminActivityTab({ dailyActivity }: AdminActivityTabProps) {
   const maxEntries = Math.max(...dailyActivity.map((d) => d.entries), 1);
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = formatDate(new Date());
 
   return (
     <div className="space-y-6">

@@ -101,9 +101,7 @@ export function useGoals(
   }, [userId]);
 
   const archiveGoalToHistory = useCallback(async (completion: GoalCompletionData): Promise<boolean> => {
-    console.log('[Archive] Starting archive...', { userId, hasSupabase: !!supabase, goalId: completion.goal.id });
     if (!userId || !supabase || !completion.goal.id) {
-      console.log('[Archive] Missing required data');
       return false;
     }
 
@@ -143,35 +141,23 @@ export function useGoals(
         duration_days: Math.max(1, durationDays),
       };
 
-      console.log('[Archive] Inserting into goal_history...', historyRecord);
       const { error: historyError } = await supabase
         .from('goal_history')
         .insert(historyRecord);
 
-      if (historyError) {
-        console.error('[Archive] Insert failed:', historyError);
-        throw historyError;
-      }
-      console.log('[Archive] Insert successful');
+      if (historyError) throw historyError;
 
-      console.log('[Archive] Deleting goal...');
       const { error: deleteError } = await supabase
         .from('goals')
         .delete()
         .eq('id', completion.goal.id);
 
-      if (deleteError) {
-        console.error('[Archive] Delete failed:', deleteError);
-        throw deleteError;
-      }
-      console.log('[Archive] Delete successful');
+      if (deleteError) throw deleteError;
 
       setGoal(null);
       await fetchGoalHistory();
-      console.log('[Archive] Complete!');
       return true;
-    } catch (error) {
-      console.error('[Archive] Failed to archive goal:', error);
+    } catch {
       return false;
     }
   }, [userId, fetchGoalHistory]);
@@ -183,19 +169,7 @@ export function useGoals(
 
   // Check for goal completion
   useEffect(() => {
-    console.log('[GoalCompletion] Check:', {
-      loading,
-      hasGoal: !!goal,
-      goalTargetDate: goal?.target_date,
-      completionHandled,
-      entriesCount: entriesLength,
-      currentWeight,
-    });
-
-    if (loading || !goal || completionHandled || entriesLength === 0) {
-      console.log('[GoalCompletion] Skipping - conditions not met');
-      return;
-    }
+    if (loading || !goal || completionHandled || entriesLength === 0) return;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -205,18 +179,8 @@ export function useGoals(
     const targetReached = currentWeight <= goal.target_weight + 0.05;
     const datePassed = today > targetDate;
 
-    console.log('[GoalCompletion] Evaluation:', {
-      today: today.toISOString(),
-      targetDate: targetDate.toISOString(),
-      targetWeight: goal.target_weight,
-      currentWeight,
-      targetReached,
-      datePassed,
-    });
-
     if (targetReached || datePassed) {
       const completionType: CompletionType = targetReached ? 'target_reached' : 'date_passed';
-      console.log('[GoalCompletion] TRIGGERED!', completionType);
       setCompletionData({
         goal,
         stats,

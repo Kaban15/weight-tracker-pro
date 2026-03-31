@@ -47,7 +47,7 @@ export default function KeyboardShortcutsHelp({ isOpen, onClose }: KeyboardShort
       onClose={onClose}
       title="Skróty klawiszowe"
       size="max-w-lg"
-      className="border-2 border-emerald-500/20"
+      className="!border-emerald-500/20"
     >
       <div className="space-y-6">
         {/* Global shortcuts */}

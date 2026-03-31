@@ -121,6 +121,7 @@ export default function SyncConflictModal({ isOpen, onClose }: SyncConflictModal
       onClose={onClose}
       title="Problemy z synchronizacją"
       size="max-w-lg"
+      noScroll
       className="!p-0 flex flex-col max-h-[80vh]"
     >
       <div className="flex-1 overflow-y-auto p-4">

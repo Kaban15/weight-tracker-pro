@@ -47,15 +47,12 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       });
 
       const data = await response.json();
-      console.log("[Feedback Debug]", data);
 
       if (!response.ok) {
         throw new Error(data.error || "Błąd podczas wysyłania");
       }
 
-      if (data.debug && !data.debug.emailSent) {
-        console.warn("[Feedback] Email nie wysłany:", data.debug);
-      }
+
 
       setSent(true);
       setTimeout(() => handleClose(), 2000);
