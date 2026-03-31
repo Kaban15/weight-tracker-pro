@@ -105,6 +105,8 @@ export interface ChatMessage {
 }
 
 // ── AI Response Schema (structured output) ──
+// Note: All fields must be required for structured output API compatibility.
+// Use .nullable() instead of .optional() where a field may be absent.
 export const aiMealSchema = z.object({
   message: z.string().describe('Konwersacyjna odpowiedź po polsku'),
   meals: z.array(z.object({
@@ -125,7 +127,7 @@ export const aiMealSchema = z.object({
     fat: z.number(),
     recipe_steps: z.array(z.string()),
     estimated_cost: z.number().nullable(),
-  })).optional().default([]),
+  })),
 });
 
 export type AIGeneratedMeal = z.infer<typeof aiMealSchema>['meals'][number];
@@ -135,12 +137,12 @@ export const aiInterviewSchema = z.object({
   message: z.string().describe('Kolejne pytanie lub podsumowanie po polsku'),
   is_complete: z.boolean().describe('Czy wywiad jest zakończony'),
   extracted_preferences: z.object({
-    allergies: z.array(z.string()).optional().default([]),
-    disliked_foods: z.array(z.string()).optional().default([]),
-    liked_foods: z.array(z.string()).optional().default([]),
-    cuisines: z.array(z.string()).optional().default([]),
-    notes: z.string().optional().default(''),
-  }).optional(),
+    allergies: z.array(z.string()),
+    disliked_foods: z.array(z.string()),
+    liked_foods: z.array(z.string()),
+    cuisines: z.array(z.string()),
+    notes: z.string(),
+  }).nullable(),
 });
 
 export type AIInterviewResponse = z.infer<typeof aiInterviewSchema>;
