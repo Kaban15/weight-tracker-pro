@@ -1,6 +1,7 @@
 export * from './types';
 export { useWeightTracker } from './useWeightTracker';
 export { useMeasurements } from './useMeasurements';
+export { calculateStatsForEntries } from './statsUtils';
 export { default as EntryModal } from './EntryModal';
 export { default as GoalWizard } from './GoalWizard';
 export { default as StatsView } from './StatsView';

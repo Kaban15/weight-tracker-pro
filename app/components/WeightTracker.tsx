@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, Target, LogOut, Table, ArrowLeft, TrendingDown, TrendingUp, Flame, Scale, Clock, Bell, History, Footprints, Dumbbell, Award, LineChart, Download, FileJson, AlertCircle, Trophy, ChevronRight, Ruler, CalendarDays, Settings2 } from 'lucide-react';
+import { Calendar, Target, LogOut, Table, ArrowLeft, Flame, Bell, History, Footprints, Dumbbell, Award, LineChart, Trophy, ChevronRight, Ruler, CalendarDays, Settings2 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { initializeNotifications, cancelScheduledReminders } from '@/lib/notifications';
 import { useKeyboardShortcuts, KeyboardShortcut } from '@/lib/useKeyboardShortcuts';
@@ -14,6 +14,7 @@ import {
   formatDate,
   useWeightTracker,
   useMeasurements,
+  calculateStatsForEntries,
   EntryModal,
   GoalWizard,
   CalendarView,
@@ -23,57 +24,8 @@ import {
 } from './tracker';
 import type { ChartRange } from './tracker/types';
 import TrendAnalysis from './tracker/TrendAnalysis';
-
-// Helper function to calculate stats for a given set of entries
-function calculateStatsForEntries(entries: Entry[], goalTargetWeight?: number): Stats & { currentWeight: number; totalWeightChange: number } {
-  if (entries.length === 0) {
-    return {
-      totalEntries: 0, avgWeight: 0, avgCalories: 0, avgSteps: 0,
-      totalWorkouts: 0, currentStreak: 0, bestWeight: 0, totalWeightChange: 0,
-      currentWeight: 0
-    };
-  }
-
-  const sortedEntries = [...entries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const currentWeight = sortedEntries[sortedEntries.length - 1].weight;
-  const startWeight = sortedEntries[0].weight;
-  const entriesWithCalories = sortedEntries.filter(e => e.calories);
-  const entriesWithSteps = sortedEntries.filter(e => e.steps);
-  const entriesWithWorkout = sortedEntries.filter(e => e.workout);
-
-  let streak = 0;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  for (let i = 0; i < 365; i++) {
-    const checkDate = new Date(today);
-    checkDate.setDate(today.getDate() - i);
-    const dateStr = formatDate(checkDate);
-    if (entries.some(e => e.date === dateStr)) {
-      streak++;
-    } else if (i > 0) {
-      break;
-    }
-  }
-
-  const isLoosingWeight = goalTargetWeight !== undefined && goalTargetWeight < startWeight;
-
-  return {
-    totalEntries: entries.length,
-    avgWeight: sortedEntries.reduce((sum, e) => sum + e.weight, 0) / entries.length,
-    avgCalories: entriesWithCalories.length > 0
-      ? entriesWithCalories.reduce((sum, e) => sum + (e.calories || 0), 0) / entriesWithCalories.length : 0,
-    avgSteps: entriesWithSteps.length > 0
-      ? entriesWithSteps.reduce((sum, e) => sum + (e.steps || 0), 0) / entriesWithSteps.length : 0,
-    totalWorkouts: entriesWithWorkout.length,
-    currentStreak: streak,
-    bestWeight: isLoosingWeight
-      ? Math.min(...sortedEntries.map(e => e.weight))
-      : Math.max(...sortedEntries.map(e => e.weight)),
-    totalWeightChange: currentWeight - startWeight,
-    currentWeight
-  };
-}
+import ExportActions from './tracker/ExportActions';
+import DashboardSummary from './tracker/DashboardSummary';
 
 interface WeightTrackerProps {
   onBack?: () => void;
@@ -124,7 +76,6 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     return formatDate(d);
   });
   const [customEndDate, setCustomEndDate] = useState(() => formatDate(new Date()));
-  const [exporting, setExporting] = useState(false);
 
   // Calculate filtered entries and stats based on chartMode
   const filteredEntries = useMemo(() => {
@@ -330,90 +281,6 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     }
   };
 
-  // Export functions
-  const downloadFile = (blob: Blob, filename: string) => {
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const performCSVExport = (entriesToExport: Entry[]) => {
-    if (entriesToExport.length === 0) return;
-    const headers = ['Data', 'Waga (kg)', 'Kalorie', 'Kroki', 'Trening', 'Czas treningu (min)', 'Notatki'];
-    const rows = [...entriesToExport]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .map(entry => [
-        entry.date,
-        entry.weight.toString(),
-        entry.calories?.toString() || '',
-        entry.steps?.toString() || '',
-        entry.workout || '',
-        entry.workout_duration?.toString() || '',
-        entry.notes?.replace(/"/g, '""') || ''
-      ]);
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-    downloadFile(blob, `weight-tracker-${new Date().toISOString().split('T')[0]}.csv`);
-  };
-
-  const performJSONExport = (entriesToExport: Entry[]) => {
-    if (entriesToExport.length === 0) return;
-    const exportData = {
-      exportDate: new Date().toISOString(),
-      entriesCount: entriesToExport.length,
-      goal: goal || null,
-      entries: entriesToExport.map(e => ({
-        date: e.date,
-        weight: e.weight,
-        calories: e.calories || null,
-        steps: e.steps || null,
-        workout: e.workout || null,
-        workout_duration: e.workout_duration || null,
-        notes: e.notes || null,
-      }))
-    };
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    downloadFile(blob, `weight-tracker-${new Date().toISOString().split('T')[0]}.json`);
-  };
-
-  const exportToCSV = async () => {
-    if (entries.length === 0) return;
-    let entriesToExport = entries;
-    if (hasMoreEntries) {
-      setExporting(true);
-      try {
-        entriesToExport = await loadAllEntries();
-      } finally {
-        setExporting(false);
-      }
-    }
-    performCSVExport(entriesToExport);
-  };
-
-  const exportToJSON = async () => {
-    if (entries.length === 0) return;
-    let entriesToExport = entries;
-    if (hasMoreEntries) {
-      setExporting(true);
-      try {
-        entriesToExport = await loadAllEntries();
-      } finally {
-        setExporting(false);
-      }
-    }
-    performJSONExport(entriesToExport);
-  };
-
   // Show goal setup screen only if no goal AND no entries (first time user)
   // If user has entries but no goal, they're in free tracking mode - show main app
   if (!goal && entries.length === 0) {
@@ -490,124 +357,15 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
 
         {/* Dashboard Summary */}
         {entries.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            {/* Current Weight */}
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
-                <Scale className="w-4 h-4" />
-                <span>Aktualna waga</span>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-white">{currentWeight.toFixed(1)}</span>
-                <span className="text-slate-400 text-sm">kg</span>
-              </div>
-              {stats.totalWeightChange !== 0 && (
-                <div className={`flex items-center gap-1 text-sm mt-1 ${stats.totalWeightChange < 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {stats.totalWeightChange < 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
-                  <span>{stats.totalWeightChange > 0 ? '+' : ''}{stats.totalWeightChange.toFixed(1)} kg</span>
-                </div>
-              )}
-            </div>
-
-            {/* Progress - only show when goal exists */}
-            {goal ? (
-              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
-                  <Target className="w-4 h-4" />
-                  <span>Postep</span>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-white">{Math.max(0, Math.min(100, progress)).toFixed(0)}</span>
-                  <span className="text-slate-400 text-sm">%</span>
-                </div>
-                <div className="h-1.5 bg-slate-700 rounded-full mt-2 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all"
-                    style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
-                  <Target className="w-4 h-4" />
-                  <span>Tryb wolny</span>
-                </div>
-                <div className="text-white text-sm mt-2">
-                  Sledzisz wage bez aktywnego celu
-                </div>
-                <button
-                  onClick={() => setShowGoalModal(true)}
-                  className="text-emerald-400 hover:text-emerald-300 text-sm mt-2"
-                >
-                  Ustal cel &rarr;
-                </button>
-              </div>
-            )}
-
-            {/* Streak */}
-            <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
-                <Flame className="w-4 h-4 text-orange-400" />
-                <span>Seria dni</span>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-white">{stats.currentStreak}</span>
-                <span className="text-slate-400 text-sm">dni</span>
-              </div>
-              {stats.currentStreak >= 7 && (
-                <div className="text-orange-400 text-sm mt-1">Super! 🔥</div>
-              )}
-            </div>
-
-            {/* Days Remaining / History */}
-            {goal ? (
-              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
-                  <Clock className="w-4 h-4" />
-                  <span>Do celu</span>
-                </div>
-                {(() => {
-                  const daysLeft = goal?.target_date
-                    ? Math.ceil((new Date(goal.target_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-                    : 0;
-                  const weightLeft = goal ? (currentWeight - goal.target_weight).toFixed(1) : '0';
-                  return (
-                    <>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-white">{Math.max(0, daysLeft)}</span>
-                        <span className="text-slate-400 text-sm">dni</span>
-                      </div>
-                      {parseFloat(weightLeft) > 0 && (
-                        <div className="text-amber-400 text-sm mt-1">
-                          Zostalo {weightLeft} kg
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            ) : (
-              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
-                  <Clock className="w-4 h-4" />
-                  <span>Historia</span>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-white">{goalHistory.length}</span>
-                  <span className="text-slate-400 text-sm">celow</span>
-                </div>
-                {goalHistory.length > 0 && (
-                  <button
-                    onClick={() => setView('history')}
-                    className="text-emerald-400 hover:text-emerald-300 text-sm mt-1"
-                  >
-                    Zobacz historie &rarr;
-                  </button>
-                )}
-              </div>
-            )}
-            </div>
+          <DashboardSummary
+            currentWeight={currentWeight}
+            stats={stats}
+            goal={goal}
+            progress={progress}
+            goalHistory={goalHistory}
+            onSetGoal={() => setShowGoalModal(true)}
+            onViewHistory={() => setView('history')}
+          />
         )}
 
         {/* View Toggle */}
@@ -893,54 +651,13 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
               />
 
               {/* Export Section - always exports all entries */}
-              {entries.length > 0 && (
-                <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                      <h3 className="text-lg font-bold text-white mb-1">Eksport danych</h3>
-                      <p className="text-slate-400 text-sm">
-                        {hasMoreEntries ? (
-                          <>Załadowano {entries.length} wpisów. Eksport pobierze wszystkie dane.</>
-                        ) : (
-                          <>Pobierz wszystkie wpisy ({entries.length}) jako plik</>
-                        )}
-                      </p>
-                      {hasMoreEntries && (
-                        <p className="text-amber-400 text-xs mt-1 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3" />
-                          Starsze wpisy zostaną automatycznie doładowane
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={exportToCSV}
-                        disabled={exporting || loadingMore}
-                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:cursor-wait text-white font-semibold py-3 px-5 rounded-xl transition-colors"
-                      >
-                        {exporting || loadingMore ? (
-                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                          <Download className="w-5 h-5" />
-                        )}
-                        <span>CSV</span>
-                      </button>
-                      <button
-                        onClick={exportToJSON}
-                        disabled={exporting || loadingMore}
-                        className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:cursor-wait text-white font-semibold py-3 px-5 rounded-xl transition-colors"
-                      >
-                        {exporting || loadingMore ? (
-                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                          <FileJson className="w-5 h-5" />
-                        )}
-                        <span>JSON</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <ExportActions
+                entries={entries}
+                goal={goal}
+                hasMoreEntries={hasMoreEntries}
+                loadAllEntries={loadAllEntries}
+                loadingMore={loadingMore}
+              />
             </div>
           )}
         </>
