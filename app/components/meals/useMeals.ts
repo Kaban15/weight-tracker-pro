@@ -76,19 +76,21 @@ export function useMeals(userId: string | undefined) {
     return { data, error };
   }, [userId]);
 
-  // ── Clear planned meals for a date (before generating new ones) ──
-  const clearPlannedForDate = useCallback(async (date: string) => {
+  // ── Clear uneaten meals for a date (before generating new ones) ──
+  const clearPendingForDate = useCallback(async (date: string) => {
     if (!userId || !supabase) return;
 
-    // Optimistic: remove planned from state
-    setMealPlans(prev => prev.filter(m => !(m.date === date && m.status === 'planned')));
+    // Remove planned + accepted (not eaten, not rejected) from state
+    setMealPlans(prev => prev.filter(m =>
+      !(m.date === date && (m.status === 'planned' || m.status === 'accepted'))
+    ));
 
     const { error } = await supabase
       .from('meal_plans')
       .delete()
       .eq('user_id', userId)
       .eq('date', date)
-      .eq('status', 'planned');
+      .in('status', ['planned', 'accepted']);
 
     if (error) {
       await loadMealPlans();
@@ -100,7 +102,7 @@ export function useMeals(userId: string | undefined) {
     if (!userId || !supabase) return;
 
     // Auto-cancel existing planned meals for this date
-    await clearPlannedForDate(date);
+    await clearPendingForDate(date);
 
     const inserts = meals.map(m => ({
       user_id: userId,
@@ -127,7 +129,7 @@ export function useMeals(userId: string | undefined) {
       setMealPlans(prev => [...prev, ...(data as MealPlan[])].sort((a, b) => a.date.localeCompare(b.date)));
     }
     return { data, error };
-  }, [userId, clearPlannedForDate]);
+  }, [userId, clearPendingForDate]);
 
   // ── Update meal status / rating ──
   const updateMealPlan = useCallback(async (id: string, updates: Partial<MealPlan>) => {
@@ -270,6 +272,6 @@ export function useMeals(userId: string | undefined) {
     toggleFavorite,
     reeatFavorite,
     getFavorites,
-    clearPlannedForDate,
+    clearPendingForDate,
   };
 }
