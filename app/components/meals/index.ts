@@ -10,6 +10,8 @@ export { default as MealSummaryCharts } from './MealSummaryCharts';
 export { default as PantryManager } from './PantryManager';
 export { default as PantryItemModal } from './PantryItemModal';
 export { default as ShoppingList } from './ShoppingList';
+export { default as FavoriteMeals } from './FavoriteMeals';
+export { default as PreferencesEditor } from './PreferencesEditor';
 export { useMeals } from './useMeals';
 export { usePantry } from './usePantry';
 export { useShoppingList } from './useShoppingList';
