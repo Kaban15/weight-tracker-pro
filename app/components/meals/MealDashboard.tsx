@@ -2,11 +2,12 @@
 "use client";
 
 import { useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Sparkles, ShoppingCart, Package, BarChart3, ToggleLeft, ToggleRight, Heart } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Sparkles, ShoppingCart, Package, BarChart3, ToggleLeft, ToggleRight, Heart, PlusCircle } from 'lucide-react';
 import { MealPlan, MealPreferences, MealIngredient, PantryItem, ChatMessage, AIGeneratedMeal, formatDate } from './types';
 import { useMealAI } from './useMealAI';
 import MealCard from './MealCard';
 import MealChat from './MealChat';
+import ManualMealModal from './ManualMealModal';
 
 interface MealDashboardProps {
   preferences: MealPreferences;
@@ -17,6 +18,7 @@ interface MealDashboardProps {
   onToggleFavorite: (id: string) => void;
   onUpdateIngredients: (id: string, ingredients: MealIngredient[]) => void;
   onMarkEaten: (id: string) => void;
+  onSaveManualMeal: (meal: { name: string; meal_slot: string; ingredients: MealIngredient[]; calories: number; protein: number; carbs: number; fat: number; recipe_steps: string[] }) => void;
   favoriteMeals: MealPlan[];
   onNavigate: (view: 'pantry' | 'shopping' | 'calendar' | 'settings' | 'favorites' | 'preferences') => void;
 }
@@ -32,12 +34,14 @@ export default function MealDashboard({
   onToggleFavorite,
   onUpdateIngredients,
   onMarkEaten,
+  onSaveManualMeal,
   favoriteMeals,
   onNavigate,
 }: MealDashboardProps) {
   const [selectedDate, setSelectedDate] = useState(formatDate(new Date()));
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [usePantryMode, setUsePantryMode] = useState(false);
+  const [showManualMeal, setShowManualMeal] = useState(false);
 
   const recentMeals = mealPlans.filter(m => m.status === 'eaten').slice(-10);
 
@@ -205,6 +209,10 @@ export default function MealDashboard({
             {{ today: 'Na dziś', tomorrow: 'Na jutro', '3days': 'Na 3 dni', week: 'Na tydzień' }[scope]}
           </button>
         ))}
+        <button onClick={() => setShowManualMeal(true)}
+          className="flex items-center gap-1 px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-sm rounded-lg transition-colors">
+          <PlusCircle className="w-4 h-4" /> Dodaj ręcznie
+        </button>
       </div>
 
       {/* Meal cards */}
@@ -236,6 +244,14 @@ export default function MealDashboard({
         onSend={handleChatSend}
         isLoading={isLoading}
         error={error}
+      />
+
+      {/* Manual meal modal */}
+      <ManualMealModal
+        isOpen={showManualMeal}
+        onClose={() => setShowManualMeal(false)}
+        onSave={(meal) => onSaveManualMeal(meal)}
+        mealSlots={preferences.meal_names}
       />
     </div>
   );

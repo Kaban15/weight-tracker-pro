@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Settings, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { MealPreferences, AIGeneratedMeal, MealIngredient } from './types';
+import { MealPreferences, AIGeneratedMeal, MealIngredient, formatDate } from './types';
 import { useMeals } from './useMeals';
 import { usePantry } from './usePantry';
 import { useShoppingList } from './useShoppingList';
@@ -29,7 +29,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
   const { user } = useAuth();
   const {
     preferences, mealPlans, isLoading,
-    savePreferences, acceptMeals, updateMealPlan, getDaySummary,
+    savePreferences, saveMealPlan, acceptMeals, updateMealPlan, getDaySummary,
     toggleFavorite, reeatFavorite, getFavorites, updateIngredients, syncToTracker,
   } = useMeals(user?.id);
 
@@ -105,6 +105,29 @@ export default function MealsMode({ onBack }: MealsModeProps) {
     await syncToTracker(updatedMeal);
   };
 
+  const handleSaveManualMeal = async (meal: {
+    name: string; meal_slot: string; ingredients: MealIngredient[];
+    calories: number; protein: number; carbs: number; fat: number; recipe_steps: string[];
+  }) => {
+    await saveMealPlan({
+      date: formatDate(new Date()),
+      meal_slot: meal.meal_slot,
+      name: meal.name,
+      ingredients: meal.ingredients,
+      calories: meal.calories,
+      protein: meal.protein,
+      carbs: meal.carbs,
+      fat: meal.fat,
+      recipe_steps: meal.recipe_steps,
+      estimated_cost: null,
+      ingredient_costs: null,
+      status: 'accepted',
+      rating: null,
+      rating_comment: null,
+      is_favorite: false,
+    });
+  };
+
   if (resolvedView === 'loading' || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center">
@@ -155,6 +178,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
             onToggleFavorite={toggleFavorite}
             onUpdateIngredients={updateIngredients}
             onMarkEaten={handleMarkEaten}
+            onSaveManualMeal={handleSaveManualMeal}
             onNavigate={(v) => setView(v as View)}
           />
         )}
