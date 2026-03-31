@@ -6,12 +6,27 @@ import { checkRateLimit, getRateLimitHeaders, MEALS_RATE_LIMIT } from '@/lib/ser
 import { aiMealSchema, aiInterviewSchema } from '@/app/components/meals/types';
 import { zodResponseFormat } from 'openai/helpers/zod';
 
-function getOpenAIClient() {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY is not configured');
+function getAIClient() {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
+    return {
+      client: new OpenAI({
+        apiKey: geminiKey,
+        baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+      }),
+      model: 'gemini-2.0-flash',
+    };
   }
-  return new OpenAI({ apiKey });
+
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (openaiKey) {
+    return {
+      client: new OpenAI({ apiKey: openaiKey }),
+      model: 'gpt-4o-mini',
+    };
+  }
+
+  throw new Error('No AI API key configured (GEMINI_API_KEY or OPENAI_API_KEY)');
 }
 
 export async function POST(request: NextRequest) {
@@ -59,10 +74,10 @@ export async function POST(request: NextRequest) {
 
     const schema = mode === 'interview' ? aiInterviewSchema : aiMealSchema;
 
-    const openai = getOpenAIClient();
+    const { client, model } = getAIClient();
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+    const response = await client.chat.completions.create({
+      model,
       messages: [
         { role: 'system', content: systemPrompt || 'Jesteś pomocnym asystentem kulinarnym. Odpowiadaj po polsku.' },
         ...messages,
