@@ -62,19 +62,19 @@ export default function WeeklyDayColumn({
     <div
       className={`
         flex flex-col min-w-[140px] flex-1 rounded-xl transition-all snap-start
-        ${isDragOver ? "bg-rose-900/30 border-2 border-rose-500/50 border-dashed" : "bg-slate-800/30 border border-slate-700/50"}
+        ${isDragOver ? "bg-blue-900/30 border-2 border-blue-500/50 border-dashed" : "bg-[var(--card-bg)] border border-[var(--card-border)]"}
       `}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       {/* Naglowek dnia */}
-      <div className="p-3 border-b border-slate-700/50 flex items-center justify-between">
+      <div className="p-3 border-b border-[var(--card-border)] flex items-center justify-between">
         <div className="flex items-baseline gap-2">
-          <span className="text-xs text-slate-500 uppercase">{dayName}</span>
+          <span className="text-xs text-[var(--muted)] uppercase">{dayName}</span>
           <span
             className={`text-xl font-bold ${
-              isToday ? "text-rose-400" : "text-white"
+              isToday ? "text-blue-400" : "text-[var(--foreground)]"
             }`}
           >
             {dayNumber}
@@ -82,7 +82,7 @@ export default function WeeklyDayColumn({
         </div>
         <button
           onClick={onAddTask}
-          className="p-1 text-slate-500 hover:text-rose-400 hover:bg-slate-700/50 rounded transition-colors"
+          className="p-1 text-[var(--muted)] hover:text-blue-400 hover:bg-[var(--surface)] rounded transition-colors"
         >
           <Plus className="w-4 h-4" />
         </button>
@@ -104,21 +104,21 @@ export default function WeeklyDayColumn({
         ))}
 
         {tasks.length === 0 && !isDragOver && (
-          <div className="text-center text-slate-600 text-xs py-8">
+          <div className="text-center text-[var(--muted)] text-xs py-8">
             Brak zadan
           </div>
         )}
 
         {isDragOver && (
-          <div className="border-2 border-dashed border-rose-500/50 rounded-lg p-4 text-center text-rose-400 text-sm">
+          <div className="border-2 border-dashed border-blue-500/50 rounded-lg p-4 text-center text-blue-400 text-sm">
             Upusc tutaj
           </div>
         )}
       </div>
 
       {/* Stopka z laczna liczba godzin */}
-      <div className="p-2 border-t border-slate-700/50 text-center">
-        <span className="text-sm text-slate-400">{totalHours}</span>
+      <div className="p-2 border-t border-[var(--card-border)] text-center">
+        <span className="text-sm text-[var(--muted)]">{totalHours}</span>
       </div>
     </div>
   );

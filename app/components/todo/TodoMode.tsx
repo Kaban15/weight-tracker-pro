@@ -98,38 +98,38 @@ export default function TodoMode({ onBack }: TodoModeProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-rose-950 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-rose-500/30 border-t-rose-500 rounded-full animate-spin" />
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-rose-950 p-4 md:p-8">
+    <div className="min-h-screen bg-[var(--background)] p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <button
               onClick={onBack}
-              className="text-slate-400 hover:text-white transition-colors"
+              className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-3xl font-bold text-white">Lista Zadań</h1>
-              <p className="text-slate-400 text-sm">Zarządzaj swoimi zadaniami</p>
+              <h1 className="text-3xl font-bold text-[var(--foreground)]">Lista Zadań</h1>
+              <p className="text-[var(--muted)] text-sm">Zarządzaj swoimi zadaniami</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {/* View Toggle */}
-            <div className="flex bg-slate-800/50 rounded-lg p-1 border border-slate-700">
+            <div className="flex bg-[var(--card-bg)] rounded-lg p-1 border border-[var(--card-border)]">
               <button
                 onClick={() => setViewMode("list")}
                 className={`p-2 rounded transition-colors ${
                   viewMode === "list"
-                    ? "bg-rose-600 text-white"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-blue-600 text-[var(--foreground)]"
+                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
                 }`}
                 title="Lista"
               >
@@ -139,8 +139,8 @@ export default function TodoMode({ onBack }: TodoModeProps) {
                 onClick={() => setViewMode("dashboard")}
                 className={`p-2 rounded transition-colors ${
                   viewMode === "dashboard"
-                    ? "bg-rose-600 text-white"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-blue-600 text-[var(--foreground)]"
+                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
                 }`}
                 title="Dashboard"
               >
@@ -152,7 +152,7 @@ export default function TodoMode({ onBack }: TodoModeProps) {
                 setEditingTask(null);
                 setShowFormModal(true);
               }}
-              className="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-colors"
+              className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-colors"
             >
               <Plus className="w-5 h-5" />
               <span className="hidden sm:inline">Nowe zadanie</span>

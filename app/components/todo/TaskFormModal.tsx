@@ -80,7 +80,7 @@ export default function TaskFormModal({
       <div className="space-y-4">
           {/* Title */}
           <div>
-            <label className="block text-sm text-slate-400 mb-2">
+            <label className="block text-sm text-[var(--muted)] mb-2">
               Nazwa zadania *
             </label>
             <input
@@ -91,13 +91,13 @@ export default function TaskFormModal({
                 setError(null);
               }}
               placeholder="np. Dokończyć raport"
-              className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none"
+              className="w-full bg-[var(--background)] border-2 border-[var(--card-border)] rounded-lg px-4 py-2 text-white placeholder-[var(--muted)] focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           {/* Notes */}
           <div>
-            <label className="block text-sm text-slate-400 mb-2 flex items-center gap-1.5">
+            <label className="block text-sm text-[var(--muted)] mb-2 flex items-center gap-1.5">
               <FileText className="w-4 h-4" />
               Notatki
             </label>
@@ -106,20 +106,20 @@ export default function TaskFormModal({
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="Dodatkowe informacje..."
               rows={3}
-              className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none resize-none"
+              className="w-full bg-[var(--background)] border-2 border-[var(--card-border)] rounded-lg px-4 py-2 text-white placeholder-[var(--muted)] focus:border-blue-500 focus:outline-none resize-none"
             />
           </div>
 
           {/* Deadline */}
           <div>
-            <label className="block text-sm text-slate-400 mb-2">
+            <label className="block text-sm text-[var(--muted)] mb-2">
               Termin *
             </label>
             <input
               type="date"
               value={formData.deadline}
               onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-              className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-rose-500 focus:outline-none"
+              className="w-full bg-[var(--background)] border-2 border-[var(--card-border)] rounded-lg px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
             />
           </div>
 
@@ -127,7 +127,7 @@ export default function TaskFormModal({
           <div className="grid grid-cols-2 gap-3">
             {/* Time */}
             <div>
-              <label className="block text-sm text-slate-400 mb-2 flex items-center gap-1.5">
+              <label className="block text-sm text-[var(--muted)] mb-2 flex items-center gap-1.5">
                 <Clock className="w-4 h-4" />
                 Godzina
               </label>
@@ -135,19 +135,19 @@ export default function TaskFormModal({
                 type="time"
                 value={formData.time || ''}
                 onChange={(e) => setFormData({ ...formData, time: e.target.value || undefined })}
-                className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-rose-500 focus:outline-none"
+                className="w-full bg-[var(--background)] border-2 border-[var(--card-border)] rounded-lg px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
               />
             </div>
 
             {/* Duration */}
             <div>
-              <label className="block text-sm text-slate-400 mb-2">
+              <label className="block text-sm text-[var(--muted)] mb-2">
                 Czas trwania
               </label>
               <select
                 value={formData.duration || ''}
                 onChange={(e) => setFormData({ ...formData, duration: e.target.value ? Number(e.target.value) : undefined })}
-                className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white focus:border-rose-500 focus:outline-none"
+                className="w-full bg-[var(--background)] border-2 border-[var(--card-border)] rounded-lg px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
               >
                 <option value="">Brak</option>
                 {DURATION_OPTIONS.map((opt) => (
@@ -161,7 +161,7 @@ export default function TaskFormModal({
 
           {/* Priority */}
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Priorytet</label>
+            <label className="block text-sm text-[var(--muted)] mb-2">Priorytet</label>
             <div className="grid grid-cols-2 gap-2">
               {(Object.keys(PRIORITY_CONFIG) as Priority[]).map((priority) => (
                 <button
@@ -169,8 +169,8 @@ export default function TaskFormModal({
                   onClick={() => setFormData({ ...formData, priority })}
                   className={`py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
                     formData.priority === priority
-                      ? "bg-rose-600 text-white"
-                      : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                      ? "bg-blue-600 text-[var(--foreground)]"
+                      : "bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface)]"
                   }`}
                 >
                   <span className={`w-3 h-3 rounded-full ${PRIORITY_CONFIG[priority].bgColor}`} />
@@ -182,7 +182,7 @@ export default function TaskFormModal({
 
           {/* Status */}
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Status</label>
+            <label className="block text-sm text-[var(--muted)] mb-2">Status</label>
             <div className="grid grid-cols-2 gap-2">
               {(Object.keys(STATUS_CONFIG) as TaskStatus[]).map((status) => (
                 <button
@@ -191,9 +191,9 @@ export default function TaskFormModal({
                   className={`py-2 px-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
                     formData.status === status
                       ? status === 'cancelled'
-                        ? "bg-red-600 text-white"
-                        : "bg-rose-600 text-white"
-                      : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                        ? "bg-red-600 text-[var(--foreground)]"
+                        : "bg-blue-600 text-[var(--foreground)]"
+                      : "bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface)]"
                   }`}
                 >
                   {status === 'cancelled' && <X className="w-3 h-3" />}
@@ -205,7 +205,7 @@ export default function TaskFormModal({
 
           {/* Category */}
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Kategoria</label>
+            <label className="block text-sm text-[var(--muted)] mb-2">Kategoria</label>
             <div className="grid grid-cols-3 gap-2">
               {(Object.keys(CATEGORY_CONFIG) as Category[]).map((category) => (
                 <button
@@ -213,8 +213,8 @@ export default function TaskFormModal({
                   onClick={() => setFormData({ ...formData, category })}
                   className={`py-2 px-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
                     formData.category === category
-                      ? "bg-rose-600 text-white"
-                      : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                      ? "bg-blue-600 text-[var(--foreground)]"
+                      : "bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface)]"
                   }`}
                 >
                   <span>{CATEGORY_CONFIG[category].emoji}</span>
@@ -231,13 +231,13 @@ export default function TaskFormModal({
           <div className="flex gap-3 pt-2">
             <button
               onClick={onClose}
-              className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg"
+              className="flex-1 bg-[var(--surface)] hover:bg-[var(--surface)] text-white py-2 rounded-lg"
             >
               Anuluj
             </button>
             <button
               onClick={handleSubmit}
-              className="flex-1 bg-rose-600 hover:bg-rose-500 text-white py-2 rounded-lg font-semibold"
+              className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg font-semibold"
             >
               {task ? "Zapisz" : "Dodaj"}
             </button>

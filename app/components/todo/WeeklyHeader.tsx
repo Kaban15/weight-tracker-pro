@@ -29,26 +29,26 @@ export default function WeeklyHeader({
   return (
     <>
       {/* Naglowek */}
-      <header className="bg-slate-900/50 border-b border-slate-800">
+      <header className="bg-[var(--background)] border-b border-[var(--card-border)]">
         <div className="px-4 py-3 flex items-center justify-between">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="hidden sm:inline">Powrot</span>
           </button>
           <div className="flex items-center gap-3">
-            <ListTodo className="w-5 h-5 text-rose-400" />
-            <h1 className="text-xl font-bold text-white">Lista Zadan</h1>
+            <ListTodo className="w-5 h-5 text-blue-400" />
+            <h1 className="text-xl font-bold text-[var(--foreground)]">Lista Zadan</h1>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={onToggleBacklog}
               className={`p-2 rounded-lg transition-colors ${
                 showBacklog
-                  ? "bg-rose-600 text-white"
-                  : "text-slate-400 hover:text-white hover:bg-slate-700"
+                  ? "bg-blue-600 text-[var(--foreground)]"
+                  : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface)]"
               }`}
               title="Pokaz/Ukryj backlog"
             >
@@ -59,10 +59,10 @@ export default function WeeklyHeader({
       </header>
 
       {/* Pasek statystyk */}
-      <div className="bg-slate-800/30 border-b border-slate-800 px-4 py-2 overflow-x-auto">
+      <div className="bg-[var(--card-bg)] border-b border-[var(--card-border)] px-4 py-2 overflow-x-auto">
         <div className="flex items-center justify-center gap-3 sm:gap-6 text-sm flex-wrap">
           <div className="flex items-center gap-2">
-            <span className="text-slate-500">Wszystkie:</span>
+            <span className="text-[var(--muted)]">Wszystkie:</span>
             <span className="text-white font-semibold">{stats.total}</span>
           </div>
           <div className="flex items-center gap-2">
@@ -70,18 +70,18 @@ export default function WeeklyHeader({
             <span className="text-amber-400 font-semibold">{stats.today}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-rose-500">Spoznione:</span>
-            <span className="text-rose-400 font-semibold">{stats.overdue}</span>
+            <span className="text-blue-500">Spoznione:</span>
+            <span className="text-blue-400 font-semibold">{stats.overdue}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-emerald-500">Ukonczone:</span>
-            <span className="text-emerald-400 font-semibold">
+            <span className="text-[var(--accent)]">Ukonczone:</span>
+            <span className="text-[var(--accent)] font-semibold">
               {stats.completed}
             </span>
           </div>
-          <div className="hidden sm:block w-32 bg-slate-700 rounded-full h-2 overflow-hidden">
+          <div className="hidden sm:block w-32 bg-[var(--surface)] rounded-full h-2 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all"
+              className="h-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent-dark)] transition-all"
               style={{ width: `${stats.percentComplete}%` }}
             />
           </div>

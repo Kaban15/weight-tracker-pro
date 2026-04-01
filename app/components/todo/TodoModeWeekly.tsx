@@ -167,14 +167,14 @@ export default function TodoModeWeekly({ onBack }: TodoModeWeeklyProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-rose-950 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-rose-500/30 border-t-rose-500 rounded-full animate-spin" />
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-rose-950 flex flex-col">
+    <div className="min-h-screen bg-[var(--background)] flex flex-col">
       <WeeklyHeader
         stats={stats}
         syncError={syncError}
@@ -204,18 +204,18 @@ export default function TodoModeWeekly({ onBack }: TodoModeWeeklyProps) {
           <div className="flex items-center justify-center gap-4 mb-4 py-2">
             <button
               onClick={goToPreviousWeek}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all"
+              className="p-2 text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface)] rounded-lg transition-all"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
 
-            <h2 className="text-lg font-semibold text-white min-w-[180px] text-center capitalize">
+            <h2 className="text-lg font-semibold text-[var(--foreground)] min-w-[180px] text-center capitalize">
               {weekRangeDisplay}
             </h2>
 
             <button
               onClick={goToNextWeek}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all"
+              className="p-2 text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface)] rounded-lg transition-all"
             >
               <ChevronRight className="w-5 h-5" />
             </button>

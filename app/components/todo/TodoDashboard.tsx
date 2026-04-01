@@ -43,7 +43,7 @@ function PieChart({
 
   if (total === 0) {
     return (
-      <div className="text-center text-slate-400 py-8">Brak danych</div>
+      <div className="text-center text-[var(--muted)] py-8">Brak danych</div>
     );
   }
 
@@ -64,7 +64,7 @@ function PieChart({
 
   return (
     <div className="flex flex-col items-center">
-      <h4 className="text-sm font-semibold text-slate-300 mb-4">{title}</h4>
+      <h4 className="text-sm font-semibold text-[var(--foreground)] mb-4">{title}</h4>
       <div className="relative w-32 h-32 mb-4">
         <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
           {segments.map((segment, index) => {
@@ -88,14 +88,14 @@ function PieChart({
           })}
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-lg font-bold text-white">{total}</span>
+          <span className="text-lg font-bold text-[var(--foreground)]">{total}</span>
         </div>
       </div>
       <div className="flex flex-wrap justify-center gap-2">
         {segments.map((segment, index) => (
           <div key={index} className="flex items-center gap-1 text-xs">
             <span className={`w-2.5 h-2.5 rounded-full ${segment.color}`} />
-            <span className="text-slate-400">
+            <span className="text-[var(--muted)]">
               {segment.label}: {segment.count}
             </span>
           </div>
@@ -120,12 +120,12 @@ export default function TodoDashboard({ tasks }: TodoDashboardProps) {
       count: tasks.filter((t) => t.status === key).length,
       color:
         key === "done"
-          ? "bg-emerald-500"
+          ? "bg-[var(--accent)]"
           : key === "in_progress"
           ? "bg-amber-500"
           : key === "cancelled"
           ? "bg-red-500"
-          : "bg-slate-500",
+          : "bg-[var(--muted)]",
     }));
 
     const categoryDist = (Object.keys(CATEGORY_CONFIG) as Category[]).map((key) => ({
@@ -144,13 +144,13 @@ export default function TodoDashboard({ tasks }: TodoDashboardProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+      <div className="bg-[var(--card-bg)] rounded-xl p-6 border border-[var(--card-border)]">
         <PieChart data={priorityDistribution} title="Wg Priorytetu" />
       </div>
-      <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+      <div className="bg-[var(--card-bg)] rounded-xl p-6 border border-[var(--card-border)]">
         <PieChart data={statusDistribution} title="Wg Statusu" />
       </div>
-      <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+      <div className="bg-[var(--card-bg)] rounded-xl p-6 border border-[var(--card-border)]">
         <PieChart data={categoryDistribution} title="Wg Kategorii" />
       </div>
     </div>
