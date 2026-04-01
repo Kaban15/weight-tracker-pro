@@ -13,11 +13,7 @@ export default function ThemeToggle({ className = "" }: ThemeToggleProps) {
   return (
     <button
       onClick={toggleTheme}
-      className={`p-2 rounded-lg transition-colors ${
-        theme === "dark"
-          ? "bg-slate-700 hover:bg-slate-600 text-yellow-400"
-          : "bg-slate-200 hover:bg-slate-300 text-slate-700"
-      } ${className}`}
+      className={`p-2 rounded-lg transition-colors bg-[var(--surface)] hover:bg-[var(--card-border)] text-[var(--foreground)] ${className}`}
       aria-label={theme === "dark" ? "Przełącz na jasny motyw" : "Przełącz na ciemny motyw"}
       title={theme === "dark" ? "Jasny motyw" : "Ciemny motyw"}
     >

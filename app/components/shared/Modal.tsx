@@ -51,17 +51,17 @@ export default function Modal({
       }}
     >
       <div
-        className={`bg-slate-800 rounded-xl border-2 border-slate-700 p-6 w-full ${size} max-h-[90vh] ${noScroll ? '' : 'overflow-y-auto'} ${className}`}
+        className={`bg-[var(--card-bg)] rounded-xl border border-[var(--card-border)] p-6 w-full ${size} max-h-[90vh] ${noScroll ? '' : 'overflow-y-auto'} ${className}`}
       >
         {(title || showClose) && (
           <div className="flex items-center justify-between mb-4">
             {title && (
-              <h2 className="text-lg font-bold text-white">{title}</h2>
+              <h2 className="text-lg font-bold text-[var(--foreground)]">{title}</h2>
             )}
             {showClose && (
               <button
                 onClick={onClose}
-                className="text-slate-400 hover:text-white transition-colors ml-auto"
+                className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors ml-auto"
               >
                 <X className="w-5 h-5" />
               </button>
