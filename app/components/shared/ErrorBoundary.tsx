@@ -45,19 +45,19 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
       }
 
       return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-xl border-2 border-slate-700 p-8 max-w-md w-full text-center">
+        <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
+          <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--card-border)] p-8 max-w-md w-full text-center">
             <div className="w-16 h-16 bg-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-8 h-8 text-rose-400" aria-hidden="true" />
             </div>
-            <h2 className="text-xl font-semibold text-white mb-2">
+            <h2 className="text-xl font-semibold text-[var(--foreground)] mb-2">
               Coś poszło nie tak
             </h2>
-            <p className="text-slate-400 text-sm mb-6">
+            <p className="text-[var(--muted)] text-sm mb-6">
               Przepraszamy, wystąpił nieoczekiwany błąd. Spróbuj odświeżyć stronę.
             </p>
             {this.state.error && (
-              <pre className="text-left text-xs bg-slate-900 p-3 rounded-lg mb-4 overflow-auto max-h-32 text-rose-300">
+              <pre className="text-left text-xs bg-[var(--surface)] p-3 rounded-lg mb-4 overflow-auto max-h-32 text-rose-300">
                 {this.state.error.message?.substring(0, 200) || "Unknown error"}
               </pre>
             )}
