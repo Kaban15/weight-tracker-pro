@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
+import { useNavigation } from "@/lib/NavigationContext";
 import { useTasks } from "./useTasks";
 import { Task, TaskFormData } from "./types";
 import { formatDate as formatDateStr, getWeekStart, getWeekDaysFrom } from "../shared/dateUtils";
@@ -12,7 +13,7 @@ import WeeklyBacklogSidebar from "./WeeklyBacklogSidebar";
 import WeeklyDayColumn from "./WeeklyDayColumn";
 
 interface TodoModeWeeklyProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 // Nazwy dni tygodnia po polsku
@@ -20,6 +21,7 @@ const DAY_NAMES = ["PON", "WT", "SR", "CZW", "PT", "SOB", "ND"];
 
 export default function TodoModeWeekly({ onBack }: TodoModeWeeklyProps) {
   const { user } = useAuth();
+  const { goHome } = useNavigation();
   const {
     tasks,
     stats,
@@ -177,7 +179,7 @@ export default function TodoModeWeekly({ onBack }: TodoModeWeeklyProps) {
         stats={stats}
         syncError={syncError}
         showBacklog={showBacklog}
-        onBack={onBack}
+        onBack={() => { if (onBack) onBack(); else goHome(); }}
         onToggleBacklog={() => setShowBacklog(!showBacklog)}
         onReload={reloadTasks}
       />

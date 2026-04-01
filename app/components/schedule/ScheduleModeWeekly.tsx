@@ -12,6 +12,7 @@ import {
   Clock,
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
+import { useNavigation } from "@/lib/NavigationContext";
 import SyncIndicator from "../shared/SyncIndicator";
 import { useTasks } from "../todo/useTasks";
 import { Task, TaskFormData, PRIORITY_CONFIG, DURATION_OPTIONS } from "../todo/types";
@@ -19,7 +20,7 @@ import WeeklyScheduleView from "./WeeklyScheduleView";
 import TaskFormModal from "../todo/TaskFormModal";
 
 interface ScheduleModeWeeklyProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 // Backlog task tile
@@ -95,6 +96,7 @@ function BacklogTaskTile({
 
 export default function ScheduleModeWeekly({ onBack }: ScheduleModeWeeklyProps) {
   const { user, signOut } = useAuth();
+  const { goHome } = useNavigation();
   const {
     tasks,
     stats,
@@ -178,7 +180,7 @@ export default function ScheduleModeWeekly({ onBack }: ScheduleModeWeeklyProps) 
       <header className="bg-slate-900/50 border-b border-slate-800">
         <div className="px-4 py-3 flex items-center justify-between">
           <button
-            onClick={onBack}
+            onClick={() => { if (onBack) onBack(); else goHome(); }}
             className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />

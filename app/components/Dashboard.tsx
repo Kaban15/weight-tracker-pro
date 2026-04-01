@@ -28,15 +28,16 @@ export default function Dashboard() {
     : undefined;
   const weightProgress = latestEntry && goal
     ? {
-        value: Math.abs((goal.start_weight ?? latestEntry.weight) - latestEntry.weight),
-        max: Math.abs((goal.start_weight ?? latestEntry.weight) - goal.target_weight),
+        value: Math.abs((goal.current_weight ?? latestEntry.weight) - latestEntry.weight),
+        max: Math.abs((goal.current_weight ?? latestEntry.weight) - goal.target_weight),
       }
     : undefined;
 
-  const activeChallenges = challenges?.filter(c => c.is_active) ?? [];
+  const today = new Date().toISOString().split("T")[0];
+  const activeChallenges = challenges?.filter(c => c.startDate <= today && c.endDate >= today) ?? [];
   const todayDone = activeChallenges.filter(c => {
     const progress = getChallengeProgress(c);
-    return progress?.completed;
+    return progress?.isCompleted;
   }).length;
 
   const todayTasks = tasks?.filter(t => !t.completed) ?? [];
@@ -89,7 +90,7 @@ export default function Dashboard() {
           {activeChallenges.slice(0, 3).map(challenge => (
             <div key={challenge.id} className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:shadow-md transition-all" onClick={() => navigateTo("challenge")}>
               <Target className="w-4 h-4 text-amber-500 flex-shrink-0" />
-              <span className="text-sm text-[var(--foreground)] truncate">{challenge.title}</span>
+              <span className="text-sm text-[var(--foreground)] truncate">{challenge.name}</span>
               <span className="text-xs text-[var(--accent)] ml-auto flex-shrink-0">do zrobienia</span>
             </div>
           ))}

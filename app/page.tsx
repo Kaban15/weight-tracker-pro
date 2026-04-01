@@ -4,8 +4,10 @@ import { useAuth } from "@/lib/AuthContext";
 import { useOnboarding } from "@/lib/OnboardingContext";
 import { useNavigation } from "@/lib/NavigationContext";
 import Auth from "./components/Auth";
+import { AppShell } from "./components/layout";
+import { PageTransition } from "./components/ui";
+import Dashboard from "./components/Dashboard";
 import WeightTracker from "./components/WeightTracker";
-import ModeSelector from "./components/ModeSelector";
 import ChallengeMode from "./components/ChallengeMode";
 import { TodoModeWeekly } from "./components/todo";
 import { ScheduleModeWeekly } from "./components/schedule";
@@ -16,48 +18,38 @@ import WelcomeModal from "./components/onboarding/WelcomeModal";
 export default function Home() {
   const { user, loading } = useAuth();
   const { hasSeenWelcome, markWelcomeSeen, isLoaded } = useOnboarding();
-  const { currentMode, goBack } = useNavigation();
+  const { currentMode } = useNavigation();
 
   if (loading || !isLoaded) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="w-12 h-12 border-4 rounded-full animate-spin"
+          style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }}
+        />
       </div>
     );
   }
 
-  if (!user) {
-    return <Auth />;
-  }
+  if (!user) return <Auth />;
+  if (!hasSeenWelcome) return <WelcomeModal onComplete={markWelcomeSeen} />;
 
-  // Show welcome modal for first-time users
-  if (!hasSeenWelcome) {
-    return <WelcomeModal onComplete={markWelcomeSeen} />;
-  }
+  const renderContent = () => {
+    switch (currentMode) {
+      case "tracker": return <WeightTracker />;
+      case "challenge": return <ChallengeMode />;
+      case "todo": return <TodoModeWeekly />;
+      case "schedule": return <ScheduleModeWeekly />;
+      case "admin": return <AdminMode />;
+      case "meals": return <MealsMode />;
+      default: return <Dashboard />;
+    }
+  };
 
-  if (!currentMode) {
-    return <ModeSelector />;
-  }
-
-  if (currentMode === 'challenge') {
-    return <ChallengeMode onBack={goBack} />;
-  }
-
-  if (currentMode === 'todo') {
-    return <TodoModeWeekly onBack={goBack} />;
-  }
-
-  if (currentMode === 'schedule') {
-    return <ScheduleModeWeekly onBack={goBack} />;
-  }
-
-  if (currentMode === 'admin') {
-    return <AdminMode onBack={goBack} />;
-  }
-
-  if (currentMode === 'meals') {
-    return <MealsMode onBack={goBack} />;
-  }
-
-  return <WeightTracker onBack={goBack} />;
+  return (
+    <AppShell>
+      <PageTransition transitionKey={currentMode || "dashboard"}>
+        {renderContent()}
+      </PageTransition>
+    </AppShell>
+  );
 }

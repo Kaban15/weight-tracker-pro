@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Settings, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
+import { useNavigation } from '@/lib/NavigationContext';
 import { supabase } from '@/lib/supabase';
 import { MealPreferences, AIGeneratedMeal, MealIngredient, formatDate } from './types';
 import { useMeals } from './useMeals';
@@ -20,13 +21,14 @@ import FavoriteMeals from './FavoriteMeals';
 import PreferencesEditor from './PreferencesEditor';
 
 interface MealsModeProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 type View = 'loading' | 'wizard' | 'interview' | 'dashboard' | 'pantry' | 'shopping' | 'calendar' | 'charts' | 'settings' | 'favorites' | 'preferences' | 'preferences-interview';
 
 export default function MealsMode({ onBack }: MealsModeProps) {
   const { user } = useAuth();
+  const { goHome } = useNavigation();
   const {
     preferences, mealPlans, isLoading,
     savePreferences, saveMealPlan, acceptMeals, updateMealPlan, getDaySummary,
@@ -142,7 +144,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
         {/* Header — only on main views */}
         {(resolvedView === 'wizard' || resolvedView === 'interview' || resolvedView === 'dashboard') && (
           <div className="flex items-center justify-between mb-6">
-            <button onClick={onBack}
+            <button onClick={() => { if (onBack) onBack(); else goHome(); }}
               className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
               <ArrowLeft className="w-5 h-5" /> Powrót
             </button>

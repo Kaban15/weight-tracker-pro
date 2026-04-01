@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
+import { useNavigation } from "@/lib/NavigationContext";
 import {
   Challenge,
   ChallengeFormData,
@@ -16,11 +17,12 @@ import {
   formatDate
 } from "./challenge";
 interface ChallengeModeProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 export default function ChallengeMode({ onBack }: ChallengeModeProps) {
   const { user, signOut } = useAuth();
+  const { goHome } = useNavigation();
   const {
     challenges,
     isLoading,
@@ -193,7 +195,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
           challenges={challenges}
           isSyncing={isSyncing}
           syncError={syncError}
-          onBack={onBack}
+          onBack={() => { if (onBack) onBack(); else goHome(); }}
           onSignOut={signOut}
           onChallengeClick={(challenge) => {
             setActiveChallenge(challenge);

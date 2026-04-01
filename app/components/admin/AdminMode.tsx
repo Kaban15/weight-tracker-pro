@@ -3,17 +3,19 @@
 import { useState } from "react";
 import { ArrowLeft, Users, Activity, BarChart3, RefreshCw } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
+import { useNavigation } from "@/lib/NavigationContext";
 import { useAdmin } from "./useAdmin";
 import AdminOverviewTab from "./AdminOverviewTab";
 import AdminUserTable from "./AdminUserTable";
 import AdminActivityTab from "./AdminActivityTab";
 
 interface AdminModeProps {
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 export default function AdminMode({ onBack }: AdminModeProps) {
   const { user } = useAuth();
+  const { goHome } = useNavigation();
   const { isAdmin, statistics, users, dailyActivity, isLoading, error, refresh } = useAdmin(user?.email);
   const [activeTab, setActiveTab] = useState<"overview" | "users" | "activity">("overview");
   const [refreshing, setRefreshing] = useState(false);
@@ -36,7 +38,7 @@ export default function AdminMode({ onBack }: AdminModeProps) {
             Nie masz uprawnień administratora.
           </p>
           <button
-            onClick={onBack}
+            onClick={() => { if (onBack) onBack(); else goHome(); }}
             className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-xl font-semibold"
           >
             Powrót
@@ -61,7 +63,7 @@ export default function AdminMode({ onBack }: AdminModeProps) {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <button
-              onClick={onBack}
+              onClick={() => { if (onBack) onBack(); else goHome(); }}
               className="text-slate-400 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
