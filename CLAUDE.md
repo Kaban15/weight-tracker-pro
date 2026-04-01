@@ -33,12 +33,21 @@ npm run test:coverage  # Vitest with v8 coverage
 
 This is effectively a single-page app despite using Next.js App Router. The entire app is a single route (`app/page.tsx`) that renders different "modes" based on client-side navigation state managed by `NavigationContext`. There is no file-based routing for app views (except `app/reset-password/page.tsx`).
 
-The navigation flow is: **Auth** -> **WelcomeModal** (first visit) -> **ModeSelector** (hub) -> one of the modes:
+The navigation flow is: **Auth** -> **WelcomeModal** (first visit) -> **AppShell** (persistent nav) with **Dashboard** (home) or one of the modes:
 - `tracker` - Weight/body tracking with goals, entries, charts, body measurements
 - `challenge` - Daily habit tracking (e.g., push-ups, exercises)
 - `todo` - Task management with priorities, categories, deadlines
 - `schedule` - Combined daily view aggregating tasks + habits
+- `meals` - Meal planning, AI suggestions, pantry, shopping list
 - `admin` - Admin dashboard (email-gated)
+
+### Navigation System
+
+Navigation uses persistent `AppShell` (`app/components/layout/AppShell.tsx`) instead of the old ModeSelector hub:
+- **Mobile (< 768px):** Bottom navigation bar with 5 items (Home, Waga, Wyzwania, Zadania, Więcej). "Więcej" opens a bottom sheet with remaining modules.
+- **Desktop (>= 768px):** Collapsible left sidebar with all modules listed.
+- **Dashboard** (`app/components/Dashboard.tsx`) replaces ModeSelector as the home view, showing live data (latest weight, challenge progress, upcoming tasks).
+- `useIsDesktop()` hook from `app/hooks/useMediaQuery.ts` controls responsive switching.
 
 ### Context Provider Stack (in `app/layout.tsx`)
 
@@ -89,7 +98,12 @@ The `Task` TypeScript type uses `deadline`, but the Supabase `tasks` table colum
 - Always check `if (!supabase)` before Supabase operations (client is `null` when env vars are missing)
 - Guard `typeof window !== "undefined"` before accessing localStorage/navigator/window (SSR safety)
 - New UI strings must be in **Polish**
-- Dark theme is default: `slate-950/900` backgrounds, `emerald-500` accent color
+- Light theme is default: warm white `#FAFAF9` backgrounds, coral `#FF6B4A` accent color (dark mode: `#13131F` bg, `#FF7B5C` accent)
+- Colors use CSS custom properties: `var(--background)`, `var(--card-bg)`, `var(--card-border)`, `var(--foreground)`, `var(--muted)`, `var(--accent)`, `var(--surface)` — defined in `globals.css`
+- Font: Space Grotesk (replaced Geist)
+- Shared UI components in `app/components/ui/`: HeroCard, StatCard, SubtleCard, Badge, ProgressBar, AnimatedCounter, PageTransition
+- Layout components in `app/components/layout/`: AppShell, BottomNav, Sidebar, MoreSheet
+- Module accent colors: Tracker=coral, Challenges=amber, Todo=blue, Schedule=cyan, Meals=violet, Admin=indigo
 - Icons come from `lucide-react`
 - Each module has its own `types.ts` and exports through `index.ts` barrel files
 - Optimistic updates: UI state updated immediately, reverted in `catch` if Supabase fails
