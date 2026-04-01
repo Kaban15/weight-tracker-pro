@@ -15,7 +15,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const STORAGE_KEY = "weight-tracker-theme";
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
+  const [theme, setThemeState] = useState<Theme>("light");
   const [mounted, setMounted] = useState(false);
 
   // Load theme from localStorage on mount
@@ -50,7 +50,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (metaThemeColor) {
       metaThemeColor.setAttribute(
         "content",
-        theme === "dark" ? "#0f172a" : "#f8fafc"
+        theme === "dark" ? "#13131F" : "#FAFAF9"
       );
     }
   }, [theme, mounted]);
@@ -77,7 +77,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Prevent flash of unstyled content
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-slate-950">
+      <div className="min-h-screen" style={{ background: '#FAFAF9' }}>
         {children}
       </div>
     );

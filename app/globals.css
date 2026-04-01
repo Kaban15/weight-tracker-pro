@@ -1,46 +1,55 @@
 @import "tailwindcss";
 
-/* Default (dark) theme variables */
+/* Default (light) theme variables — light-first */
 :root {
-  --background: #0f172a;
-  --foreground: #f1f5f9;
-  --card-bg: #1e293b;
-  --card-border: #334155;
-  --muted: #94a3b8;
-  --accent: #10b981;
+  --background: #FAFAF9;
+  --foreground: #1A1A2E;
+  --card-bg: #FFFFFF;
+  --card-border: #E5E5E0;
+  --surface: #F5F5F2;
+  --muted: #6B6B80;
+  --accent: #FF6B4A;
+  --accent-light: #FF8566;
+  --accent-dark: #E5502E;
 }
 
-/* Light theme */
-:root.light {
-  --background: #f0f4f8;
-  --foreground: #1e293b;
-  --card-bg: #ffffff;
-  --card-border: #cbd5e1;
-  --muted: #475569;
-  --accent: #059669;
-}
-
-/* Dark theme (explicit) */
+/* Dark theme */
 :root.dark {
-  --background: #0f172a;
-  --foreground: #f1f5f9;
-  --card-bg: #1e293b;
-  --card-border: #334155;
-  --muted: #94a3b8;
-  --accent: #10b981;
+  --background: #13131F;
+  --foreground: #E8E8F0;
+  --card-bg: #1E1E30;
+  --card-border: #2A2A3D;
+  --surface: #1A1A2A;
+  --muted: #8888A0;
+  --accent: #FF7B5C;
+  --accent-light: #FF9580;
+  --accent-dark: #E5603E;
+}
+
+/* Light theme (explicit, same as :root default) */
+:root.light {
+  --background: #FAFAF9;
+  --foreground: #1A1A2E;
+  --card-bg: #FFFFFF;
+  --card-border: #E5E5E0;
+  --surface: #F5F5F2;
+  --muted: #6B6B80;
+  --accent: #FF6B4A;
+  --accent-light: #FF8566;
+  --accent-dark: #E5502E;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-space-grotesk);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Space Grotesk', Arial, Helvetica, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
@@ -48,201 +57,138 @@ body {
   padding-right: env(safe-area-inset-right);
 }
 
-/* Light mode specific overrides for Tailwind classes */
-.light .bg-slate-950 {
-  background-color: #f1f5f9 !important;
+/* --- Light mode Tailwind class overrides (for existing module code) --- */
+.light .bg-slate-950 { background-color: #FAFAF9 !important; }
+.light .bg-slate-900 { background-color: #FAFAF9 !important; }
+.light .bg-slate-800 { background-color: #FFFFFF !important; }
+.light .bg-slate-700 { background-color: #E5E5E0 !important; }
+
+.light .text-white { color: #1A1A2E !important; }
+.light .text-slate-300 { color: #3a3a4a !important; }
+.light .text-slate-400 { color: #6B6B80 !important; }
+.light .text-slate-500 { color: #6B6B80 !important; }
+
+.light .border-slate-700 { border-color: #E5E5E0 !important; }
+.light .border-slate-600 { border-color: #E5E5E0 !important; }
+.light .border-slate-800 { border-color: #E5E5E0 !important; }
+
+.light .from-slate-950 { --tw-gradient-from: #FAFAF9 !important; }
+.light .via-slate-900 { --tw-gradient-via: #FAFAF9 !important; }
+.light .to-emerald-950 { --tw-gradient-to: #FAFAF9 !important; }
+.light .to-violet-950 { --tw-gradient-to: #FAFAF9 !important; }
+
+.light input, .light select, .light textarea {
+  background-color: #F5F5F2 !important;
+  border-color: #E5E5E0 !important;
+  color: #1A1A2E !important;
+}
+.light input::placeholder, .light textarea::placeholder {
+  color: #8888A0 !important;
 }
 
-.light .bg-slate-900 {
-  background-color: #f8fafc !important;
-}
+.light .hover\:bg-slate-700:hover { background-color: #E5E5E0 !important; }
+.light .hover\:bg-slate-600:hover { background-color: #ddddd8 !important; }
 
-.light .bg-slate-800 {
-  background-color: #ffffff !important;
-}
-
-.light .bg-slate-700 {
-  background-color: #e2e8f0 !important;
-}
-
-.light .text-white {
-  color: #1e293b !important;
-}
-
-.light .text-slate-300 {
-  color: #334155 !important;
-}
-
-.light .text-slate-400 {
-  color: #475569 !important;
-}
-
-.light .text-slate-500 {
-  color: #64748b !important;
-}
-
-.light .border-slate-700 {
-  border-color: #e2e8f0 !important;
-}
-
-.light .border-slate-600 {
-  border-color: #cbd5e1 !important;
-}
-
-.light .border-slate-800 {
-  border-color: #e2e8f0 !important;
-}
-
-/* Light mode gradient backgrounds */
-.light .from-slate-950 {
-  --tw-gradient-from: #e0e7ef !important;
-}
-
-.light .via-slate-900 {
-  --tw-gradient-via: #eef2f7 !important;
-}
-
-.light .to-emerald-950 {
-  --tw-gradient-to: #d1fae5 !important;
-}
-
-.light .to-violet-950 {
-  --tw-gradient-to: #ede9fe !important;
-}
-
-/* Light mode input styling */
-.light input,
-.light select,
-.light textarea {
-  background-color: #f8fafc !important;
-  border-color: #cbd5e1 !important;
-  color: #0f172a !important;
-}
-
-.light input::placeholder,
-.light textarea::placeholder {
-  color: #94a3b8 !important;
-}
-
-/* Light mode hover states */
-.light .hover\:bg-slate-700:hover {
-  background-color: #e2e8f0 !important;
-}
-
-.light .hover\:bg-slate-600:hover {
-  background-color: #cbd5e1 !important;
-}
-
-/* Light mode card styling */
 .light .bg-slate-800\/60,
 .light .bg-slate-800\/80,
 .light .bg-slate-800\/40,
 .light .bg-slate-800\/50 {
-  background-color: #ffffff !important;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05) !important;
-  border: 1px solid #e2e8f0 !important;
+  background-color: #FFFFFF !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid #E5E5E0 !important;
 }
-
-.light .bg-slate-700\/50 {
-  background-color: #f1f5f9 !important;
-}
-
+.light .bg-slate-700\/50 { background-color: #F5F5F2 !important; }
 .light .bg-slate-900\/50 {
   background-color: rgba(255, 255, 255, 0.95) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  backdrop-filter: blur(10px) !important;
+  border-bottom: 1px solid #E5E5E0 !important;
 }
 
-/* Light mode shadows */
-.light {
-  --tw-shadow-color: rgba(0, 0, 0, 0.1);
-}
+.light { --tw-shadow-color: rgba(0, 0, 0, 0.08); }
 
-/* Light mode buttons with better visibility */
 .light button.group {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
   transition: all 0.2s ease !important;
 }
-
 .light button.group:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
   transform: translateY(-2px);
 }
 
-/* Keep accent colors the same */
-.light .bg-emerald-600,
-.light .bg-emerald-500,
-.light .bg-violet-600,
-.light .bg-violet-500,
-.light .bg-amber-600,
-.light .bg-amber-500,
-.light .bg-rose-600,
-.light .bg-rose-500 {
-  /* Keep original colors */
+.light .text-emerald-400, .light .text-emerald-500 { color: #E5502E !important; }
+.light .text-violet-400, .light .text-violet-500 { color: #7c3aed !important; }
+.light .text-amber-400 { color: #d97706 !important; }
+.light .text-rose-400 { color: #2563eb !important; }
+
+.light .bg-rose-500\/20 { background-color: #dbeafe !important; }
+.light .bg-emerald-500\/20 { background-color: #ffece8 !important; }
+.light .bg-amber-500\/20 { background-color: #fde68a !important; }
+.light .bg-violet-500\/20 { background-color: #ddd6fe !important; }
+.light .bg-indigo-600\/20 { background-color: #c7d2fe !important; }
+.light .bg-emerald-600\/20 { background-color: #ffece8 !important; }
+
+/* --- Dark mode Tailwind overrides (warm dark instead of cold slate) --- */
+.dark .bg-slate-950 { background-color: #13131F !important; }
+.dark .bg-slate-900 { background-color: #13131F !important; }
+.dark .bg-slate-800 { background-color: #1E1E30 !important; }
+.dark .bg-slate-700 { background-color: #2A2A3D !important; }
+.dark .border-slate-700 { border-color: #2A2A3D !important; }
+.dark .border-slate-600 { border-color: #353548 !important; }
+.dark .border-slate-800 { border-color: #2A2A3D !important; }
+
+.dark .bg-slate-800\/60,
+.dark .bg-slate-800\/80,
+.dark .bg-slate-800\/40,
+.dark .bg-slate-800\/50 {
+  background-color: #1E1E30 !important;
+  border: 1px solid #2A2A3D !important;
+}
+.dark .bg-slate-700\/50 { background-color: #1A1A2A !important; }
+
+.dark .from-slate-950 { --tw-gradient-from: #13131F !important; }
+.dark .via-slate-900 { --tw-gradient-via: #13131F !important; }
+.dark .to-emerald-950 { --tw-gradient-to: #13131F !important; }
+.dark .to-violet-950 { --tw-gradient-to: #13131F !important; }
+
+/* --- Animation keyframes --- */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.light .text-emerald-400,
-.light .text-emerald-500 {
-  color: #059669 !important;
+@keyframes progress-fill {
+  from { width: 0%; }
 }
 
-.light .text-violet-400,
-.light .text-violet-500 {
-  color: #7c3aed !important;
-}
-
-.light .text-amber-400 {
-  color: #d97706 !important;
-}
-
-.light .text-rose-400 {
-  color: #e11d48 !important;
-}
-
-/* Light mode - better icon backgrounds */
-.light .bg-rose-500\/20 {
-  background-color: #fecdd3 !important;
-}
-
-.light .bg-emerald-500\/20 {
-  background-color: #a7f3d0 !important;
-}
-
-.light .bg-amber-500\/20 {
-  background-color: #fde68a !important;
-}
-
-.light .bg-violet-500\/20 {
-  background-color: #ddd6fe !important;
-}
-
-.light .bg-indigo-600\/20 {
-  background-color: #c7d2fe !important;
-}
-
-.light .bg-emerald-600\/20 {
-  background-color: #a7f3d0 !important;
-}
-
-/* Light mode - header bar */
-.light .bg-slate-900\/50 {
-  background-color: rgba(255, 255, 255, 0.9) !important;
-  backdrop-filter: blur(10px) !important;
-  border-bottom: 1px solid #e2e8f0 !important;
-}
-
-/* Onboarding pulse animation */
 @keyframes pulse-ring {
-  0% {
-    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.5);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(139, 92, 246, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
-  }
+  0% { box-shadow: 0 0 0 0 rgba(255, 107, 74, 0.5); }
+  70% { box-shadow: 0 0 0 10px rgba(255, 107, 74, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 107, 74, 0); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-progress-fill {
+  animation: progress-fill 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .animate-pulse-ring {
   animation: pulse-ring 2s infinite;
+}
+
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }
+.stagger-5 { animation-delay: 250ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-progress-fill {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
