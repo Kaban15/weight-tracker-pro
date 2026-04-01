@@ -18,22 +18,22 @@ interface WelcomeModalProps {
 const slides = [
   {
     icon: Sparkles,
-    iconBg: "bg-violet-500/20",
-    iconColor: "text-violet-400",
+    iconBg: "bg-[var(--accent)]/20",
+    iconColor: "text-[var(--accent)]",
     title: "Witaj w Weight Tracker Pro!",
     description: "Twoja aplikacja do zarządzania zdrowiem, celami i codziennymi zadaniami. Poznaj główne funkcje w kilka sekund.",
   },
   {
     icon: ListChecks,
-    iconBg: "bg-rose-500/20",
-    iconColor: "text-rose-400",
+    iconBg: "bg-blue-500/20",
+    iconColor: "text-blue-400",
     title: "Lista Zadań",
     description: "Zarządzaj zadaniami z priorytetami, terminami i kategoriami. Filtruj, sortuj i śledź postępy w realizacji.",
   },
   {
     icon: Scale,
-    iconBg: "bg-emerald-500/20",
-    iconColor: "text-emerald-400",
+    iconBg: "bg-[var(--accent)]/20",
+    iconColor: "text-[var(--accent)]",
     title: "Progress Tracker",
     description: "Śledź swoją wagę, ustalaj cele i monitoruj postępy na wykresach. Kalendarz pomoże Ci być konsekwentnym.",
   },
@@ -77,10 +77,10 @@ export default function WelcomeModal({ onComplete }: WelcomeModalProps) {
       className="!p-0 overflow-hidden animate-in fade-in zoom-in-95 duration-300"
     >
       {/* Skip button */}
-      <div className="flex justify-end p-3 border-b border-slate-700">
+      <div className="flex justify-end p-3 border-b border-[var(--card-border)]">
         <button
           onClick={onComplete}
-          className="text-sm text-slate-500 hover:text-slate-300 hover:bg-slate-700/50 rounded-lg px-3 py-1.5 transition-colors"
+          className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card-bg)] rounded-lg px-3 py-1.5 transition-colors"
           title="Pomiń wprowadzenie"
         >
           Pomiń
@@ -97,12 +97,12 @@ export default function WelcomeModal({ onComplete }: WelcomeModalProps) {
         </div>
 
         {/* Title */}
-        <h2 className="text-2xl font-bold text-white mb-3">
+        <h2 className="text-2xl font-bold text-[var(--foreground)] mb-3">
           {slide.title}
         </h2>
 
         {/* Description */}
-        <p className="text-slate-400 leading-relaxed mb-8">
+        <p className="text-[var(--muted)] leading-relaxed mb-8">
           {slide.description}
         </p>
 
@@ -112,10 +112,10 @@ export default function WelcomeModal({ onComplete }: WelcomeModalProps) {
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
-              className={`w-2.5 h-2.5 rounded-full transition-all ${
+              className={`h-2.5 rounded-full transition-all ${
                 index === currentSlide
-                  ? "bg-violet-500 w-6"
-                  : "bg-slate-600 hover:bg-slate-500"
+                  ? "w-6 bg-[var(--accent)]"
+                  : "w-2.5 bg-[var(--card-border)] hover:bg-[var(--muted)]"
               }`}
             />
           ))}
@@ -126,7 +126,7 @@ export default function WelcomeModal({ onComplete }: WelcomeModalProps) {
           {currentSlide > 0 && (
             <button
               onClick={handlePrev}
-              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-[var(--card-bg)] hover:bg-[var(--card-border)] text-[var(--foreground)] rounded-xl transition-colors"
             >
               <ChevronLeft className="w-5 h-5" />
               Wstecz
@@ -136,9 +136,10 @@ export default function WelcomeModal({ onComplete }: WelcomeModalProps) {
             onClick={handleNext}
             className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition-colors font-semibold ${
               isLastSlide
-                ? "bg-violet-600 hover:bg-violet-500 text-white"
-                : "bg-slate-700 hover:bg-slate-600 text-white"
+                ? "text-white"
+                : "bg-[var(--card-bg)] hover:bg-[var(--card-border)] text-[var(--foreground)]"
             }`}
+            style={isLastSlide ? { background: 'var(--accent)' } : undefined}
           >
             {isLastSlide ? "Zaczynamy!" : "Dalej"}
             {!isLastSlide && <ChevronRight className="w-5 h-5" />}

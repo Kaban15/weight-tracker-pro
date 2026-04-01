@@ -37,7 +37,7 @@ function validatePassword(password: string): PasswordValidation {
 
 function PasswordRule({ passed, text }: { passed: boolean; text: string }) {
   return (
-    <li className={`flex items-center gap-2 text-xs ${passed ? 'text-emerald-400' : 'text-slate-500'}`}>
+    <li className={`flex items-center gap-2 text-xs ${passed ? 'text-[var(--accent)]' : 'text-[var(--muted)]'}`}>
       {passed ? (
         <Check className="w-3 h-3" aria-hidden="true" />
       ) : (
@@ -127,14 +127,14 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center p-4">
-      <div className="bg-slate-900/50 backdrop-blur-xl rounded-3xl p-8 max-w-md w-full border-2 border-emerald-500/20">
+    <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
+      <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl p-8 max-w-md w-full border-2 border-[var(--card-border)]">
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-emerald-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Target className="w-10 h-10 text-emerald-400" />
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'color-mix(in srgb, var(--accent) 20%, transparent)' }}>
+            <Target className="w-10 h-10 text-[var(--accent)]" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Weight Tracker Pro</h1>
-          <p className="text-slate-400">
+          <h1 className="text-3xl font-bold text-[var(--foreground)] mb-2">Weight Tracker Pro</h1>
+          <p className="text-[var(--muted)]">
             {isForgotPassword
               ? 'Zresetuj swoje hasło'
               : isLogin
@@ -145,7 +145,7 @@ export default function Auth() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="flex items-center gap-2 text-slate-300 mb-2 font-semibold">
+            <label className="flex items-center gap-2 text-[var(--foreground)] mb-2 font-semibold">
               <Mail className="w-4 h-4" />
               Email
             </label>
@@ -155,13 +155,13 @@ export default function Auth() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none"
+              className="w-full bg-[var(--card-bg)] text-[var(--foreground)] rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none"
             />
           </div>
 
           {!isForgotPassword && (
             <div>
-              <label className="flex items-center gap-2 text-slate-300 mb-2 font-semibold">
+              <label className="flex items-center gap-2 text-[var(--foreground)] mb-2 font-semibold">
                 <Lock className="w-4 h-4" />
                 Hasło
               </label>
@@ -174,17 +174,17 @@ export default function Auth() {
                 placeholder="••••••••"
                 required
                 minLength={PASSWORD_RULES.minLength}
-                className={`w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 outline-none transition-colors ${
+                className={`w-full bg-[var(--card-bg)] text-[var(--foreground)] rounded-xl px-4 py-3 border-2 outline-none transition-colors ${
                   mode === 'signup' && password && !passwordValidation.isValid
                     ? 'border-amber-500 focus:border-amber-500'
-                    : 'border-slate-700 focus:border-emerald-500'
+                    : 'border-[var(--card-border)] focus:border-[var(--accent)]'
                 }`}
               />
 
               {/* Password requirements - only show during signup */}
               {mode === 'signup' && (showPasswordRules || (password && !passwordValidation.isValid)) && (
-                <div className="mt-2 p-3 bg-slate-800/50 rounded-xl border border-slate-700">
-                  <p className="text-xs text-slate-400 mb-2">Wymagania hasła:</p>
+                <div className="mt-2 p-3 bg-[var(--card-bg)]/50 rounded-xl border border-[var(--card-border)]">
+                  <p className="text-xs text-[var(--muted)] mb-2">Wymagania hasła:</p>
                   <ul className="space-y-1">
                     <PasswordRule
                       passed={passwordValidation.hasMinLength}
@@ -215,7 +215,7 @@ export default function Auth() {
           )}
 
           {message && (
-            <div className="bg-emerald-500/10 border-2 border-emerald-500/20 rounded-xl p-3 text-emerald-400 text-sm">
+            <div className="rounded-xl p-3 text-sm border-2" style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', borderColor: 'color-mix(in srgb, var(--accent) 20%, transparent)', color: 'var(--accent)' }}>
               {message}
             </div>
           )}
@@ -223,10 +223,11 @@ export default function Auth() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+            className="w-full disabled:bg-[var(--card-bg)] disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+            style={{ background: loading ? undefined : 'var(--accent)' }}
           >
             {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-white/30 rounded-full animate-spin" style={{ borderTopColor: 'var(--accent)' }} />
             ) : isForgotPassword ? (
               <>
                 <KeyRound className="w-5 h-5" />
@@ -254,7 +255,7 @@ export default function Auth() {
                 setError('');
                 setMessage('');
               }}
-              className="text-slate-400 hover:text-emerald-400 transition-colors flex items-center justify-center gap-2 mx-auto"
+              className="text-[var(--muted)] hover:text-[var(--accent)] transition-colors flex items-center justify-center gap-2 mx-auto"
             >
               <ArrowLeft className="w-4 h-4" />
               Wróć do logowania
@@ -267,7 +268,7 @@ export default function Auth() {
                   setError('');
                   setMessage('');
                 }}
-                className="text-slate-400 hover:text-emerald-400 transition-colors block mx-auto"
+                className="text-[var(--muted)] hover:text-[var(--accent)] transition-colors block mx-auto"
               >
                 {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
               </button>
@@ -278,7 +279,7 @@ export default function Auth() {
                     setError('');
                     setMessage('');
                   }}
-                  className="text-slate-500 hover:text-emerald-400 transition-colors text-sm block mx-auto"
+                  className="text-[var(--muted)] hover:text-[var(--accent)] transition-colors text-sm block mx-auto"
                 >
                   Zapomniałeś hasła?
                 </button>
