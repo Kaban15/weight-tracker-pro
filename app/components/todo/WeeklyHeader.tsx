@@ -103,7 +103,7 @@ export default function WeeklyHeader({
             className="flex items-center gap-1.5 text-red-400 hover:text-red-300 text-sm font-semibold px-3 py-1 bg-red-500/20 rounded-lg hover:bg-red-500/30 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            Ponow
+            Ponów
           </button>
         </div>
       )}

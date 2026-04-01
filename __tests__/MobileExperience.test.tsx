@@ -265,7 +265,7 @@ describe('TodoModeWeekly — mobile (375px)', () => {
     const { container } = await renderTodoWeekly()
 
     // The progress bar wrapper div has hidden sm:block classes directly on it
-    const progressBar = container.querySelector('.bg-slate-700.rounded-full.h-2')
+    const progressBar = container.querySelector('.rounded-full.h-2')
     expect(progressBar).not.toBeNull()
     expect(progressBar?.classList.contains('hidden')).toBe(true)
     expect(progressBar?.classList.contains('sm:block')).toBe(true)
