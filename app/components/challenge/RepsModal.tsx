@@ -54,31 +54,31 @@ export default function RepsModal({
             value={goalValue}
             onChange={(e) => onGoalChange(e.target.value)}
             placeholder="np. 30 (0 = brak celu)"
-            className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-2 text-white text-center placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+            className="w-full bg-[var(--background)] border-2 border-[var(--card-border)] rounded-lg px-4 py-2 text-white text-center placeholder-[var(--muted)] focus:border-amber-500 focus:outline-none"
           />
         </div>
 
         {/* Progress indicator */}
         {hasGoal && currentValue > 0 && (
-          <div className={`p-3 rounded-lg border ${goalReached ? 'bg-emerald-500/20 border-emerald-500/50' : 'bg-slate-700/50 border-slate-600'}`}>
+          <div className={`p-3 rounded-lg border ${goalReached ? 'bg-emerald-500/20 border-emerald-500/50' : 'bg-[var(--surface)] border-[var(--card-border)]'}`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-slate-300">Postęp</span>
-              {goalReached && <Check className="w-5 h-5 text-emerald-400" />}
+              <span className="text-sm text-[var(--foreground)]">Postęp</span>
+              {goalReached && <Check className="w-5 h-5 text-[var(--accent)]" />}
             </div>
-            <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-2 bg-[var(--surface)] rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all ${goalReached ? 'bg-emerald-500' : 'bg-amber-500'}`}
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-[var(--muted)] mt-1">
               {currentValue}/{currentGoal} ({progress}%)
             </p>
           </div>
         )}
 
         <div>
-          <label htmlFor="reps-completed-input" className="block text-sm text-slate-400 mb-2">
+          <label htmlFor="reps-completed-input" className="block text-sm text-[var(--muted)] mb-2">
             Wykonano ({goalUnit})
           </label>
           <input
@@ -88,7 +88,7 @@ export default function RepsModal({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder="np. 50"
-            className="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-4 py-3 text-white text-2xl text-center placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
+            className="w-full bg-[var(--background)] border-2 border-[var(--card-border)] rounded-lg px-4 py-3 text-white text-2xl text-center placeholder-[var(--muted)] focus:border-amber-500 focus:outline-none"
             autoFocus
           />
         </div>
@@ -98,14 +98,14 @@ export default function RepsModal({
           <div className="flex gap-2">
             <button
               onClick={() => onChange(currentGoal.toString())}
-              className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-sm flex items-center justify-center gap-1"
+              className="flex-1 bg-[var(--surface)] hover:bg-[var(--surface)] text-white py-2 rounded-lg text-sm flex items-center justify-center gap-1"
             >
               <TrendingUp className="w-4 h-4" />
               Cel ({currentGoal})
             </button>
             <button
               onClick={() => onChange(Math.round(currentGoal * 1.5).toString())}
-              className="flex-1 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-400 py-2 rounded-lg text-sm"
+              className="flex-1 bg-emerald-600/30 hover:bg-emerald-600/50 text-[var(--accent)] py-2 rounded-lg text-sm"
             >
               +50%
             </button>
@@ -115,7 +115,7 @@ export default function RepsModal({
         <div className="flex gap-3">
           <button
             onClick={onDelete}
-            className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-sm"
+            className="flex-1 bg-[var(--surface)] hover:bg-[var(--surface)] text-white py-2 rounded-lg text-sm"
           >
             Usuń
           </button>

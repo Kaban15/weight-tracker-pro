@@ -47,7 +47,7 @@ function StatCard({
   color: "emerald" | "blue" | "amber" | "rose" | "violet";
 }) {
   const colors = {
-    emerald: "bg-emerald-500/20 text-emerald-400",
+    emerald: "bg-indigo-500/20 text-[var(--accent)]",
     blue: "bg-blue-500/20 text-blue-400",
     amber: "bg-amber-500/20 text-amber-400",
     rose: "bg-rose-500/20 text-rose-400",
@@ -55,13 +55,13 @@ function StatCard({
   };
 
   return (
-    <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+    <div className="bg-[var(--card-bg)] rounded-xl p-5 border border-[var(--card-border)]">
       <div className={`w-10 h-10 rounded-lg ${colors[color]} flex items-center justify-center mb-3`}>
         <Icon className="w-5 h-5" />
       </div>
       <div className="text-3xl font-bold text-white mb-1">{value}</div>
-      <div className="text-slate-400 text-sm">{label}</div>
-      {subtitle && <div className="text-slate-500 text-xs mt-1">{subtitle}</div>}
+      <div className="text-[var(--muted)] text-sm">{label}</div>
+      {subtitle && <div className="text-[var(--muted)] text-xs mt-1">{subtitle}</div>}
     </div>
   );
 }
@@ -82,19 +82,19 @@ function UsageItem({
   color: "emerald" | "amber" | "rose" | "violet";
 }) {
   const colors = {
-    emerald: "text-emerald-400",
+    emerald: "text-[var(--accent)]",
     amber: "text-amber-400",
     rose: "text-rose-400",
     violet: "text-violet-400",
   };
 
   return (
-    <div className="text-center p-4 bg-slate-700/30 rounded-xl">
+    <div className="text-center p-4 bg-[var(--surface)] rounded-xl">
       <Icon className={`w-6 h-6 ${colors[color]} mx-auto mb-2`} />
       <div className="text-2xl font-bold text-white">{total}</div>
-      <div className="text-slate-400 text-xs mb-1">{label}</div>
+      <div className="text-[var(--muted)] text-xs mb-1">{label}</div>
       {average > 0 && (
-        <div className="text-slate-500 text-xs">
+        <div className="text-[var(--muted)] text-xs">
           śr. {average}/{suffix || "użytkownika"}
         </div>
       )}
@@ -143,9 +143,9 @@ export default function AdminOverviewTab({ statistics }: AdminOverviewTabProps) 
       {/* Charts Row: Module Adoption + Task Completion */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Module Adoption Bar Chart */}
-        <div className="lg:col-span-2 bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+        <div className="lg:col-span-2 bg-[var(--card-bg)] rounded-xl p-6 border border-[var(--card-border)]">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-emerald-400" />
+            <BarChart3 className="w-5 h-5 text-[var(--accent)]" />
             Adopcja modułów
           </h3>
           {moduleData.some((d) => d.users > 0) ? (
@@ -181,14 +181,14 @@ export default function AdminOverviewTab({ statistics }: AdminOverviewTabProps) 
               </ResponsiveContainer>
             </div>
           ) : (
-            <p className="text-slate-500 text-center py-16">Brak danych o adopcji modułów.</p>
+            <p className="text-[var(--muted)] text-center py-16">Brak danych o adopcji modułów.</p>
           )}
           {/* Legend */}
           <div className="flex flex-wrap gap-4 mt-4">
             {moduleData.map((m) => (
               <div key={m.name} className="flex items-center gap-2 text-sm">
                 <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: m.fill }} />
-                <span className="text-slate-400">
+                <span className="text-[var(--muted)]">
                   {m.name}: <span className="text-white font-semibold">{m.users}</span>
                 </span>
               </div>
@@ -197,9 +197,9 @@ export default function AdminOverviewTab({ statistics }: AdminOverviewTabProps) 
         </div>
 
         {/* Task Completion Donut */}
-        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700 flex flex-col items-center">
+        <div className="bg-[var(--card-bg)] rounded-xl p-6 border border-[var(--card-border)] flex flex-col items-center">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2 self-start">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            <CheckCircle2 className="w-5 h-5 text-[var(--accent)]" />
             Realizacja zadań
           </h3>
           {statistics.totalTasks > 0 ? (
@@ -234,56 +234,56 @@ export default function AdminOverviewTab({ statistics }: AdminOverviewTabProps) 
                 {/* Center label */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-3xl font-bold text-white">{statistics.taskCompletionRate}%</span>
-                  <span className="text-slate-400 text-xs">ukończono</span>
+                  <span className="text-[var(--muted)] text-xs">ukończono</span>
                 </div>
               </div>
               <div className="flex gap-6 mt-4 text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-emerald-500" />
-                  <span className="text-slate-400">
+                  <div className="w-3 h-3 rounded-sm bg-indigo-500" />
+                  <span className="text-[var(--muted)]">
                     Ukończone: <span className="text-white font-semibold">{statistics.tasksDone}</span>
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-slate-700" />
-                  <span className="text-slate-400">
+                  <div className="w-3 h-3 rounded-sm bg-[var(--surface)]" />
+                  <span className="text-[var(--muted)]">
                     Pozostałe: <span className="text-white font-semibold">{statistics.totalTasks - statistics.tasksDone}</span>
                   </span>
                 </div>
               </div>
             </>
           ) : (
-            <p className="text-slate-500 text-center py-16">Brak zadań w systemie.</p>
+            <p className="text-[var(--muted)] text-center py-16">Brak zadań w systemie.</p>
           )}
         </div>
       </div>
 
       {/* New Users Stats */}
-      <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+      <div className="bg-[var(--card-bg)] rounded-xl p-6 border border-[var(--card-border)]">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <UserPlus className="w-5 h-5 text-emerald-400" />
+          <UserPlus className="w-5 h-5 text-[var(--accent)]" />
           Nowi użytkownicy
         </h3>
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
             <div className="text-3xl font-bold text-white">{statistics.newUsersToday}</div>
-            <div className="text-slate-400 text-sm">Dziś</div>
+            <div className="text-[var(--muted)] text-sm">Dziś</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-white">{statistics.newUsersThisWeek}</div>
-            <div className="text-slate-400 text-sm">Ten tydzień</div>
+            <div className="text-[var(--muted)] text-sm">Ten tydzień</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-white">{statistics.newUsersThisMonth}</div>
-            <div className="text-slate-400 text-sm">Ten miesiąc</div>
+            <div className="text-[var(--muted)] text-sm">Ten miesiąc</div>
           </div>
         </div>
       </div>
 
       {/* Usage Stats */}
-      <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+      <div className="bg-[var(--card-bg)] rounded-xl p-6 border border-[var(--card-border)]">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <Zap className="w-5 h-5 text-emerald-400" />
+          <Zap className="w-5 h-5 text-[var(--accent)]" />
           Statystyki użycia
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

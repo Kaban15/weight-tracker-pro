@@ -24,12 +24,12 @@ function TagInput({ label, tags, onChange }: { label: string; tags: string[]; on
 
   return (
     <div>
-      <label className="block text-sm text-slate-400 mb-1.5">{label}</label>
+      <label className="block text-sm text-[var(--muted)] mb-1.5">{label}</label>
       <div className="flex flex-wrap gap-1.5 mb-2">
         {tags.map(tag => (
-          <span key={tag} className="flex items-center gap-1 px-2 py-1 bg-slate-700 text-slate-200 rounded-lg text-xs">
+          <span key={tag} className="flex items-center gap-1 px-2 py-1 bg-[var(--surface)] text-[var(--foreground)] rounded-lg text-xs">
             {tag}
-            <button onClick={() => onChange(tags.filter(t => t !== tag))} className="text-slate-400 hover:text-red-400">
+            <button onClick={() => onChange(tags.filter(t => t !== tag))} className="text-[var(--muted)] hover:text-red-400">
               <X className="w-3 h-3" />
             </button>
           </span>
@@ -39,7 +39,7 @@ function TagInput({ label, tags, onChange }: { label: string; tags: string[]; on
         <input value={input} onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTag())}
           placeholder="Wpisz i naciśnij Enter..."
-          className="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-3 py-1.5 text-white text-sm placeholder-slate-500" />
+          className="flex-1 bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-3 py-1.5 text-white text-sm placeholder-[var(--muted)]" />
         <button onClick={addTag} disabled={!input.trim()}
           className="p-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg text-white disabled:opacity-30">
           <Plus className="w-4 h-4" />
@@ -74,7 +74,7 @@ export default function PreferencesEditor({ preferences, onSave, onStartIntervie
   return (
     <div className="space-y-6 max-w-lg mx-auto">
       <div className="flex items-center justify-between">
-        <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+        <button onClick={onBack} className="flex items-center gap-2 text-[var(--muted)] hover:text-white transition-colors">
           <ArrowLeft className="w-4 h-4" /> Powrót
         </button>
       </div>
@@ -87,23 +87,23 @@ export default function PreferencesEditor({ preferences, onSave, onStartIntervie
       <TagInput label="Ulubione kuchnie" tags={cuisines} onChange={setCuisines} />
 
       {/* Thermomix toggle */}
-      <div className="flex items-center justify-between bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+      <div className="flex items-center justify-between bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-4">
         <div>
           <p className="text-white font-medium">Thermomix</p>
-          <p className="text-xs text-slate-400">AI zaproponuje przepisy z Thermomixem gdzie to sensowne</p>
+          <p className="text-xs text-[var(--muted)]">AI zaproponuje przepisy z Thermomixem gdzie to sensowne</p>
         </div>
         <button onClick={() => setHasThermomix(!hasThermomix)}
-          className={`w-12 h-6 rounded-full transition-colors relative ${hasThermomix ? 'bg-violet-600' : 'bg-slate-600'}`}>
+          className={`w-12 h-6 rounded-full transition-colors relative ${hasThermomix ? 'bg-violet-600' : 'bg-[var(--muted)]'}`}>
           <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${hasThermomix ? 'translate-x-6' : 'translate-x-0.5'}`} />
         </button>
       </div>
 
       {/* Additional notes */}
       <div>
-        <label className="block text-sm text-slate-400 mb-1.5">Dodatkowe uwagi</label>
+        <label className="block text-sm text-[var(--muted)] mb-1.5">Dodatkowe uwagi</label>
         <textarea value={preferencesText} onChange={e => setPreferencesText(e.target.value)}
           rows={3} placeholder="Np. 'Gotuję max 30 min', 'Preferuję proste przepisy'..."
-          className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 resize-none" />
+          className="w-full bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-3 py-2 text-white text-sm placeholder-[var(--muted)] resize-none" />
       </div>
 
       {/* Actions */}
@@ -113,7 +113,7 @@ export default function PreferencesEditor({ preferences, onSave, onStartIntervie
           {saved ? <><Check className="w-4 h-4" /> Zapisano!</> : 'Zapisz zmiany'}
         </button>
         <button onClick={onStartInterview}
-          className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl transition-colors">
+          className="flex items-center gap-2 px-4 py-2.5 bg-[var(--surface)] hover:bg-[var(--surface)] text-[var(--foreground)] rounded-xl transition-colors">
           <MessageSquare className="w-4 h-4" /> Wywiad AI
         </button>
       </div>

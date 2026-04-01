@@ -26,7 +26,7 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
 
   const statusColors: Record<string, string> = {
     planned: 'text-blue-400',
-    accepted: 'text-emerald-400',
+    accepted: 'text-[var(--accent)]',
     eaten: 'text-violet-400',
     rejected: 'text-red-400',
   };
@@ -89,13 +89,13 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
   };
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
+    <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl overflow-hidden">
       {/* Header */}
       <div className="p-4">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-medium text-slate-500 uppercase">{meal.meal_slot}</span>
+              <span className="text-xs font-medium text-[var(--muted)] uppercase">{meal.meal_slot}</span>
               <span className={`text-xs ${statusColors[meal.status]}`}>• {statusLabels[meal.status]}</span>
             </div>
             <h3 className="text-white font-medium">{meal.name}</h3>
@@ -111,12 +111,12 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
 
         {/* Macros row */}
         <div className="flex gap-4 mt-3 text-xs">
-          <span className="text-emerald-400 font-medium">{Math.round(meal.calories)} kcal</span>
+          <span className="text-[var(--accent)] font-medium">{Math.round(meal.calories)} kcal</span>
           <span className="text-blue-400">B: {Math.round(meal.protein)}g</span>
           <span className="text-amber-400">W: {Math.round(meal.carbs)}g</span>
           <span className="text-red-400">T: {Math.round(meal.fat)}g</span>
           {totalCost > 0 && (
-            <span className="text-slate-400 ml-auto">{totalCost.toFixed(2)} zł</span>
+            <span className="text-[var(--muted)] ml-auto">{totalCost.toFixed(2)} zł</span>
           )}
         </div>
 
@@ -125,7 +125,7 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
           {meal.status === 'planned' && (
             <>
               <button onClick={() => onAccept(meal.id)}
-                className="flex items-center gap-1 px-3 py-1 text-xs bg-emerald-600/20 text-emerald-400 rounded-lg hover:bg-emerald-600/30">
+                className="flex items-center gap-1 px-3 py-1 text-xs bg-violet-600/20 text-[var(--accent)] rounded-lg hover:bg-violet-600/30">
                 <Check className="w-3 h-3" /> Akceptuj
               </button>
               <button onClick={() => onReject(meal.id)}
@@ -156,17 +156,17 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
             className={`flex items-center gap-1 px-3 py-1 text-xs rounded-lg ${
               meal.is_favorite
                 ? 'bg-pink-600/20 text-pink-400 hover:bg-pink-600/30'
-                : 'bg-slate-600/20 text-slate-400 hover:bg-slate-600/30'
+                : 'bg-[var(--muted)]/20 text-[var(--muted)] hover:bg-[var(--surface)]/30'
             }`}>
             <Heart className={`w-3 h-3 ${meal.is_favorite ? 'fill-pink-400' : ''}`} />
             {meal.is_favorite ? 'Ulubiony' : 'Polub'}
           </button>
           <button onClick={() => onReplace(meal)}
-            className="flex items-center gap-1 px-3 py-1 text-xs bg-slate-600/20 text-slate-400 rounded-lg hover:bg-slate-600/30">
+            className="flex items-center gap-1 px-3 py-1 text-xs bg-[var(--muted)]/20 text-[var(--muted)] rounded-lg hover:bg-[var(--surface)]/30">
             <RefreshCw className="w-3 h-3" /> Zamień
           </button>
           <button onClick={() => setExpanded(!expanded)}
-            className="ml-auto p-1 text-slate-400 hover:text-white">
+            className="ml-auto p-1 text-[var(--muted)] hover:text-white">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
@@ -174,18 +174,18 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
 
       {/* Rating form */}
       {showRating && (
-        <div className="px-4 pb-4 border-t border-slate-700 pt-3 space-y-2">
+        <div className="px-4 pb-4 border-t border-[var(--card-border)] pt-3 space-y-2">
           <div className="flex items-center gap-1">
             {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
               <button key={n} onClick={() => setRating(n)}
                 className={`w-7 h-7 rounded text-xs font-bold transition-colors ${
-                  n <= rating ? 'bg-amber-500 text-white' : 'bg-slate-700 text-slate-400'
+                  n <= rating ? 'bg-amber-500 text-white' : 'bg-[var(--surface)] text-[var(--muted)]'
                 }`}>{n}</button>
             ))}
           </div>
           <input value={comment} onChange={e => setComment(e.target.value)}
             placeholder="Komentarz (opcjonalny)..."
-            className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-1.5 text-white text-sm placeholder-slate-500" />
+            className="w-full bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-3 py-1.5 text-white text-sm placeholder-[var(--muted)]" />
           <button onClick={() => { onRate(meal.id, rating, comment); setShowRating(false); }}
             className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-sm rounded-lg">
             Zapisz ocenę
@@ -195,10 +195,10 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
 
       {/* Expanded: ingredients + recipe */}
       {expanded && (
-        <div className="px-4 pb-4 border-t border-slate-700 pt-3 space-y-3">
+        <div className="px-4 pb-4 border-t border-[var(--card-border)] pt-3 space-y-3">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-medium text-slate-300">Składniki</h4>
+              <h4 className="text-sm font-medium text-[var(--foreground)]">Składniki</h4>
               {!editing && meal.status === 'accepted' && (
                 <button onClick={() => setEditing(true)} className="text-xs text-blue-400 hover:text-blue-300">
                   Edytuj
@@ -209,7 +209,7 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
             {editing ? (
               <div className="space-y-2">
                 {/* Header */}
-                <div className="grid grid-cols-[1fr_55px_40px_50px_40px_40px_40px_20px] gap-1 text-[10px] text-slate-500">
+                <div className="grid grid-cols-[1fr_55px_40px_50px_40px_40px_40px_20px] gap-1 text-[10px] text-[var(--muted)]">
                   <span>Nazwa</span><span>Ilość</span><span>Jdn.</span>
                   <span>kcal</span><span className="text-blue-400">B</span>
                   <span className="text-amber-400">W</span><span className="text-red-400">T</span><span></span>
@@ -219,31 +219,31 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
                   <div key={i} className="grid grid-cols-[1fr_55px_40px_50px_40px_40px_40px_20px] gap-1 items-center">
                     <input value={ing.name} onChange={e => updateIngredientField(i, 'name', e.target.value)}
                       placeholder="Składnik"
-                      className="bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-white text-xs" />
+                      className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1.5 py-1 text-white text-xs" />
                     <input type="number" value={ing.amount || ''} onChange={e => handleAmountChange(i, parseFloat(e.target.value) || 0)}
-                      className="bg-slate-900 border border-slate-700 rounded px-1 py-1 text-white text-xs text-center" />
+                      className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1 text-white text-xs text-center" />
                     <select value={ing.unit} onChange={e => updateIngredientField(i, 'unit', e.target.value)}
-                      className="bg-slate-900 border border-slate-700 rounded px-0 py-1 text-white text-[10px]">
+                      className="bg-[var(--background)] border border-[var(--card-border)] rounded px-0 py-1 text-white text-[10px]">
                       <option value="g">g</option><option value="ml">ml</option><option value="szt">szt</option>
                     </select>
                     <input type="number" value={Math.round(ing.calories) || ''} onChange={e => updateIngredientField(i, 'calories', parseFloat(e.target.value) || 0)}
-                      className="bg-slate-900 border border-slate-700 rounded px-1 py-1 text-emerald-300 text-xs text-center" />
+                      className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1 text-violet-300 text-xs text-center" />
                     <input type="number" value={Math.round(ing.protein) || ''} onChange={e => updateIngredientField(i, 'protein', parseFloat(e.target.value) || 0)}
-                      className="bg-slate-900 border border-slate-700 rounded px-1 py-1 text-blue-300 text-xs text-center" />
+                      className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1 text-blue-300 text-xs text-center" />
                     <input type="number" value={Math.round(ing.carbs) || ''} onChange={e => updateIngredientField(i, 'carbs', parseFloat(e.target.value) || 0)}
-                      className="bg-slate-900 border border-slate-700 rounded px-1 py-1 text-amber-300 text-xs text-center" />
+                      className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1 text-amber-300 text-xs text-center" />
                     <input type="number" value={Math.round(ing.fat) || ''} onChange={e => updateIngredientField(i, 'fat', parseFloat(e.target.value) || 0)}
-                      className="bg-slate-900 border border-slate-700 rounded px-1 py-1 text-red-300 text-xs text-center" />
-                    <button onClick={() => removeIngredient(i)} className="text-slate-500 hover:text-red-400">
+                      className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1 text-red-300 text-xs text-center" />
+                    <button onClick={() => removeIngredient(i)} className="text-[var(--muted)] hover:text-red-400">
                       <Trash2 className="w-3 h-3" />
                     </button>
                   </div>
                 ))}
 
                 {/* Totals */}
-                <div className="flex gap-3 text-[10px] text-slate-400 pt-1 border-t border-slate-700">
+                <div className="flex gap-3 text-[10px] text-[var(--muted)] pt-1 border-t border-[var(--card-border)]">
                   <span>Suma:</span>
-                  <span className="text-emerald-400">{Math.round(editedIngredients.reduce((s, i) => s + i.calories, 0))} kcal</span>
+                  <span className="text-[var(--accent)]">{Math.round(editedIngredients.reduce((s, i) => s + i.calories, 0))} kcal</span>
                   <span className="text-blue-400">B: {Math.round(editedIngredients.reduce((s, i) => s + i.protein, 0))}g</span>
                   <span className="text-amber-400">W: {Math.round(editedIngredients.reduce((s, i) => s + i.carbs, 0))}g</span>
                   <span className="text-red-400">T: {Math.round(editedIngredients.reduce((s, i) => s + i.fat, 0))}g</span>
@@ -251,15 +251,15 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
 
                 <div className="flex gap-2 mt-2">
                   <button onClick={addIngredient}
-                    className="flex items-center gap-1 px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg">
+                    className="flex items-center gap-1 px-3 py-1 text-xs bg-[var(--surface)] hover:bg-[var(--surface)] text-[var(--foreground)] rounded-lg">
                     <Plus className="w-3 h-3" /> Dodaj składnik
                   </button>
                   <button onClick={handleSaveEdit}
-                    className="px-3 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg">
+                    className="px-3 py-1 text-xs bg-violet-600 hover:bg-violet-500 text-white rounded-lg">
                     Zapisz zmiany
                   </button>
                   <button onClick={handleCancelEdit}
-                    className="px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg">
+                    className="px-3 py-1 text-xs bg-[var(--surface)] hover:bg-[var(--surface)] text-[var(--foreground)] rounded-lg">
                     Anuluj
                   </button>
                 </div>
@@ -267,7 +267,7 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
             ) : (
               <ul className="space-y-1">
                 {meal.ingredients.map((ing, i) => (
-                  <li key={i} className="flex justify-between text-xs text-slate-400">
+                  <li key={i} className="flex justify-between text-xs text-[var(--muted)]">
                     <span>{ing.name} — {ing.amount} {ing.unit}</span>
                     <span className="flex items-center gap-3">
                       <span>{Math.round(ing.calories)} kcal</span>
@@ -285,10 +285,10 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
             )}
           </div>
           <div>
-            <h4 className="text-sm font-medium text-slate-300 mb-2">Przygotowanie</h4>
+            <h4 className="text-sm font-medium text-[var(--foreground)] mb-2">Przygotowanie</h4>
             <ol className="space-y-1">
               {meal.recipe_steps.map((step, i) => (
-                <li key={i} className="text-xs text-slate-400">
+                <li key={i} className="text-xs text-[var(--muted)]">
                   <span className="text-violet-400 font-medium">{i + 1}.</span> {step}
                 </li>
               ))}

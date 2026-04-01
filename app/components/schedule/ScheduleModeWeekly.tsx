@@ -53,11 +53,11 @@ function BacklogTaskTile({
       className={`
         group flex items-center gap-2 p-2.5 rounded-lg border transition-all cursor-grab active:cursor-grabbing
         ${isDragging ? "opacity-50 scale-95" : "opacity-100"}
-        ${isCompleted ? "bg-emerald-950/20 border-emerald-500/30" : "bg-slate-800/60 border-slate-700/50 hover:border-slate-600"}
+        ${isCompleted ? "bg-cyan-950/20 border-cyan-500/30" : "bg-[var(--card-bg)] border-[var(--card-border)] hover:border-[var(--card-border)]"}
       `}
     >
       {/* Drag handle */}
-      <div className="text-slate-600">
+      <div className="text-[var(--muted)]">
         <GripVertical className="w-4 h-4" />
       </div>
 
@@ -69,7 +69,7 @@ function BacklogTaskTile({
         }}
         className={`
           w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center transition-all
-          ${isCompleted ? "bg-emerald-500 text-white" : "border-2 border-slate-500 hover:border-emerald-400"}
+          ${isCompleted ? "bg-cyan-600 text-white" : "border-2 border-[var(--card-border)] hover:border-cyan-400"}
         `}
       >
         {isCompleted && <Check className="w-3 h-3" />}
@@ -78,7 +78,7 @@ function BacklogTaskTile({
       {/* Title */}
       <span
         className={`flex-1 text-sm truncate ${
-          isCompleted ? "text-slate-500 line-through" : "text-white"
+          isCompleted ? "text-[var(--muted)] line-through" : "text-white"
         }`}
         title={task.title}
       >
@@ -168,20 +168,20 @@ export default function ScheduleModeWeekly({ onBack }: ScheduleModeWeeklyProps) 
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 flex flex-col">
+    <div className="min-h-screen bg-[var(--background)] flex flex-col">
       {/* Header */}
-      <header className="bg-slate-900/50 border-b border-slate-800">
+      <header className="bg-[var(--background)] border-b border-[var(--card-border)]">
         <div className="px-4 py-3 flex items-center justify-between">
           <button
             onClick={() => { if (onBack) onBack(); else goHome(); }}
-            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-[var(--muted)] hover:text-white transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="hidden sm:inline">Powrot</span>
@@ -195,7 +195,7 @@ export default function ScheduleModeWeekly({ onBack }: ScheduleModeWeeklyProps) 
             <button
               onClick={() => setShowBacklog(!showBacklog)}
               className={`p-2 rounded-lg transition-colors ${
-                showBacklog ? "bg-cyan-600 text-white" : "text-slate-400 hover:text-white hover:bg-slate-700"
+                showBacklog ? "bg-cyan-600 text-white" : "text-[var(--muted)] hover:text-white hover:bg-[var(--surface)]"
               }`}
               title="Pokaz/Ukryj backlog"
             >
@@ -203,7 +203,7 @@ export default function ScheduleModeWeekly({ onBack }: ScheduleModeWeeklyProps) 
             </button>
             <button
               onClick={signOut}
-              className="text-slate-400 hover:text-white transition-colors text-sm"
+              className="text-[var(--muted)] hover:text-white transition-colors text-sm"
             >
               Wyloguj
             </button>
@@ -215,8 +215,8 @@ export default function ScheduleModeWeekly({ onBack }: ScheduleModeWeeklyProps) 
       <div className="flex flex-1 overflow-hidden">
         {/* Backlog sidebar */}
         {showBacklog && (
-          <div className="w-64 sm:w-72 bg-slate-900/50 border-r border-slate-800 flex flex-col">
-            <div className="p-4 border-b border-slate-800">
+          <div className="w-64 sm:w-72 bg-[var(--background)] border-r border-[var(--card-border)] flex flex-col">
+            <div className="p-4 border-b border-[var(--card-border)]">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="font-semibold text-white flex items-center gap-2">
                   <Settings className="w-4 h-4" />
@@ -229,19 +229,19 @@ export default function ScheduleModeWeekly({ onBack }: ScheduleModeWeeklyProps) 
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[var(--muted)]">
                 Przeciagnij zadania na kalendarz
               </p>
             </div>
 
             {/* Backlog tasks section */}
-            <div className="p-3 border-b border-slate-800">
-              <h3 className="text-xs text-slate-500 uppercase tracking-wider mb-2">
+            <div className="p-3 border-b border-[var(--card-border)]">
+              <h3 className="text-xs text-[var(--muted)] uppercase tracking-wider mb-2">
                 Zadania ({backlogTasks.length})
               </h3>
               <div className="space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto">
                 {backlogTasks.length === 0 ? (
-                  <p className="text-sm text-slate-600 text-center py-4">
+                  <p className="text-sm text-[var(--muted)] text-center py-4">
                     Brak zadan
                   </p>
                 ) : (
@@ -263,7 +263,7 @@ export default function ScheduleModeWeekly({ onBack }: ScheduleModeWeeklyProps) 
             <div className="p-3 mt-auto">
               <button
                 onClick={() => handleAddTask(new Date().toISOString().split("T")[0])}
-                className="w-full flex items-center justify-center gap-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 text-slate-400 hover:text-cyan-400 py-2.5 rounded-lg transition-all"
+                className="w-full flex items-center justify-center gap-2 bg-[var(--card-bg)] hover:bg-[var(--surface)] border border-[var(--card-border)] text-[var(--muted)] hover:text-cyan-400 py-2.5 rounded-lg transition-all"
               >
                 <Plus className="w-4 h-4" />
                 Nowe zadanie

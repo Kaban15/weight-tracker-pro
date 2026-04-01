@@ -28,11 +28,11 @@ export default function MealCalendar({ mealPlans, getDaySummary, targetCalories,
 
     return (
       <button onClick={() => setSelectedDay(dateStr)}
-        className="w-full h-full flex flex-col items-center justify-center gap-0.5 hover:bg-slate-700/50 rounded-lg transition-colors p-1">
-        <span className="text-sm text-slate-300">{day}</span>
+        className="w-full h-full flex flex-col items-center justify-center gap-0.5 hover:bg-[var(--surface)] rounded-lg transition-colors p-1">
+        <span className="text-sm text-[var(--foreground)]">{day}</span>
         {hasMeals && (
           <div className={`w-1.5 h-1.5 rounded-full ${
-            percent > 110 ? 'bg-red-400' : percent > 80 ? 'bg-emerald-400' : 'bg-amber-400'
+            percent > 110 ? 'bg-red-400' : percent > 80 ? 'bg-violet-400' : 'bg-amber-400'
           }`} />
         )}
       </button>
@@ -42,7 +42,7 @@ export default function MealCalendar({ mealPlans, getDaySummary, targetCalories,
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+        <button onClick={onBack} className="flex items-center gap-2 text-[var(--muted)] hover:text-white transition-colors">
           <ArrowLeft className="w-4 h-4" /> Powrót
         </button>
         <button onClick={onNavigateToCharts}

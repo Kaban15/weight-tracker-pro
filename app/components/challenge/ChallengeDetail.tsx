@@ -32,13 +32,13 @@ export default function ChallengeDetail({
   const progress = getChallengeProgress(challenge);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950">
+    <div className="min-h-screen bg-[var(--background)]">
       {/* Header */}
-      <header className="bg-slate-900/50 border-b border-slate-800">
+      <header className="bg-[var(--background)] border-b border-[var(--card-border)]">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-slate-400 hover:text-white"
+            className="flex items-center gap-2 text-[var(--muted)] hover:text-white"
             aria-label="Wróć do listy nawyków"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -51,14 +51,14 @@ export default function ChallengeDetail({
           <div className="flex items-center gap-2">
             <button
               onClick={onEdit}
-              className="text-slate-400 hover:text-amber-400 p-1"
+              className="text-[var(--muted)] hover:text-amber-400 p-1"
               aria-label="Edytuj nawyk"
             >
               <Edit2 className="w-4 h-4" />
             </button>
             <button
               onClick={onDelete}
-              className="text-slate-400 hover:text-rose-400 p-1"
+              className="text-[var(--muted)] hover:text-rose-400 p-1"
               aria-label="Usuń nawyk"
             >
               <Trash2 className="w-4 h-4" />
@@ -72,13 +72,13 @@ export default function ChallengeDetail({
         <ProgressSummary challenge={challenge} progress={progress} />
 
         {/* View Toggle */}
-        <div className="flex gap-1 bg-slate-800/50 p-1 rounded-lg" role="tablist">
+        <div className="flex gap-1 bg-[var(--card-bg)] p-1 rounded-lg" role="tablist">
           <button
             role="tab"
             aria-selected={detailView === 'grid'}
             onClick={() => setDetailView('grid')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all ${
-              detailView === 'grid' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+              detailView === 'grid' ? 'bg-amber-600 text-white' : 'text-[var(--muted)] hover:text-white hover:bg-[var(--surface)]'
             }`}
           >
             <Grid3X3 className="w-4 h-4" />
@@ -89,7 +89,7 @@ export default function ChallengeDetail({
             aria-selected={detailView === 'table'}
             onClick={() => setDetailView('table')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all ${
-              detailView === 'table' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+              detailView === 'table' ? 'bg-amber-600 text-white' : 'text-[var(--muted)] hover:text-white hover:bg-[var(--surface)]'
             }`}
           >
             <BarChart3 className="w-4 h-4" />
@@ -127,10 +127,10 @@ interface ProgressSummaryProps {
 
 function ProgressSummary({ challenge, progress }: ProgressSummaryProps) {
   return (
-    <div className="bg-slate-800/50 rounded-xl border-2 border-slate-700 p-4">
+    <div className="bg-[var(--card-bg)] rounded-xl border-2 border-[var(--card-border)] p-4">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <p className="text-slate-400 text-sm">{challenge.startDate} - {challenge.endDate}</p>
+          <p className="text-[var(--muted)] text-sm">{challenge.startDate} - {challenge.endDate}</p>
           {progress.streak > 0 && (
             <p className="flex items-center gap-1 text-orange-400 text-sm mt-1">
               <Flame className="w-4 h-4" aria-hidden="true" /> {progress.streak} dni z rzędu
@@ -141,9 +141,9 @@ function ProgressSummary({ challenge, progress }: ProgressSummaryProps) {
           {!challenge.trackReps && (
             <p className="text-2xl font-bold text-amber-400">{progress.percentage}%</p>
           )}
-          <p className="text-slate-400 text-xs">{progress.completedCount}/{progress.totalDays} dni</p>
+          <p className="text-[var(--muted)] text-xs">{progress.completedCount}/{progress.totalDays} dni</p>
           {challenge.dailyGoals && Object.keys(challenge.dailyGoals).length > 0 && (
-            <p className="text-emerald-400 text-xs">
+            <p className="text-[var(--accent)] text-xs">
               {Object.entries(challenge.completedDays).filter(([date, reps]) =>
                 challenge.dailyGoals?.[date] && reps >= challenge.dailyGoals[date]
               ).length} dni z celem
@@ -158,7 +158,7 @@ function ProgressSummary({ challenge, progress }: ProgressSummaryProps) {
       )}
 
       {/* Main Progress Bar */}
-      <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+      <div className="h-3 bg-[var(--surface)] rounded-full overflow-hidden">
         <div
           className={`h-full transition-all ${progress.isCompleted ? 'bg-emerald-500' : 'bg-gradient-to-r from-amber-600 to-amber-400'}`}
           style={{ width: `${progress.percentage}%` }}
@@ -171,7 +171,7 @@ function ProgressSummary({ challenge, progress }: ProgressSummaryProps) {
 
       {progress.isCompleted && (
         <div className="mt-3 bg-emerald-500/20 border border-emerald-500/50 rounded-lg p-2 text-center">
-          <p className="text-emerald-400 font-semibold">
+          <p className="text-[var(--accent)] font-semibold">
             Cel osiągnięty!
             {challenge.trackReps && progress.totalReps > 0 && (
               <span className="block text-sm mt-1">
@@ -209,11 +209,11 @@ function TotalRepsSummary({ challenge, progress }: TotalRepsSummaryProps) {
       </div>
       {totalGoal > 0 && (
         <div className="mt-2">
-          <div className="flex justify-between text-xs text-slate-400 mb-1">
+          <div className="flex justify-between text-xs text-[var(--muted)] mb-1">
             <span>Cel łączny: {totalGoal} {challenge.goalUnit}</span>
-            <span className={goalPercentage >= 100 ? 'text-emerald-400' : ''}>{goalPercentage}%</span>
+            <span className={goalPercentage >= 100 ? 'text-[var(--accent)]' : ''}>{goalPercentage}%</span>
           </div>
-          <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-[var(--surface)] rounded-full overflow-hidden">
             <div
               className={`h-full transition-all ${goalPercentage >= 100 ? 'bg-emerald-500' : 'bg-amber-500'}`}
               style={{ width: `${Math.min(100, goalPercentage)}%` }}
@@ -256,20 +256,20 @@ function WeeklyGrid({ challenge, onDayClick }: WeeklyGridProps) {
   }
 
   return (
-    <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
+    <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--card-border)] overflow-hidden">
       {/* Header */}
-      <div className="grid grid-cols-8 bg-slate-700/50 border-b border-slate-600">
-        <div className="p-2 text-center text-xs text-slate-400 font-medium">Tydz.</div>
+      <div className="grid grid-cols-8 bg-[var(--surface)] border-b border-[var(--card-border)]">
+        <div className="p-2 text-center text-xs text-[var(--muted)] font-medium">Tydz.</div>
         {DAY_NAMES_MEDIUM.map(day => (
-          <div key={day} className="p-2 text-center text-xs text-slate-400 font-medium">{day}</div>
+          <div key={day} className="p-2 text-center text-xs text-[var(--muted)] font-medium">{day}</div>
         ))}
       </div>
 
       {/* Weeks */}
-      <div className="divide-y divide-slate-700/50 max-h-[400px] overflow-y-auto">
+      <div className="divide-y divide-[var(--card-border)] max-h-[400px] overflow-y-auto">
         {weeks.map((week, weekIdx) => (
           <div key={weekIdx} className="grid grid-cols-8">
-            <div className="p-2 flex items-center justify-center text-xs text-slate-500 bg-slate-800/30">
+            <div className="p-2 flex items-center justify-center text-xs text-[var(--muted)] bg-[var(--card-bg)]">
               {weekIdx + 1}
             </div>
             {week.map((day, dayIdx) => (
@@ -305,7 +305,7 @@ function GridCell({ day, challenge, onDayClick }: GridCellProps) {
   if (!inChallenge) {
     return (
       <div className="p-1.5 flex items-center justify-center">
-        <div className="w-8 h-8 flex items-center justify-center text-xs text-slate-600">
+        <div className="w-8 h-8 flex items-center justify-center text-xs text-[var(--muted)]">
           {day.getDate()}
         </div>
       </div>
@@ -315,15 +315,15 @@ function GridCell({ day, challenge, onDayClick }: GridCellProps) {
   return (
     <button
       onClick={() => onDayClick(day.getDate(), dateStr)}
-      className={`p-1.5 flex items-center justify-center transition-colors ${todayCheck ? 'bg-emerald-500/10' : 'hover:bg-slate-700/50'}`}
+      className={`p-1.5 flex items-center justify-center transition-colors ${todayCheck ? 'bg-emerald-500/10' : 'hover:bg-[var(--surface)]'}`}
       aria-label={`${day.getDate()} - ${completed ? 'wykonane' : 'nie wykonane'}`}
     >
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
         goalReached ? 'bg-emerald-600 text-white' :
         completed ? 'bg-amber-600 text-white' :
-        dayGoal > 0 ? 'border-2 border-dashed border-amber-500/50 text-slate-300' :
-        'border-2 border-slate-600 text-slate-300'
-      } ${todayCheck ? 'ring-2 ring-emerald-400 ring-offset-1 ring-offset-slate-800' : ''}`}>
+        dayGoal > 0 ? 'border-2 border-dashed border-amber-500/50 text-[var(--foreground)]' :
+        'border-2 border-[var(--card-border)] text-[var(--foreground)]'
+      } ${todayCheck ? 'ring-2 ring-[var(--accent)] ring-offset-1 ring-offset-[var(--card-bg)]' : ''}`}>
         {goalReached || (completed && !challenge.trackReps) ? (
           <Check className="w-4 h-4" />
         ) : challenge.trackReps && reps > 0 ? (
@@ -352,11 +352,11 @@ function AnalysisView({ challenge, onDayClick, onToggleSimpleDay }: AnalysisView
   }
 
   return (
-    <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
-      <div className="bg-slate-700/50 px-4 py-3 border-b border-slate-600">
+    <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--card-border)] overflow-hidden">
+      <div className="bg-[var(--surface)] px-4 py-3 border-b border-[var(--card-border)]">
         <h3 className="text-white font-semibold text-center">Analiza postępów</h3>
       </div>
-      <div className="divide-y divide-slate-700/50 max-h-[400px] overflow-y-auto">
+      <div className="divide-y divide-[var(--card-border)] max-h-[400px] overflow-y-auto">
         {days.map((day) => (
           <AnalysisRow
             key={formatDate(day)}
@@ -397,36 +397,36 @@ function AnalysisRow({ day, challenge, onDayClick, onToggleSimpleDay }: Analysis
   return (
     <button
       onClick={handleClick}
-      className={`w-full px-4 py-3 flex items-center gap-4 hover:bg-slate-700/50 transition-colors ${
+      className={`w-full px-4 py-3 flex items-center gap-4 hover:bg-[var(--surface)] transition-colors ${
         isCurrentDay ? 'bg-emerald-500/10' : ''
       }`}
     >
       <div className="w-12 text-center">
-        <div className={`text-lg font-bold ${isCurrentDay ? 'text-emerald-400' : 'text-slate-300'}`}>
+        <div className={`text-lg font-bold ${isCurrentDay ? 'text-[var(--accent)]' : 'text-[var(--foreground)]'}`}>
           {day.getDate()}
         </div>
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-[var(--muted)]">
           {day.toLocaleDateString('pl-PL', { weekday: 'short' })}
         </div>
       </div>
       <div className="flex-1">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-sm text-slate-400">
+          <span className="text-sm text-[var(--muted)]">
             {challenge.trackReps
               ? (dayGoal > 0 ? `Cel: ${dayGoal}` : 'Brak celu')
               : (completed ? 'Wykonane' : 'Nie wykonane')
             }
           </span>
           <span className={`text-sm font-bold ${
-            completed ? (progressPct >= 100 ? 'text-emerald-400' : 'text-amber-400') : 'text-slate-500'
+            completed ? (progressPct >= 100 ? 'text-[var(--accent)]' : 'text-amber-400') : 'text-[var(--muted)]'
           }`}>
             {challenge.trackReps ? (reps > 0 ? reps : '-') : ''}
           </span>
         </div>
-        <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+        <div className="h-2 bg-[var(--surface)] rounded-full overflow-hidden">
           <div
             className={`h-full transition-all ${
-              progressPct >= 100 ? 'bg-emerald-500' : progressPct > 0 ? 'bg-amber-500' : 'bg-slate-600'
+              progressPct >= 100 ? 'bg-[var(--accent)]' : progressPct > 0 ? 'bg-amber-500' : 'bg-[var(--muted)]'
             }`}
             style={{ width: `${progressPct}%` }}
           />
@@ -434,11 +434,11 @@ function AnalysisRow({ day, challenge, onDayClick, onToggleSimpleDay }: Analysis
       </div>
       <div className="w-12 text-right">
         {(dayGoal > 0 || !challenge.trackReps) && (
-          <span className={`text-sm font-bold ${progressPct >= 100 ? 'text-emerald-400' : 'text-slate-400'}`}>
+          <span className={`text-sm font-bold ${progressPct >= 100 ? 'text-[var(--accent)]' : 'text-[var(--muted)]'}`}>
             {challenge.trackReps ? `${progressPct}%` : ''}
           </span>
         )}
-        {progressPct >= 100 && <Check className="w-4 h-4 text-emerald-400 inline ml-1" />}
+        {progressPct >= 100 && <Check className="w-4 h-4 text-[var(--accent)] inline ml-1" />}
       </div>
     </button>
   );

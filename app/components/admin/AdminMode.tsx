@@ -28,18 +28,18 @@ export default function AdminMode({ onBack }: AdminModeProps) {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-red-950 flex items-center justify-center p-4">
-        <div className="bg-slate-800/50 rounded-xl p-8 text-center max-w-md">
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
+        <div className="bg-[var(--card-bg)] rounded-xl p-8 text-center max-w-md">
           <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <Users className="w-8 h-8 text-red-400" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">Brak dostępu</h2>
-          <p className="text-slate-400 mb-6">
+          <p className="text-[var(--muted)] mb-6">
             Nie masz uprawnień administratora.
           </p>
           <button
             onClick={() => { if (onBack) onBack(); else goHome(); }}
-            className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-xl font-semibold"
+            className="bg-[var(--surface)] hover:bg-[var(--surface)] text-white px-6 py-3 rounded-xl font-semibold"
           >
             Powrót
           </button>
@@ -50,27 +50,27 @@ export default function AdminMode({ onBack }: AdminModeProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-4 md:p-8">
+    <div className="min-h-screen bg-[var(--background)] p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <button
               onClick={() => { if (onBack) onBack(); else goHome(); }}
-              className="text-slate-400 hover:text-white transition-colors"
+              className="text-[var(--muted)] hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
               <h1 className="text-3xl font-bold text-white">Panel Admina</h1>
-              <p className="text-slate-400 text-sm">
+              <p className="text-[var(--muted)] text-sm">
                 Statystyki aplikacji i użytkowników
               </p>
             </div>
@@ -78,7 +78,7 @@ export default function AdminMode({ onBack }: AdminModeProps) {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-colors"
+            className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-[var(--surface)] text-white px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition-colors"
           >
             <RefreshCw className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`} />
             <span className="hidden sm:inline">Odśwież</span>
@@ -103,8 +103,8 @@ export default function AdminMode({ onBack }: AdminModeProps) {
               onClick={() => setActiveTab(id as typeof activeTab)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors whitespace-nowrap ${
                 activeTab === id
-                  ? "bg-emerald-600 text-white"
-                  : "bg-slate-800/50 text-slate-400 hover:text-white"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-[var(--card-bg)] text-[var(--muted)] hover:text-white"
               }`}
             >
               <Icon className="w-4 h-4" />

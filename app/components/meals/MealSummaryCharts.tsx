@@ -65,14 +65,14 @@ export default function MealSummaryCharts({ mealPlans, getDaySummary, targetCalo
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+        <button onClick={onBack} className="flex items-center gap-2 text-[var(--muted)] hover:text-white transition-colors">
           <ArrowLeft className="w-4 h-4" /> Powrót
         </button>
         <div className="flex gap-1">
           {(['week', 'month'] as Period[]).map(p => (
             <button key={p} onClick={() => setPeriod(p)}
               className={`px-3 py-1 text-sm rounded-lg transition-colors ${
-                period === p ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-400'
+                period === p ? 'bg-violet-600 text-white' : 'bg-[var(--surface)] text-[var(--muted)]'
               }`}>
               {p === 'week' ? 'Tydzień' : 'Miesiąc'}
             </button>
@@ -82,20 +82,20 @@ export default function MealSummaryCharts({ mealPlans, getDaySummary, targetCalo
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-3 text-center">
-          <p className="text-xs text-slate-400">Śr. kalorie/dzień</p>
-          <p className="text-lg font-bold text-emerald-400">{totals.avgCalories}</p>
+        <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-3 text-center">
+          <p className="text-xs text-[var(--muted)]">Śr. kalorie/dzień</p>
+          <p className="text-lg font-bold text-[var(--accent)]">{totals.avgCalories}</p>
         </div>
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-3 text-center">
-          <p className="text-xs text-slate-400">Śr. koszt/dzień</p>
+        <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-3 text-center">
+          <p className="text-xs text-[var(--muted)]">Śr. koszt/dzień</p>
           <p className="text-lg font-bold text-white">{totals.avgCost.toFixed(2)} zł</p>
         </div>
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-3 text-center">
-          <p className="text-xs text-slate-400">Łączny koszt</p>
+        <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-3 text-center">
+          <p className="text-xs text-[var(--muted)]">Łączny koszt</p>
           <p className="text-lg font-bold text-white">{totals.cost.toFixed(2)} zł</p>
         </div>
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-3 text-center">
-          <p className="text-xs text-slate-400">% celu kcal</p>
+        <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-3 text-center">
+          <p className="text-xs text-[var(--muted)]">% celu kcal</p>
           <p className="text-lg font-bold text-violet-400">
             {Math.round((totals.avgCalories / targetCalories) * 100)}%
           </p>
@@ -103,8 +103,8 @@ export default function MealSummaryCharts({ mealPlans, getDaySummary, targetCalo
       </div>
 
       {/* Calorie trend chart */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
-        <h3 className="text-sm font-medium text-slate-300 mb-3">Trend kaloryczny</h3>
+      <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-4">
+        <h3 className="text-sm font-medium text-[var(--foreground)] mb-3">Trend kaloryczny</h3>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={calorieData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -118,8 +118,8 @@ export default function MealSummaryCharts({ mealPlans, getDaySummary, targetCalo
       </div>
 
       {/* Macro pie chart */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
-        <h3 className="text-sm font-medium text-slate-300 mb-3">Rozkład makroskładników</h3>
+      <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-4">
+        <h3 className="text-sm font-medium text-[var(--foreground)] mb-3">Rozkład makroskładników</h3>
         <ResponsiveContainer width="100%" height={200}>
           <PieChart>
             <Pie data={macroData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}g`}>
@@ -131,8 +131,8 @@ export default function MealSummaryCharts({ mealPlans, getDaySummary, targetCalo
       </div>
 
       {/* Cost per day bar chart */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
-        <h3 className="text-sm font-medium text-slate-300 mb-3">Koszt dzienny (zł)</h3>
+      <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-4">
+        <h3 className="text-sm font-medium text-[var(--foreground)] mb-3">Koszt dzienny (zł)</h3>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={costData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -146,8 +146,8 @@ export default function MealSummaryCharts({ mealPlans, getDaySummary, targetCalo
 
       {/* Top rated meals */}
       {topMeals.length > 0 && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-slate-300 mb-3">Najlepiej ocenione posiłki</h3>
+        <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-4">
+          <h3 className="text-sm font-medium text-[var(--foreground)] mb-3">Najlepiej ocenione posiłki</h3>
           <div className="space-y-2">
             {topMeals.map(meal => (
               <div key={meal.id} className="flex items-center justify-between text-sm">

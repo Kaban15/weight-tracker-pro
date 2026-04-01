@@ -72,8 +72,8 @@ export default function MealWizard({ existingProfile, currentWeight, onComplete 
       <div className="flex gap-1 mb-8">
         {STEPS.map((s, i) => (
           <div key={s} className="flex-1">
-            <div className={`h-1.5 rounded-full transition-colors ${i <= step ? 'bg-violet-500' : 'bg-slate-700'}`} />
-            <p className={`text-xs mt-1 ${i === step ? 'text-violet-400' : 'text-slate-500'}`}>{s}</p>
+            <div className={`h-1.5 rounded-full transition-colors ${i <= step ? 'bg-violet-500' : 'bg-[var(--surface)]'}`} />
+            <p className={`text-xs mt-1 ${i === step ? 'text-violet-400' : 'text-[var(--muted)]'}`}>{s}</p>
           </div>
         ))}
       </div>
@@ -82,31 +82,31 @@ export default function MealWizard({ existingProfile, currentWeight, onComplete 
       {step === 0 && (
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-white">Dane podstawowe</h2>
-          <p className="text-slate-400 text-sm">Te dane posłużą do obliczenia Twojego dziennego zapotrzebowania kalorycznego.</p>
+          <p className="text-[var(--muted)] text-sm">Te dane posłużą do obliczenia Twojego dziennego zapotrzebowania kalorycznego.</p>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-slate-400 mb-1">Wiek</label>
+              <label className="block text-sm text-[var(--muted)] mb-1">Wiek</label>
               <input type="number" value={data.age} onChange={e => setData(d => ({ ...d, age: +e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white" />
+                className="w-full bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-3 py-2 text-white" />
             </div>
             <div>
-              <label className="block text-sm text-slate-400 mb-1">Płeć</label>
+              <label className="block text-sm text-[var(--muted)] mb-1">Płeć</label>
               <select value={data.gender} onChange={e => setData(d => ({ ...d, gender: e.target.value as 'male' | 'female' }))}
-                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white">
+                className="w-full bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-3 py-2 text-white">
                 <option value="male">Mężczyzna</option>
                 <option value="female">Kobieta</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm text-slate-400 mb-1">Wzrost (cm)</label>
+              <label className="block text-sm text-[var(--muted)] mb-1">Wzrost (cm)</label>
               <input type="number" value={data.height} onChange={e => setData(d => ({ ...d, height: +e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white" />
+                className="w-full bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-3 py-2 text-white" />
             </div>
             <div>
-              <label className="block text-sm text-slate-400 mb-1">Waga (kg)</label>
+              <label className="block text-sm text-[var(--muted)] mb-1">Waga (kg)</label>
               <input type="number" value={data.weight} onChange={e => setData(d => ({ ...d, weight: +e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white" />
+                className="w-full bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-3 py-2 text-white" />
             </div>
           </div>
         </div>
@@ -122,7 +122,7 @@ export default function MealWizard({ existingProfile, currentWeight, onComplete 
                 className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
                   data.activityLevel === level.value
                     ? 'border-violet-500 bg-violet-500/10 text-white'
-                    : 'border-slate-700 bg-slate-800/50 text-slate-300 hover:border-slate-600'
+                    : 'border-[var(--card-border)] bg-[var(--card-bg)] text-[var(--foreground)] hover:border-[var(--card-border)]'
                 }`}>
                 {level.label}
               </button>
@@ -142,7 +142,7 @@ export default function MealWizard({ existingProfile, currentWeight, onComplete 
                   className={`p-3 rounded-lg border-2 transition-colors text-sm ${
                     data.dietType === diet.value
                       ? 'border-violet-500 bg-violet-500/10 text-white'
-                      : 'border-slate-700 bg-slate-800/50 text-slate-300 hover:border-slate-600'
+                      : 'border-[var(--card-border)] bg-[var(--card-bg)] text-[var(--foreground)] hover:border-[var(--card-border)]'
                   }`}>
                   {diet.label}
                 </button>
@@ -162,7 +162,7 @@ export default function MealWizard({ existingProfile, currentWeight, onComplete 
                   className={`p-3 rounded-lg border-2 transition-colors ${
                     data.goalType === goal.value
                       ? 'border-violet-500 bg-violet-500/10 text-white'
-                      : 'border-slate-700 bg-slate-800/50 text-slate-300 hover:border-slate-600'
+                      : 'border-[var(--card-border)] bg-[var(--card-bg)] text-[var(--foreground)] hover:border-[var(--card-border)]'
                   }`}>
                   {goal.label}
                 </button>
@@ -171,7 +171,7 @@ export default function MealWizard({ existingProfile, currentWeight, onComplete 
 
             {data.goalType !== 'maintain' && (
               <div className="mt-4">
-                <label className="block text-sm text-slate-400 mb-1">
+                <label className="block text-sm text-[var(--muted)] mb-1">
                   Dostosowanie ({data.calorieAdjustment > 0 ? '+' : ''}{data.calorieAdjustment} kcal/dzień)
                 </label>
                 <input type="range"
@@ -181,7 +181,7 @@ export default function MealWizard({ existingProfile, currentWeight, onComplete 
                   value={data.calorieAdjustment}
                   onChange={e => setData(d => ({ ...d, calorieAdjustment: +e.target.value }))}
                   className="w-full accent-violet-500" />
-                <div className="flex justify-between text-xs text-slate-500 mt-1">
+                <div className="flex justify-between text-xs text-[var(--muted)] mt-1">
                   <span>{data.goalType === 'loss' ? '-1000' : '+100'}</span>
                   <span>{data.goalType === 'loss' ? '-200' : '+1000'}</span>
                 </div>
@@ -205,7 +205,7 @@ export default function MealWizard({ existingProfile, currentWeight, onComplete 
                 className={`flex-1 p-3 rounded-lg border-2 text-lg font-bold transition-colors ${
                   data.mealsPerDay === n
                     ? 'border-violet-500 bg-violet-500/10 text-white'
-                    : 'border-slate-700 bg-slate-800/50 text-slate-300'
+                    : 'border-[var(--card-border)] bg-[var(--card-bg)] text-[var(--foreground)]'
                 }`}>
                 {n}
               </button>
@@ -213,7 +213,7 @@ export default function MealWizard({ existingProfile, currentWeight, onComplete 
           </div>
 
           <div className="space-y-2 mt-4">
-            <p className="text-sm text-slate-400">Nazwy posiłków (możesz zmienić):</p>
+            <p className="text-sm text-[var(--muted)]">Nazwy posiłków (możesz zmienić):</p>
             {data.mealNames.map((name, i) => (
               <input key={i} value={name}
                 onChange={e => {
@@ -221,7 +221,7 @@ export default function MealWizard({ existingProfile, currentWeight, onComplete 
                   names[i] = e.target.value;
                   setData(d => ({ ...d, mealNames: names }));
                 }}
-                className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm" />
+                className="w-full bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-3 py-2 text-white text-sm" />
             ))}
           </div>
         </div>
@@ -231,36 +231,36 @@ export default function MealWizard({ existingProfile, currentWeight, onComplete 
       {step === 4 && (
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-white">Podsumowanie</h2>
-          <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-4 space-y-3">
+          <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--card-border)] p-4 space-y-3">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-400">BMR</span>
+              <span className="text-[var(--muted)]">BMR</span>
               <span className="text-white font-medium">{Math.round(bmr)} kcal</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-400">TDEE</span>
+              <span className="text-[var(--muted)]">TDEE</span>
               <span className="text-white font-medium">{Math.round(tdee)} kcal</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Cel kaloryczny</span>
+              <span className="text-[var(--muted)]">Cel kaloryczny</span>
               <span className="text-violet-400 font-bold text-lg">{Math.round(targetCalories)} kcal/dzień</span>
             </div>
-            <hr className="border-slate-700" />
+            <hr className="border-[var(--card-border)]" />
             <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Dieta</span>
+              <span className="text-[var(--muted)]">Dieta</span>
               <span className="text-white">{DIET_TYPES.find(d => d.value === data.dietType)?.label}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Posiłki</span>
+              <span className="text-[var(--muted)]">Posiłki</span>
               <span className="text-white">{data.mealsPerDay}× ({data.mealNames.join(', ')})</span>
             </div>
           </div>
 
-          <div className="bg-slate-800/30 rounded-lg p-3 border border-slate-700">
-            <label className="block text-sm text-slate-400 mb-1">Nadpisz TDEE ręcznie (opcjonalne)</label>
+          <div className="bg-[var(--card-bg)] rounded-lg p-3 border border-[var(--card-border)]">
+            <label className="block text-sm text-[var(--muted)] mb-1">Nadpisz TDEE ręcznie (opcjonalne)</label>
             <input type="number" placeholder="np. 2200"
               value={data.customTdee || ''}
               onChange={e => setData(d => ({ ...d, customTdee: e.target.value ? +e.target.value : null }))}
-              className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm" />
+              className="w-full bg-[var(--card-bg)] border border-[var(--card-border)] rounded-lg px-3 py-2 text-white text-sm" />
           </div>
         </div>
       )}
@@ -268,7 +268,7 @@ export default function MealWizard({ existingProfile, currentWeight, onComplete 
       {/* Navigation */}
       <div className="flex justify-between mt-8">
         <button onClick={() => setStep(s => s - 1)} disabled={step === 0}
-          className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-white disabled:opacity-30 transition-colors">
+          className="flex items-center gap-2 px-4 py-2 text-[var(--muted)] hover:text-white disabled:opacity-30 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Wstecz
         </button>
 
@@ -279,7 +279,7 @@ export default function MealWizard({ existingProfile, currentWeight, onComplete 
           </button>
         ) : (
           <button onClick={handleComplete}
-            className="flex items-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors">
+            className="flex items-center gap-2 px-6 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg transition-colors">
             <Check className="w-4 h-4" /> Rozpocznij wywiad
           </button>
         )}

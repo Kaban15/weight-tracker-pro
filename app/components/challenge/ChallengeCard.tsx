@@ -20,33 +20,33 @@ export default function ChallengeCard({
 }: ChallengeCardProps) {
   return (
     <div
-      className="bg-slate-800/50 rounded-xl border-2 border-slate-700 p-4 hover:border-amber-500/50 transition-colors cursor-pointer"
+      className="bg-[var(--card-bg)] rounded-xl border-2 border-[var(--card-border)] p-4 hover:border-amber-500/50 transition-colors cursor-pointer"
       onClick={onClick}
     >
       <div className="flex items-start justify-between mb-3">
         <div>
           <h3 className="text-lg font-semibold text-white">{challenge.name}</h3>
-          <p className="text-slate-400 text-sm">
+          <p className="text-[var(--muted)] text-sm">
             {challenge.startDate} - {challenge.endDate}
           </p>
         </div>
         <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
           <button
             onClick={onEdit}
-            className="text-slate-400 hover:text-amber-400 p-1"
+            className="text-[var(--muted)] hover:text-amber-400 p-1"
           >
             <Edit2 className="w-4 h-4" />
           </button>
           <button
             onClick={onDelete}
-            className="text-slate-400 hover:text-rose-400 p-1"
+            className="text-[var(--muted)] hover:text-rose-400 p-1"
           >
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      <div className="h-2 bg-slate-700 rounded-full overflow-hidden mb-2">
+      <div className="h-2 bg-[var(--surface)] rounded-full overflow-hidden mb-2">
         <div
           className={`h-full transition-all ${progress.isCompleted ? 'bg-emerald-500' : 'bg-amber-500'}`}
           style={{ width: `${progress.percentage}%` }}
@@ -55,7 +55,7 @@ export default function ChallengeCard({
 
       <div className="flex justify-between text-sm">
         <div className="flex items-center gap-3">
-          <span className="text-slate-400">
+          <span className="text-[var(--muted)]">
             {progress.completedCount}/{progress.totalDays} dni
           </span>
           {progress.streak > 0 && (
@@ -64,12 +64,12 @@ export default function ChallengeCard({
             </span>
           )}
           {challenge.trackReps && progress.totalReps > 0 && (
-            <span className="text-emerald-400 font-medium">
+            <span className="text-[var(--accent)] font-medium">
               {progress.totalReps} pow.
             </span>
           )}
         </div>
-        <span className={progress.isCompleted ? 'text-emerald-400' : 'text-amber-400'}>
+        <span className={progress.isCompleted ? 'text-[var(--accent)]' : 'text-amber-400'}>
           {progress.percentage}%
         </span>
       </div>

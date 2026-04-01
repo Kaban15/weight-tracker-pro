@@ -18,7 +18,7 @@ export default function PantryManager({ items, onAdd, onDelete, onBack }: Pantry
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+        <button onClick={onBack} className="flex items-center gap-2 text-[var(--muted)] hover:text-white transition-colors">
           <ArrowLeft className="w-4 h-4" /> Powrót
         </button>
         <button onClick={() => setModalOpen(true)}
@@ -32,7 +32,7 @@ export default function PantryManager({ items, onAdd, onDelete, onBack }: Pantry
       </h2>
 
       {items.length === 0 ? (
-        <div className="text-center py-8 text-slate-500">
+        <div className="text-center py-8 text-[var(--muted)]">
           <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
           <p>Spiżarnia jest pusta.</p>
           <p className="text-xs mt-1">Dodaj produkty, żeby śledzić koszty posiłków.</p>
@@ -42,23 +42,23 @@ export default function PantryManager({ items, onAdd, onDelete, onBack }: Pantry
           {items.map(item => {
             const percentRemaining = (item.quantity_remaining / item.quantity_total) * 100;
             return (
-              <div key={item.id} className="bg-slate-800/50 border border-slate-700 rounded-xl p-3">
+              <div key={item.id} className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-3">
                 <div className="flex items-center justify-between mb-2">
                   <div>
                     <span className="text-white font-medium">{item.name}</span>
-                    <span className="text-slate-400 text-sm ml-2">
+                    <span className="text-[var(--muted)] text-sm ml-2">
                       {Math.round(item.quantity_remaining)} / {Math.round(item.quantity_total)} {item.unit}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-400 text-sm">{item.price.toFixed(2)} zł</span>
+                    <span className="text-[var(--muted)] text-sm">{item.price.toFixed(2)} zł</span>
                     <button onClick={() => onDelete(item.id)}
-                      className="p-1 text-slate-500 hover:text-red-400">
+                      className="p-1 text-[var(--muted)] hover:text-red-400">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-                <div className="w-full bg-slate-700 rounded-full h-1.5">
+                <div className="w-full bg-[var(--surface)] rounded-full h-1.5">
                   <div className={`h-1.5 rounded-full transition-all ${
                     percentRemaining > 30 ? 'bg-emerald-500' : percentRemaining > 10 ? 'bg-amber-500' : 'bg-red-500'
                   }`} style={{ width: `${percentRemaining}%` }} />

@@ -147,13 +147,13 @@ export default function MealDashboard({
       {/* Top bar */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <button onClick={() => navigateDate(-1)} className="p-1 text-slate-400 hover:text-white">
+          <button onClick={() => navigateDate(-1)} className="p-1 text-[var(--muted)] hover:text-white">
             <ChevronLeft className="w-5 h-5" />
           </button>
           <span className="text-white font-medium">
             {isToday ? 'Dziś' : selectedDate}
           </span>
-          <button onClick={() => navigateDate(1)} className="p-1 text-slate-400 hover:text-white">
+          <button onClick={() => navigateDate(1)} className="p-1 text-[var(--muted)] hover:text-white">
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
@@ -161,43 +161,43 @@ export default function MealDashboard({
         <div className="flex items-center gap-2">
           <button onClick={() => setUsePantryMode(!usePantryMode)}
             className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg transition-colors ${
-              usePantryMode ? 'bg-emerald-600/20 text-emerald-400' : 'bg-slate-700 text-slate-400'
+              usePantryMode ? 'bg-emerald-600/20 text-[var(--accent)]' : 'bg-[var(--surface)] text-[var(--muted)]'
             }`}>
             {usePantryMode ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
             Z tego co mam
           </button>
           <button onClick={() => onNavigate('favorites')}
-            className="p-2 text-slate-400 hover:text-white" title="Ulubione">
+            className="p-2 text-[var(--muted)] hover:text-white" title="Ulubione">
             <Heart className="w-4 h-4" />
           </button>
           <button onClick={() => onNavigate('pantry')}
-            className="p-2 text-slate-400 hover:text-white" title="Spiżarnia">
+            className="p-2 text-[var(--muted)] hover:text-white" title="Spiżarnia">
             <Package className="w-4 h-4" />
           </button>
           <button onClick={() => onNavigate('shopping')}
-            className="p-2 text-slate-400 hover:text-white" title="Lista zakupów">
+            className="p-2 text-[var(--muted)] hover:text-white" title="Lista zakupów">
             <ShoppingCart className="w-4 h-4" />
           </button>
           <button onClick={() => onNavigate('calendar')}
-            className="p-2 text-slate-400 hover:text-white" title="Historia">
+            className="p-2 text-[var(--muted)] hover:text-white" title="Historia">
             <CalendarDays className="w-4 h-4" />
           </button>
           <button onClick={() => onNavigate('settings')}
-            className="p-2 text-slate-400 hover:text-white" title="Podsumowania">
+            className="p-2 text-[var(--muted)] hover:text-white" title="Podsumowania">
             <BarChart3 className="w-4 h-4" />
           </button>
         </div>
       </div>
 
       {/* Day summary bar */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-3 flex items-center justify-between text-xs flex-wrap gap-2">
+      <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-3 flex items-center justify-between text-xs flex-wrap gap-2">
         <div className="flex gap-4">
-          <span className="text-emerald-400 font-medium">{Math.round(dayTotals.calories)} / {Math.round(preferences.target_calories)} kcal</span>
+          <span className="text-[var(--accent)] font-medium">{Math.round(dayTotals.calories)} / {Math.round(preferences.target_calories)} kcal</span>
           <span className="text-blue-400">B: {Math.round(dayTotals.protein)}g</span>
           <span className="text-amber-400">W: {Math.round(dayTotals.carbs)}g</span>
           <span className="text-red-400">T: {Math.round(dayTotals.fat)}g</span>
         </div>
-        <span className="text-slate-400">{dayTotals.cost.toFixed(2)} zł</span>
+        <span className="text-[var(--muted)]">{dayTotals.cost.toFixed(2)} zł</span>
       </div>
 
       {/* Generate buttons */}
@@ -210,7 +210,7 @@ export default function MealDashboard({
           </button>
         ))}
         <button onClick={() => setShowManualMeal(true)}
-          className="flex items-center gap-1 px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-sm rounded-lg transition-colors">
+          className="flex items-center gap-1 px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-[var(--accent)] text-sm rounded-lg transition-colors">
           <PlusCircle className="w-4 h-4" /> Dodaj ręcznie
         </button>
       </div>
@@ -218,7 +218,7 @@ export default function MealDashboard({
       {/* Meal cards */}
       <div className="space-y-3">
         {dayMeals.length === 0 && (
-          <div className="text-center py-8 text-slate-500">
+          <div className="text-center py-8 text-[var(--muted)]">
             <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
             <p>Brak zaplanowanych posiłków na ten dzień.</p>
             <p className="text-xs mt-1">Kliknij przycisk powyżej lub napisz w czacie.</p>

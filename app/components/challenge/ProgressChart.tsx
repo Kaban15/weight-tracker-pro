@@ -39,12 +39,12 @@ export default function ProgressChart({ dailyStats, monthData }: ProgressChartPr
     : '';
 
   return (
-    <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-4">
-      <h3 className="text-sm font-medium text-slate-300 mb-4">Dzienny postęp</h3>
+    <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--card-border)] p-4">
+      <h3 className="text-sm font-medium text-[var(--foreground)] mb-4">Dzienny postęp</h3>
 
       <div className="relative h-[140px]">
         {/* Y-axis labels */}
-        <div className="absolute left-0 top-0 bottom-6 w-10 flex flex-col justify-between text-xs text-slate-500">
+        <div className="absolute left-0 top-0 bottom-6 w-10 flex flex-col justify-between text-xs text-[var(--muted)]">
           <span>100%</span>
           <span>75%</span>
           <span>50%</span>
@@ -59,7 +59,7 @@ export default function ProgressChart({ dailyStats, monthData }: ProgressChartPr
             {[0, 25, 50, 75, 100].map(val => (
               <div
                 key={val}
-                className="absolute w-full border-t border-slate-700/50"
+                className="absolute w-full border-t border-[var(--card-border)]"
                 style={{ top: `${100 - val}%` }}
               />
             ))}

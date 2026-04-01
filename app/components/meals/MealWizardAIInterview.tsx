@@ -88,7 +88,7 @@ export default function MealWizardAIInterview({ onComplete }: MealWizardAIInterv
   return (
     <div className="max-w-lg mx-auto flex flex-col h-[70vh]">
       <h2 className="text-xl font-semibold text-white mb-2">Wywiad kulinarny</h2>
-      <p className="text-slate-400 text-sm mb-4">AI pozna Twoje preferencje, żeby lepiej dobierać posiłki.</p>
+      <p className="text-[var(--muted)] text-sm mb-4">AI pozna Twoje preferencje, żeby lepiej dobierać posiłki.</p>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-2">
@@ -97,7 +97,7 @@ export default function MealWizardAIInterview({ onComplete }: MealWizardAIInterv
             <div className={`max-w-[80%] px-4 py-2 rounded-2xl text-sm ${
               msg.role === 'user'
                 ? 'bg-violet-600 text-white rounded-br-md'
-                : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-bl-md'
+                : 'bg-[var(--card-bg)] text-[var(--foreground)] border border-[var(--card-border)] rounded-bl-md'
             }`}>
               {msg.content}
             </div>
@@ -106,7 +106,7 @@ export default function MealWizardAIInterview({ onComplete }: MealWizardAIInterv
 
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-slate-800 border border-slate-700 rounded-2xl rounded-bl-md px-4 py-2">
+            <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-2xl rounded-bl-md px-4 py-2">
               <Loader2 className="w-4 h-4 animate-spin text-violet-400" />
             </div>
           </div>
@@ -122,7 +122,7 @@ export default function MealWizardAIInterview({ onComplete }: MealWizardAIInterv
       {/* Input or Finish */}
       {isComplete ? (
         <button onClick={handleFinish}
-          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-colors">
+          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white rounded-xl transition-colors">
           <Check className="w-5 h-5" /> Zapisz preferencje i przejdź do planowania
         </button>
       ) : (
@@ -133,7 +133,7 @@ export default function MealWizardAIInterview({ onComplete }: MealWizardAIInterv
             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
             placeholder="Napisz odpowiedź..."
             disabled={isLoading}
-            className="flex-1 bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-white placeholder-slate-500 disabled:opacity-50"
+            className="flex-1 bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl px-4 py-2 text-white placeholder-[var(--muted)] disabled:opacity-50"
           />
           <button onClick={handleSend} disabled={isLoading || !input.trim()}
             className="p-2 bg-violet-600 hover:bg-violet-500 rounded-xl text-white disabled:opacity-30 transition-colors">

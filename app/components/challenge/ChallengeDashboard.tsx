@@ -104,15 +104,15 @@ export default function ChallengeDashboard({
   }, [activeChallenges, monthData.weeks]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950">
+    <div className="min-h-screen bg-[var(--background)]">
       {/* Header with stats */}
-      <header className="bg-slate-900/80 border-b border-slate-800">
+      <header className="bg-[var(--background)] border-b border-[var(--card-border)]">
         <div className="max-w-7xl mx-auto px-4 py-4">
           {/* Top row */}
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={onBack}
-              className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-[var(--muted)] hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
               <span className="hidden sm:inline">Powrót</span>
@@ -122,7 +122,7 @@ export default function ChallengeDashboard({
             </div>
             <button
               onClick={onSignOut}
-              className="text-slate-400 hover:text-white transition-colors text-sm"
+              className="text-[var(--muted)] hover:text-white transition-colors text-sm"
             >
               Wyloguj
             </button>
@@ -134,7 +134,7 @@ export default function ChallengeDashboard({
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setMonthOffset(prev => prev - 1)}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors"
+                className="p-2 text-[var(--muted)] hover:text-white hover:bg-[var(--surface)] rounded-lg transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
@@ -143,25 +143,25 @@ export default function ChallengeDashboard({
               </h1>
               <button
                 onClick={() => setMonthOffset(prev => prev + 1)}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors"
+                className="p-2 text-[var(--muted)] hover:text-white hover:bg-[var(--surface)] rounded-lg transition-colors"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
 
             {/* Stats row */}
-            <div className="flex items-center gap-6 bg-slate-800/50 rounded-xl px-6 py-3 border border-slate-700">
+            <div className="flex items-center gap-6 bg-[var(--card-bg)] rounded-xl px-6 py-3 border border-[var(--card-border)]">
               <div className="text-center">
-                <div className="text-xs text-slate-400">Ilość Nawyków</div>
+                <div className="text-xs text-[var(--muted)]">Ilość Nawyków</div>
                 <div className="text-xl font-bold text-white">{monthlyStats.totalHabits}</div>
               </div>
               <div className="text-center">
-                <div className="text-xs text-slate-400">Ukończone Nawyki</div>
-                <div className="text-xl font-bold text-emerald-400">{monthlyStats.totalCompletions}</div>
+                <div className="text-xs text-[var(--muted)]">Ukończone Nawyki</div>
+                <div className="text-xl font-bold text-[var(--accent)]">{monthlyStats.totalCompletions}</div>
               </div>
               <div className="flex-1 min-w-[100px]">
-                <div className="text-xs text-slate-400 mb-1">Progress</div>
-                <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+                <div className="text-xs text-[var(--muted)] mb-1">Progress</div>
+                <div className="h-3 bg-[var(--surface)] rounded-full overflow-hidden">
                   <div
                     className="h-full bg-emerald-500 transition-all"
                     style={{ width: `${parseFloat(monthlyStats.progressPercent)}%` }}
@@ -169,7 +169,7 @@ export default function ChallengeDashboard({
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-xs text-slate-400">Progres w %</div>
+                <div className="text-xs text-[var(--muted)]">Progres w %</div>
                 <div className="text-xl font-bold text-white">{monthlyStats.progressPercent}%</div>
               </div>
             </div>
@@ -179,28 +179,28 @@ export default function ChallengeDashboard({
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         {/* Tab Toggle */}
-        <div className="flex gap-2 mb-4 bg-slate-800/50 p-1 rounded-lg max-w-md">
+        <div className="flex gap-2 mb-4 bg-[var(--card-bg)] p-1 rounded-lg max-w-md">
           <button
             onClick={() => setDashboardTab('active')}
             className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg transition-all ${
-              dashboardTab === 'active' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-white'
+              dashboardTab === 'active' ? 'bg-amber-600 text-white' : 'text-[var(--muted)] hover:text-white'
             }`}
           >
             <Zap className="w-4 h-4" />
             <span className="text-sm font-medium">Aktywne</span>
-            <span className={`text-xs px-1.5 py-0.5 rounded ${dashboardTab === 'active' ? 'bg-amber-500' : 'bg-slate-700'}`}>
+            <span className={`text-xs px-1.5 py-0.5 rounded ${dashboardTab === 'active' ? 'bg-amber-500' : 'bg-[var(--surface)]'}`}>
               {activeChallenges.length}
             </span>
           </button>
           <button
             onClick={() => setDashboardTab('history')}
             className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg transition-all ${
-              dashboardTab === 'history' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'
+              dashboardTab === 'history' ? 'bg-[var(--muted)] text-white' : 'text-[var(--muted)] hover:text-white'
             }`}
           >
             <History className="w-4 h-4" />
             <span className="text-sm font-medium">Historia</span>
-            <span className={`text-xs px-1.5 py-0.5 rounded ${dashboardTab === 'history' ? 'bg-slate-500' : 'bg-slate-700'}`}>
+            <span className={`text-xs px-1.5 py-0.5 rounded ${dashboardTab === 'history' ? 'bg-[var(--muted)]' : 'bg-[var(--surface)]'}`}>
               {completedChallenges.length}
             </span>
           </button>
@@ -210,7 +210,7 @@ export default function ChallengeDashboard({
         {dashboardTab === 'history' && (
           completedChallenges.length === 0 ? (
             <EmptyState
-              icon={<History className="w-8 h-8 text-slate-500" />}
+              icon={<History className="w-8 h-8 text-[var(--muted)]" />}
               title="Brak historii"
               description="Ukończone nawyki pojawią się tutaj"
             />

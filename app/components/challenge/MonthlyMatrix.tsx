@@ -56,31 +56,31 @@ export default function MonthlyMatrix({
   }, [month]);
 
   return (
-    <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
+    <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--card-border)] overflow-hidden">
       <div className="overflow-x-auto" ref={scrollContainerRef}>
         <table className="w-full border-collapse">
           <thead>
             {/* Week headers */}
-            <tr className="bg-slate-700/50 border-b border-slate-600">
-              <th className="text-left px-3 py-2 text-sm font-medium text-slate-300 min-w-[140px] sticky left-0 bg-slate-700/50 z-10">
+            <tr className="bg-[var(--surface)] border-b border-[var(--card-border)]">
+              <th className="text-left px-3 py-2 text-sm font-medium text-[var(--foreground)] min-w-[140px] sticky left-0 bg-[var(--surface)] z-10">
                 Moje Nawyki
               </th>
               {monthData.weeks.map((week, weekIdx) => (
                 <th
                   key={weekIdx}
                   colSpan={week.length}
-                  className="text-center px-1 py-2 text-xs font-medium text-slate-400 border-l border-slate-600"
+                  className="text-center px-1 py-2 text-xs font-medium text-[var(--muted)] border-l border-[var(--card-border)]"
                 >
                   Tydzień {weekIdx + 1}
                 </th>
               ))}
-              <th className="text-center px-2 py-2 text-sm font-medium text-slate-300 min-w-[120px] border-l border-slate-600">
+              <th className="text-center px-2 py-2 text-sm font-medium text-[var(--foreground)] min-w-[120px] border-l border-[var(--card-border)]">
                 Analiza
               </th>
             </tr>
             {/* Day names row */}
-            <tr className="bg-slate-700/30 border-b border-slate-600">
-              <th className="sticky left-0 bg-slate-700/30 z-10"></th>
+            <tr className="bg-[var(--surface)] border-b border-[var(--card-border)]">
+              <th className="sticky left-0 bg-[var(--surface)] z-10"></th>
               {monthData.weeks.map((week, weekIdx) => {
                 const weekOffset = monthData.weekDayOffsets[weekIdx];
                 return week.map((day, dayIdx) => {
@@ -91,14 +91,14 @@ export default function MonthlyMatrix({
                       key={`${weekIdx}-${dayIdx}`}
                       data-today={isCurrentDay ? "true" : undefined}
                       className={`text-center px-0.5 py-1 min-w-[32px] ${
-                        dayIdx === 0 ? 'border-l border-slate-600' : ''
+                        dayIdx === 0 ? 'border-l border-[var(--card-border)]' : ''
                       } ${isCurrentDay ? 'bg-amber-500/20' : ''}`}
                     >
-                      <div className="text-[10px] text-slate-400">
+                      <div className="text-[10px] text-[var(--muted)]">
                         {DAY_NAMES_MEDIUM[dayNameIdx]}
                       </div>
                       <div className={`text-xs font-medium ${
-                        isCurrentDay ? 'text-amber-400' : 'text-slate-300'
+                        isCurrentDay ? 'text-amber-400' : 'text-[var(--foreground)]'
                       }`}>
                         {day.getDate()}
                       </div>
@@ -106,8 +106,8 @@ export default function MonthlyMatrix({
                   );
                 });
               })}
-              <th className="border-l border-slate-600">
-                <div className="flex text-[10px] text-slate-400">
+              <th className="border-l border-[var(--card-border)]">
+                <div className="flex text-[10px] text-[var(--muted)]">
                   <span className="flex-1 text-center">Cel</span>
                   <span className="flex-1 text-center">Wynik</span>
                   <span className="flex-1 text-center">Progres</span>
@@ -115,19 +115,19 @@ export default function MonthlyMatrix({
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-700/50">
+          <tbody className="divide-y divide-[var(--card-border)]">
             {monthlyStats.challengeAnalysis.map(({ challenge, goal, result, progress }) => (
-              <tr key={challenge.id} className="hover:bg-slate-700/20 transition-colors">
+              <tr key={challenge.id} className="hover:bg-[var(--surface)]/20 transition-colors">
                 {/* Challenge name */}
-                <td className="px-3 py-2 sticky left-0 bg-slate-800/90 z-10">
+                <td className="px-3 py-2 sticky left-0 bg-[var(--card-bg)] z-10">
                   <button
                     onClick={() => onChallengeClick(challenge)}
                     className="flex items-center gap-2 group text-left w-full"
                   >
-                    <span className="font-medium text-slate-200 group-hover:text-amber-400 transition-colors text-sm truncate max-w-[120px]">
+                    <span className="font-medium text-[var(--foreground)] group-hover:text-amber-400 transition-colors text-sm truncate max-w-[120px]">
                       {challenge.name}
                     </span>
-                    <Info className="w-3 h-3 text-slate-500 group-hover:text-amber-400 flex-shrink-0" />
+                    <Info className="w-3 h-3 text-[var(--muted)] group-hover:text-amber-400 flex-shrink-0" />
                   </button>
                 </td>
 
@@ -144,10 +144,10 @@ export default function MonthlyMatrix({
                         <td
                           key={`${weekIdx}-${dayIdx}`}
                           className={`text-center px-0.5 py-1.5 ${
-                            dayIdx === 0 ? 'border-l border-slate-600' : ''
+                            dayIdx === 0 ? 'border-l border-[var(--card-border)]' : ''
                           } ${isCurrentDay ? 'bg-amber-500/10' : ''}`}
                         >
-                          <div className="w-6 h-6 mx-auto rounded bg-slate-800/30 opacity-30" />
+                          <div className="w-6 h-6 mx-auto rounded bg-[var(--card-bg)] opacity-30" />
                         </td>
                       );
                     }
@@ -156,7 +156,7 @@ export default function MonthlyMatrix({
                       <td
                         key={`${weekIdx}-${dayIdx}`}
                         className={`text-center px-0.5 py-1.5 ${
-                          dayIdx === 0 ? 'border-l border-slate-600' : ''
+                          dayIdx === 0 ? 'border-l border-[var(--card-border)]' : ''
                         } ${isCurrentDay ? 'bg-amber-500/10' : ''}`}
                       >
                         <button
@@ -164,7 +164,7 @@ export default function MonthlyMatrix({
                           className={`w-6 h-6 mx-auto rounded flex items-center justify-center transition-all ${
                             completed
                               ? 'bg-emerald-600 text-white'
-                              : 'border border-slate-500 hover:border-slate-400'
+                              : 'border border-[var(--card-border)] hover:border-[var(--card-border)]'
                           }`}
                         >
                           {completed && <Check className="w-3.5 h-3.5" />}
@@ -175,12 +175,12 @@ export default function MonthlyMatrix({
                 ))}
 
                 {/* Analysis column */}
-                <td className="px-2 py-2 border-l border-slate-600">
+                <td className="px-2 py-2 border-l border-[var(--card-border)]">
                   <div className="flex items-center gap-1 text-xs">
-                    <span className="w-8 text-center text-slate-400">{goal}</span>
+                    <span className="w-8 text-center text-[var(--muted)]">{goal}</span>
                     <span className="w-8 text-center text-white font-medium">{result}</span>
                     <div className="flex-1 min-w-[50px]">
-                      <div className="h-3 bg-slate-700 rounded overflow-hidden">
+                      <div className="h-3 bg-[var(--surface)] rounded overflow-hidden">
                         <div
                           className="h-full bg-emerald-500 transition-all"
                           style={{ width: `${progress}%` }}
@@ -194,8 +194,8 @@ export default function MonthlyMatrix({
           </tbody>
           {/* Bottom stats rows */}
           <tfoot>
-            <tr className="bg-slate-700/30 border-t border-slate-600">
-              <td className="px-3 py-2 text-xs text-slate-400 sticky left-0 bg-slate-700/30 z-10">
+            <tr className="bg-[var(--surface)] border-t border-[var(--card-border)]">
+              <td className="px-3 py-2 text-xs text-[var(--muted)] sticky left-0 bg-[var(--surface)] z-10">
                 Progres
               </td>
               {monthData.weeks.map((week, weekIdx) => (
@@ -205,12 +205,12 @@ export default function MonthlyMatrix({
 
                   return (
                     <td key={`prog-${weekIdx}-${dayIdx}`} className={`text-center px-0.5 py-1 ${
-                      dayIdx === 0 ? 'border-l border-slate-600' : ''
+                      dayIdx === 0 ? 'border-l border-[var(--card-border)]' : ''
                     }`}>
                       <span className={`text-[10px] font-medium ${
-                        stats?.progress >= 70 ? 'text-emerald-400' :
+                        stats?.progress >= 70 ? 'text-[var(--accent)]' :
                         stats?.progress >= 40 ? 'text-amber-400' :
-                        'text-slate-400'
+                        'text-[var(--muted)]'
                       }`}>
                         {stats?.progress || 0}%
                       </span>
@@ -218,10 +218,10 @@ export default function MonthlyMatrix({
                   );
                 })
               ))}
-              <td className="border-l border-slate-600"></td>
+              <td className="border-l border-[var(--card-border)]"></td>
             </tr>
-            <tr className="bg-slate-700/20">
-              <td className="px-3 py-1 text-xs text-emerald-400 sticky left-0 bg-slate-700/20 z-10">
+            <tr className="bg-[var(--surface)]">
+              <td className="px-3 py-1 text-xs text-[var(--accent)] sticky left-0 bg-[var(--surface)] z-10">
                 Zrobione
               </td>
               {monthData.weeks.map((week, weekIdx) => (
@@ -231,19 +231,19 @@ export default function MonthlyMatrix({
 
                   return (
                     <td key={`done-${weekIdx}-${dayIdx}`} className={`text-center px-0.5 py-1 ${
-                      dayIdx === 0 ? 'border-l border-slate-600' : ''
+                      dayIdx === 0 ? 'border-l border-[var(--card-border)]' : ''
                     }`}>
-                      <span className="text-[10px] text-emerald-400">
+                      <span className="text-[10px] text-[var(--accent)]">
                         {stats?.done || 0}
                       </span>
                     </td>
                   );
                 })
               ))}
-              <td className="border-l border-slate-600"></td>
+              <td className="border-l border-[var(--card-border)]"></td>
             </tr>
-            <tr className="bg-slate-700/10">
-              <td className="px-3 py-1 text-xs text-slate-400 sticky left-0 bg-slate-700/10 z-10">
+            <tr className="bg-[var(--surface)]">
+              <td className="px-3 py-1 text-xs text-[var(--muted)] sticky left-0 bg-[var(--surface)] z-10">
                 Nie zrobione
               </td>
               {monthData.weeks.map((week, weekIdx) => (
@@ -253,26 +253,26 @@ export default function MonthlyMatrix({
 
                   return (
                     <td key={`notdone-${weekIdx}-${dayIdx}`} className={`text-center px-0.5 py-1 ${
-                      dayIdx === 0 ? 'border-l border-slate-600' : ''
+                      dayIdx === 0 ? 'border-l border-[var(--card-border)]' : ''
                     }`}>
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-[10px] text-[var(--muted)]">
                         {stats?.notDone || 0}
                       </span>
                     </td>
                   );
                 })
               ))}
-              <td className="border-l border-slate-600"></td>
+              <td className="border-l border-[var(--card-border)]"></td>
             </tr>
           </tfoot>
         </table>
       </div>
 
       {/* Add new habit button */}
-      <div className="border-t border-slate-700 p-3">
+      <div className="border-t border-[var(--card-border)] p-3">
         <button
           onClick={onCreateClick}
-          className="w-full flex items-center justify-center gap-2 py-2 text-slate-400 hover:text-amber-400 hover:bg-slate-700/50 rounded-lg transition-colors"
+          className="w-full flex items-center justify-center gap-2 py-2 text-[var(--muted)] hover:text-amber-400 hover:bg-[var(--surface)] rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" />
           <span className="text-sm">Dodaj nawyk</span>

@@ -132,25 +132,25 @@ export default function MealsMode({ onBack }: MealsModeProps) {
 
   if (resolvedView === 'loading' || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-4">
+    <div className="min-h-screen bg-[var(--background)] p-4">
       <div className="max-w-4xl mx-auto">
         {/* Header — only on main views */}
         {(resolvedView === 'wizard' || resolvedView === 'interview' || resolvedView === 'dashboard') && (
           <div className="flex items-center justify-between mb-6">
             <button onClick={() => { if (onBack) onBack(); else goHome(); }}
-              className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+              className="flex items-center gap-2 text-[var(--muted)] hover:text-white transition-colors">
               <ArrowLeft className="w-5 h-5" /> Powrót
             </button>
             {resolvedView === 'dashboard' && preferences && (
               <button onClick={() => setView('settings')}
-                className="p-2 text-slate-400 hover:text-white" title="Ustawienia diety">
+                className="p-2 text-[var(--muted)] hover:text-white" title="Ustawienia diety">
                 <Settings className="w-5 h-5" />
               </button>
             )}
@@ -255,19 +255,19 @@ export default function MealsMode({ onBack }: MealsModeProps) {
         {resolvedView === 'settings' && (
           <div className="space-y-4 max-w-lg mx-auto">
             <button onClick={() => setView('dashboard')}
-              className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+              className="flex items-center gap-2 text-[var(--muted)] hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4" /> Powrót
             </button>
             <h2 className="text-xl font-semibold text-white">Ustawienia</h2>
             <button onClick={() => setView('wizard' as View)}
-              className="w-full bg-slate-800/50 hover:bg-slate-800 border-2 border-slate-700 hover:border-violet-500 rounded-xl p-4 text-left transition-colors">
+              className="w-full bg-[var(--card-bg)] hover:bg-[var(--card-bg)] border-2 border-[var(--card-border)] hover:border-violet-500 rounded-xl p-4 text-left transition-colors">
               <p className="text-white font-medium">Dane dietetyczne</p>
-              <p className="text-xs text-slate-400 mt-1">Waga, wzrost, aktywność, cel kaloryczny, typ diety</p>
+              <p className="text-xs text-[var(--muted)] mt-1">Waga, wzrost, aktywność, cel kaloryczny, typ diety</p>
             </button>
             <button onClick={() => setView('preferences')}
-              className="w-full bg-slate-800/50 hover:bg-slate-800 border-2 border-slate-700 hover:border-violet-500 rounded-xl p-4 text-left transition-colors">
+              className="w-full bg-[var(--card-bg)] hover:bg-[var(--card-bg)] border-2 border-[var(--card-border)] hover:border-violet-500 rounded-xl p-4 text-left transition-colors">
               <p className="text-white font-medium">Preferencje kulinarne</p>
-              <p className="text-xs text-slate-400 mt-1">Alergie, ulubione kuchnie, Thermomix, wywiad AI</p>
+              <p className="text-xs text-[var(--muted)] mt-1">Alergie, ulubione kuchnie, Thermomix, wywiad AI</p>
             </button>
           </div>
         )}

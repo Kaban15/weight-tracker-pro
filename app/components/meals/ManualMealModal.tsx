@@ -98,15 +98,15 @@ export default function ManualMealModal({ isOpen, onClose, onSave, mealSlots }: 
         {/* Name + slot */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Nazwa posiłku</label>
+            <label className="block text-xs text-[var(--muted)] mb-1">Nazwa posiłku</label>
             <input value={name} onChange={e => setName(e.target.value)}
               placeholder="np. Jajecznica z pomidorami"
-              className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm" />
+              className="w-full bg-[var(--background)] border border-[var(--card-border)] rounded-lg px-3 py-2 text-white text-sm" />
           </div>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Typ posiłku</label>
+            <label className="block text-xs text-[var(--muted)] mb-1">Typ posiłku</label>
             <select value={mealSlot} onChange={e => setMealSlot(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm">
+              className="w-full bg-[var(--background)] border border-[var(--card-border)] rounded-lg px-3 py-2 text-white text-sm">
               {mealSlots.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
@@ -115,7 +115,7 @@ export default function ManualMealModal({ isOpen, onClose, onSave, mealSlots }: 
         {/* Ingredients */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-xs text-slate-400">Składniki</label>
+            <label className="text-xs text-[var(--muted)]">Składniki</label>
             <button type="button" onClick={addIngredient}
               className="flex items-center gap-1 text-xs text-violet-400 hover:text-violet-300">
               <Plus className="w-3 h-3" /> Dodaj składnik
@@ -124,7 +124,7 @@ export default function ManualMealModal({ isOpen, onClose, onSave, mealSlots }: 
 
           <div className="space-y-2">
             {/* Header */}
-            <div className="grid grid-cols-[1fr_60px_45px_55px_55px_55px_55px_24px] gap-1 text-[10px] text-slate-500">
+            <div className="grid grid-cols-[1fr_60px_45px_55px_55px_55px_55px_24px] gap-1 text-[10px] text-[var(--muted)]">
               <span>Nazwa</span>
               <span>Ilość</span>
               <span>Jdn.</span>
@@ -139,30 +139,30 @@ export default function ManualMealModal({ isOpen, onClose, onSave, mealSlots }: 
               <div key={i} className="grid grid-cols-[1fr_60px_45px_55px_55px_55px_55px_24px] gap-1">
                 <input value={ing.name} onChange={e => updateIngredient(i, 'name', e.target.value)}
                   placeholder="np. Jajko"
-                  className="bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-white text-xs" />
+                  className="bg-[var(--background)] border border-[var(--card-border)] rounded px-2 py-1.5 text-white text-xs" />
                 <input type="number" value={ing.amount} onChange={e => updateIngredient(i, 'amount', e.target.value)}
                   placeholder="100"
-                  className="bg-slate-900 border border-slate-700 rounded px-1 py-1.5 text-white text-xs text-center" />
+                  className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1.5 text-white text-xs text-center" />
                 <select value={ing.unit} onChange={e => updateIngredient(i, 'unit', e.target.value as PantryUnit)}
-                  className="bg-slate-900 border border-slate-700 rounded px-0.5 py-1.5 text-white text-xs">
+                  className="bg-[var(--background)] border border-[var(--card-border)] rounded px-0.5 py-1.5 text-white text-xs">
                   <option value="g">g</option>
                   <option value="ml">ml</option>
                   <option value="szt">szt</option>
                 </select>
                 <input type="number" value={ing.calories} onChange={e => updateIngredient(i, 'calories', e.target.value)}
                   placeholder="0"
-                  className="bg-slate-900 border border-slate-700 rounded px-1 py-1.5 text-white text-xs text-center" />
+                  className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1.5 text-white text-xs text-center" />
                 <input type="number" value={ing.protein} onChange={e => updateIngredient(i, 'protein', e.target.value)}
                   placeholder="0"
-                  className="bg-slate-900 border border-slate-700 rounded px-1 py-1.5 text-blue-300 text-xs text-center" />
+                  className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1.5 text-blue-300 text-xs text-center" />
                 <input type="number" value={ing.carbs} onChange={e => updateIngredient(i, 'carbs', e.target.value)}
                   placeholder="0"
-                  className="bg-slate-900 border border-slate-700 rounded px-1 py-1.5 text-amber-300 text-xs text-center" />
+                  className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1.5 text-amber-300 text-xs text-center" />
                 <input type="number" value={ing.fat} onChange={e => updateIngredient(i, 'fat', e.target.value)}
                   placeholder="0"
-                  className="bg-slate-900 border border-slate-700 rounded px-1 py-1.5 text-red-300 text-xs text-center" />
+                  className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1.5 text-red-300 text-xs text-center" />
                 <button type="button" onClick={() => removeIngredient(i)}
-                  className="text-slate-500 hover:text-red-400 flex items-center justify-center">
+                  className="text-[var(--muted)] hover:text-red-400 flex items-center justify-center">
                   <Trash2 className="w-3 h-3" />
                 </button>
               </div>
@@ -171,9 +171,9 @@ export default function ManualMealModal({ isOpen, onClose, onSave, mealSlots }: 
         </div>
 
         {/* Totals */}
-        <div className="flex gap-4 text-xs bg-slate-800/50 rounded-lg p-2 border border-slate-700">
-          <span className="text-slate-400">Suma:</span>
-          <span className="text-emerald-400 font-medium">{Math.round(totals.calories)} kcal</span>
+        <div className="flex gap-4 text-xs bg-[var(--card-bg)] rounded-lg p-2 border border-[var(--card-border)]">
+          <span className="text-[var(--muted)]">Suma:</span>
+          <span className="text-[var(--accent)] font-medium">{Math.round(totals.calories)} kcal</span>
           <span className="text-blue-400">B: {Math.round(totals.protein)}g</span>
           <span className="text-amber-400">W: {Math.round(totals.carbs)}g</span>
           <span className="text-red-400">T: {Math.round(totals.fat)}g</span>

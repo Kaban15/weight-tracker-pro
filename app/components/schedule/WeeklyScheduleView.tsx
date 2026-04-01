@@ -74,16 +74,16 @@ function TaskTile({
       }}
       onDragEnd={onDragEnd}
       className={`
-        group relative bg-slate-800/80 rounded-lg p-2.5 mb-2 border transition-all
+        group relative bg-[var(--card-bg)] rounded-lg p-2.5 mb-2 border transition-all
         ${isDragging ? "opacity-50 scale-95" : "opacity-100"}
-        ${isCompleted ? "border-emerald-500/30 bg-emerald-950/20" : "border-slate-700/50"}
-        ${isCancelled ? "opacity-50 cursor-not-allowed" : "cursor-grab hover:border-slate-600"}
+        ${isCompleted ? "border-cyan-500/30 bg-cyan-950/20" : "border-[var(--card-border)]"}
+        ${isCancelled ? "opacity-50 cursor-not-allowed" : "cursor-grab hover:border-[var(--card-border)]"}
         active:cursor-grabbing
       `}
     >
       <div className="flex items-start gap-2">
         {/* Drag handle */}
-        <div className="text-slate-600 pt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="text-[var(--muted)] pt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <GripVertical className="w-3.5 h-3.5" />
         </div>
 
@@ -98,8 +98,8 @@ function TaskTile({
             w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center transition-all mt-0.5
             ${
               isCompleted
-                ? "bg-emerald-500 text-white"
-                : "border-2 border-slate-500 hover:border-emerald-400"
+                ? "bg-cyan-600 text-white"
+                : "border-2 border-[var(--card-border)] hover:border-cyan-400"
             }
             ${isCancelled ? "cursor-not-allowed" : ""}
           `}
@@ -111,7 +111,7 @@ function TaskTile({
         <div className="flex-1 min-w-0">
           <div
             className={`text-sm font-medium truncate ${
-              isCompleted ? "text-slate-500 line-through" : "text-white"
+              isCompleted ? "text-[var(--muted)] line-through" : "text-white"
             }`}
             title={task.title}
           >
@@ -121,7 +121,7 @@ function TaskTile({
           {/* Duration and time */}
           <div className="flex items-center gap-2 mt-1">
             {task.duration && (
-              <span className="text-xs text-slate-400 flex items-center gap-1">
+              <span className="text-xs text-[var(--muted)] flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 {formatDuration(task.duration)}
               </span>
@@ -145,7 +145,7 @@ function TaskTile({
             e.stopPropagation();
             onDelete();
           }}
-          className="p-1 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+          className="p-1 text-[var(--muted)] hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -211,16 +211,16 @@ function DayColumn({
     <div
       className={`
         flex flex-col min-w-[140px] flex-1 rounded-xl transition-all snap-start
-        ${isDragOver ? "bg-cyan-900/30 border-2 border-cyan-500/50 border-dashed" : "bg-slate-800/30 border border-slate-700/50"}
+        ${isDragOver ? "bg-cyan-900/30 border-2 border-cyan-500/50 border-dashed" : "bg-[var(--card-bg)] border border-[var(--card-border)]"}
       `}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       {/* Day header */}
-      <div className="p-3 border-b border-slate-700/50 flex items-center justify-between">
+      <div className="p-3 border-b border-[var(--card-border)] flex items-center justify-between">
         <div className="flex items-baseline gap-2">
-          <span className="text-xs text-slate-500 uppercase">{dayName}</span>
+          <span className="text-xs text-[var(--muted)] uppercase">{dayName}</span>
           <span
             className={`text-xl font-bold ${
               isToday ? "text-cyan-400" : "text-white"
@@ -231,7 +231,7 @@ function DayColumn({
         </div>
         <button
           onClick={onAddTask}
-          className="p-1 text-slate-500 hover:text-cyan-400 hover:bg-slate-700/50 rounded transition-colors"
+          className="p-1 text-[var(--muted)] hover:text-cyan-400 hover:bg-[var(--surface)] rounded transition-colors"
         >
           <Plus className="w-4 h-4" />
         </button>
@@ -252,7 +252,7 @@ function DayColumn({
         ))}
 
         {tasks.length === 0 && !isDragOver && (
-          <div className="text-center text-slate-600 text-xs py-8">
+          <div className="text-center text-[var(--muted)] text-xs py-8">
             Brak zadan
           </div>
         )}
@@ -265,8 +265,8 @@ function DayColumn({
       </div>
 
       {/* Total hours footer */}
-      <div className="p-2 border-t border-slate-700/50 text-center">
-        <span className="text-sm text-slate-400">{totalHours}</span>
+      <div className="p-2 border-t border-[var(--card-border)] text-center">
+        <span className="text-sm text-[var(--muted)]">{totalHours}</span>
       </div>
     </div>
   );
@@ -378,7 +378,7 @@ export default function WeeklyScheduleView({
       <div className="flex items-center justify-center gap-4 mb-4 py-2">
         <button
           onClick={goToPreviousWeek}
-          className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all"
+          className="p-2 text-[var(--muted)] hover:text-white hover:bg-[var(--surface)] rounded-lg transition-all"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -389,7 +389,7 @@ export default function WeeklyScheduleView({
 
         <button
           onClick={goToNextWeek}
-          className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all"
+          className="p-2 text-[var(--muted)] hover:text-white hover:bg-[var(--surface)] rounded-lg transition-all"
         >
           <ChevronRight className="w-5 h-5" />
         </button>

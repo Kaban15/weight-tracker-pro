@@ -24,9 +24,9 @@ export default function DeleteConfirmModal({
         <AlertTriangle className="w-7 h-7 text-rose-400" />
       </div>
       <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
-      <p className="text-slate-400 text-sm mb-6">{message}</p>
+      <p className="text-[var(--muted)] text-sm mb-6">{message}</p>
       <div className="flex gap-3">
-        <button onClick={onCancel} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg">
+        <button onClick={onCancel} className="flex-1 bg-[var(--surface)] hover:bg-[var(--surface)] text-white py-2 rounded-lg">
           Anuluj
         </button>
         <button onClick={onConfirm} className="flex-1 bg-rose-600 hover:bg-rose-500 text-white py-2 rounded-lg" autoFocus>

@@ -26,7 +26,7 @@ export default function FavoriteMeals({ favorites, onReeat, onToggleFavorite, on
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+        <button onClick={onBack} className="flex items-center gap-2 text-[var(--muted)] hover:text-white transition-colors">
           <ArrowLeft className="w-4 h-4" /> Powrót
         </button>
       </div>
@@ -36,7 +36,7 @@ export default function FavoriteMeals({ favorites, onReeat, onToggleFavorite, on
       </h2>
 
       {favorites.length === 0 ? (
-        <div className="text-center py-8 text-slate-500">
+        <div className="text-center py-8 text-[var(--muted)]">
           <Heart className="w-8 h-8 mx-auto mb-2 opacity-50" />
           <p>Brak ulubionych posiłków.</p>
           <p className="text-xs mt-1">Oznacz posiłek serduszkiem, żeby dodać go tutaj.</p>
@@ -44,18 +44,18 @@ export default function FavoriteMeals({ favorites, onReeat, onToggleFavorite, on
       ) : (
         <div className="space-y-3">
           {favorites.map(meal => (
-            <div key={meal.id} className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+            <div key={meal.id} className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h3 className="text-white font-medium">{meal.name}</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">{meal.meal_slot}</p>
+                  <p className="text-xs text-[var(--muted)] mt-0.5">{meal.meal_slot}</p>
                   <div className="flex gap-3 mt-2 text-xs">
-                    <span className="text-emerald-400">{Math.round(meal.calories)} kcal</span>
+                    <span className="text-[var(--accent)]">{Math.round(meal.calories)} kcal</span>
                     <span className="text-blue-400">B: {Math.round(meal.protein)}g</span>
                     <span className="text-amber-400">W: {Math.round(meal.carbs)}g</span>
                     <span className="text-red-400">T: {Math.round(meal.fat)}g</span>
                     {meal.estimated_cost !== null && (
-                      <span className="text-slate-400">{meal.estimated_cost.toFixed(2)} zł</span>
+                      <span className="text-[var(--muted)]">{meal.estimated_cost.toFixed(2)} zł</span>
                     )}
                   </div>
                   {meal.rating && (
@@ -75,7 +75,7 @@ export default function FavoriteMeals({ favorites, onReeat, onToggleFavorite, on
                 {reeatTarget?.id === meal.id ? (
                   <>
                     <button onClick={() => handleReeat(meal.id, today)}
-                      className="flex items-center gap-1 px-3 py-1.5 text-xs bg-emerald-600/20 text-emerald-400 rounded-lg hover:bg-emerald-600/30">
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs bg-violet-600/20 text-[var(--accent)] rounded-lg hover:bg-violet-600/30">
                       <Calendar className="w-3 h-3" /> Dziś
                     </button>
                     <button onClick={() => handleReeat(meal.id, tomorrow)}
@@ -83,7 +83,7 @@ export default function FavoriteMeals({ favorites, onReeat, onToggleFavorite, on
                       <Calendar className="w-3 h-3" /> Jutro
                     </button>
                     <button onClick={() => setReeatTarget(null)}
-                      className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-300">
+                      className="px-3 py-1.5 text-xs text-[var(--muted)] hover:text-[var(--foreground)]">
                       Anuluj
                     </button>
                   </>
