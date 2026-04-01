@@ -14,7 +14,7 @@ import { formatDate } from "./shared/dateUtils";
 export default function Dashboard() {
   const { user } = useAuth();
   const { navigateTo } = useNavigation();
-  const { entries, goal } = useWeightTracker(user?.id);
+  const { sortedEntries, goal } = useWeightTracker(user?.id);
   const { challenges } = useChallenges(user?.id);
   const { tasks } = useTasks(user?.id);
 
@@ -22,7 +22,7 @@ export default function Dashboard() {
     initializeNotifications();
   }, []);
 
-  const latestEntry = entries?.[0];
+  const latestEntry = sortedEntries?.length ? sortedEntries[sortedEntries.length - 1] : undefined;
   const weightValue = latestEntry ? `${latestEntry.weight} kg` : "—";
   const weightSubtitle = goal
     ? `Cel: ${goal.target_weight} kg`
