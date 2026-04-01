@@ -9,6 +9,7 @@ import { useWeightTracker } from "./tracker";
 import { useChallenges, getChallengeProgress } from "./challenge";
 import { useTasks } from "./todo";
 import { initializeNotifications } from "@/lib/notifications";
+import { formatDate } from "./shared/dateUtils";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -33,7 +34,7 @@ export default function Dashboard() {
       }
     : undefined;
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = formatDate(new Date());
   const activeChallenges = challenges?.filter(c => c.startDate <= today && c.endDate >= today) ?? [];
   const todayDone = activeChallenges.filter(c => {
     const progress = getChallengeProgress(c);

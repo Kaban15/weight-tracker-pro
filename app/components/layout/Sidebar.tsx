@@ -46,7 +46,7 @@ export default function Sidebar({ activeMode, onNavigate, collapsed, onToggleCol
 
       {/* Nav items */}
       <nav className="flex-1 px-2 space-y-0.5">
-        {mainItems.map(({ mode, icon: Icon, label }) => {
+        {[...mainItems, ...(showAdmin ? [{ mode: "admin" as AppMode, icon: Shield, label: "Admin" }] : [])].map(({ mode, icon: Icon, label }) => {
           const isActive = activeMode === mode;
           return (
             <button
@@ -64,20 +64,6 @@ export default function Sidebar({ activeMode, onNavigate, collapsed, onToggleCol
             </button>
           );
         })}
-        {showAdmin && (
-          <button
-            onClick={() => onNavigate("admin")}
-            className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-sm transition-colors ${
-              activeMode === "admin"
-                ? "bg-[var(--accent)]/10 text-[var(--accent)] font-semibold"
-                : "text-[var(--muted)] hover:bg-[var(--surface)]"
-            } ${collapsed ? "justify-center" : ""}`}
-            title={collapsed ? "Admin" : undefined}
-          >
-            <Shield className="w-5 h-5 flex-shrink-0" />
-            {!collapsed && "Admin"}
-          </button>
-        )}
       </nav>
 
       {/* Bottom actions */}

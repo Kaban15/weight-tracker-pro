@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState, type ReactNode } from "react";
+import { useMediaQuery } from "@/app/hooks/useMediaQuery";
 
 interface PageTransitionProps {
   children: ReactNode;
@@ -13,22 +14,18 @@ export default function PageTransition({
   transitionKey,
   className = "",
 }: PageTransitionProps) {
-  const [displayKey, setDisplayKey] = useState(transitionKey);
   const [phase, setPhase] = useState<"enter" | "idle">("idle");
   const prevKey = useRef(transitionKey);
+  const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
 
   useEffect(() => {
     if (transitionKey !== prevKey.current) {
       prevKey.current = transitionKey;
       setPhase("enter");
-      setDisplayKey(transitionKey);
       const timer = setTimeout(() => setPhase("idle"), 300);
       return () => clearTimeout(timer);
     }
   }, [transitionKey]);
-
-  const reducedMotion = typeof window !== "undefined"
-    && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const style = reducedMotion || phase === "idle"
     ? { opacity: 1, transform: "none", transition: "none" }
@@ -40,7 +37,7 @@ export default function PageTransition({
       };
 
   return (
-    <div key={displayKey} className={className} style={style}>
+    <div key={transitionKey} className={className} style={style}>
       {children}
     </div>
   );

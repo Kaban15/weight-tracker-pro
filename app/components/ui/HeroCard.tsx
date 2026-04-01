@@ -20,7 +20,7 @@ export default function HeroCard({
   className = "",
 }: HeroCardProps) {
   const gradientEnd = colorLight || color;
-  const pct = progress ? Math.min((progress.value / progress.max) * 100, 100) : 0;
+  const pct = progress && progress.max > 0 ? Math.min((progress.value / progress.max) * 100, 100) : 0;
 
   return (
     <div
