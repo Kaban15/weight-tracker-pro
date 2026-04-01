@@ -37,7 +37,7 @@ function avgOf(...values: (number | undefined)[]): number | undefined {
 }
 
 const METRICS: MetricConfig[] = [
-  { key: 'weight', label: 'Waga', trendLabel: 'Wykres postępów', unit: 'kg', color: '#10b981', extractValue: () => undefined },
+  { key: 'weight', label: 'Waga', trendLabel: 'Wykres postępów', unit: 'kg', color: '#FF6B4A', extractValue: () => undefined },
   { key: 'waist', label: 'Talia', trendLabel: 'Trend obwodu talii', unit: 'cm', color: '#8b5cf6', extractValue: m => m.waist },
   { key: 'hips', label: 'Biodra', trendLabel: 'Trend obwodu bioder', unit: 'cm', color: '#f59e0b', extractValue: m => m.hips },
   { key: 'chest', label: 'Klatka', trendLabel: 'Trend klatki piersiowej', unit: 'cm', color: '#3b82f6', extractValue: m => m.chest },
@@ -307,9 +307,9 @@ export default function ProgressChart({ entries, goal, startDate, endDate, measu
                 {showGoalLine && goal && (
                   <ReferenceLine
                     y={goal.target_weight}
-                    stroke="#10b981"
+                    stroke="#FF6B4A"
                     strokeDasharray="5 5"
-                    label={{ value: `Cel: ${goal.target_weight}kg`, fill: '#10b981', fontSize: 12 }}
+                    label={{ value: `Cel: ${goal.target_weight}kg`, fill: '#FF6B4A', fontSize: 12 }}
                   />
                 )}
                 {/* Goal trajectory line — weight only */}

@@ -101,11 +101,11 @@ export default function ExportActions({ entries, goal, hasMoreEntries, loadAllEn
   if (entries.length === 0) return null;
 
   return (
-    <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
+    <div className="bg-[var(--card-bg)] rounded-xl p-6 border-2 border-[var(--card-border)]">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h3 className="text-lg font-bold text-white mb-1">Eksport danych</h3>
-          <p className="text-slate-400 text-sm">
+          <p className="text-[var(--muted)] text-sm">
             {hasMoreEntries ? (
               <>Załadowano {entries.length} wpisów. Eksport pobierze wszystkie dane.</>
             ) : (
@@ -123,7 +123,7 @@ export default function ExportActions({ entries, goal, hasMoreEntries, loadAllEn
           <button
             onClick={exportToCSV}
             disabled={exporting || loadingMore}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:cursor-wait text-white font-semibold py-3 px-5 rounded-xl transition-colors"
+            className="flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-dark)] disabled:bg-[var(--surface)] disabled:cursor-wait text-white font-semibold py-3 px-5 rounded-xl transition-colors"
           >
             {exporting || loadingMore ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -135,7 +135,7 @@ export default function ExportActions({ entries, goal, hasMoreEntries, loadAllEn
           <button
             onClick={exportToJSON}
             disabled={exporting || loadingMore}
-            className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:cursor-wait text-white font-semibold py-3 px-5 rounded-xl transition-colors"
+            className="flex items-center gap-2 bg-[var(--surface)] hover:bg-[var(--surface)] disabled:bg-[var(--card-bg)] disabled:cursor-wait text-white font-semibold py-3 px-5 rounded-xl transition-colors"
           >
             {exporting || loadingMore ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

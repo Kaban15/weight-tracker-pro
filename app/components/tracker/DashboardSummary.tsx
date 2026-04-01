@@ -25,17 +25,17 @@ export default function DashboardSummary({
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
       {/* Current Weight */}
-      <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-        <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+      <div className="bg-[var(--card-bg)] rounded-xl p-4 border border-[var(--card-border)]">
+        <div className="flex items-center gap-2 text-[var(--muted)] text-sm mb-1">
           <Scale className="w-4 h-4" />
           <span>Aktualna waga</span>
         </div>
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-white">{currentWeight.toFixed(1)}</span>
-          <span className="text-slate-400 text-sm">kg</span>
+          <span className="text-2xl font-bold text-[var(--foreground)]">{currentWeight.toFixed(1)}</span>
+          <span className="text-[var(--muted)] text-sm">kg</span>
         </div>
         {stats.totalWeightChange !== 0 && (
-          <div className={`flex items-center gap-1 text-sm mt-1 ${stats.totalWeightChange < 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+          <div className={`flex items-center gap-1 text-sm mt-1 ${stats.totalWeightChange < 0 ? 'text-[var(--accent)]' : 'text-red-400'}`}>
             {stats.totalWeightChange < 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
             <span>{stats.totalWeightChange > 0 ? '+' : ''}{stats.totalWeightChange.toFixed(1)} kg</span>
           </div>
@@ -44,34 +44,34 @@ export default function DashboardSummary({
 
       {/* Progress - only show when goal exists */}
       {goal ? (
-        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-          <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+        <div className="bg-[var(--card-bg)] rounded-xl p-4 border border-[var(--card-border)]">
+          <div className="flex items-center gap-2 text-[var(--muted)] text-sm mb-1">
             <Target className="w-4 h-4" />
             <span>Postep</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-white">{Math.max(0, Math.min(100, progress)).toFixed(0)}</span>
-            <span className="text-slate-400 text-sm">%</span>
+            <span className="text-2xl font-bold text-[var(--foreground)]">{Math.max(0, Math.min(100, progress)).toFixed(0)}</span>
+            <span className="text-[var(--muted)] text-sm">%</span>
           </div>
-          <div className="h-1.5 bg-slate-700 rounded-full mt-2 overflow-hidden">
+          <div className="h-1.5 bg-[var(--surface)] rounded-full mt-2 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all"
+              className="h-full bg-[var(--accent)] transition-all"
               style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
             />
           </div>
         </div>
       ) : (
-        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-          <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+        <div className="bg-[var(--card-bg)] rounded-xl p-4 border border-[var(--card-border)]">
+          <div className="flex items-center gap-2 text-[var(--muted)] text-sm mb-1">
             <Target className="w-4 h-4" />
             <span>Tryb wolny</span>
           </div>
-          <div className="text-white text-sm mt-2">
+          <div className="text-[var(--foreground)] text-sm mt-2">
             Sledzisz wage bez aktywnego celu
           </div>
           <button
             onClick={onSetGoal}
-            className="text-emerald-400 hover:text-emerald-300 text-sm mt-2"
+            className="text-[var(--accent)] hover:text-[var(--accent-dark)] text-sm mt-2"
           >
             Ustal cel &rarr;
           </button>
@@ -79,14 +79,14 @@ export default function DashboardSummary({
       )}
 
       {/* Streak */}
-      <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-        <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+      <div className="bg-[var(--card-bg)] rounded-xl p-4 border border-[var(--card-border)]">
+        <div className="flex items-center gap-2 text-[var(--muted)] text-sm mb-1">
           <Flame className="w-4 h-4 text-orange-400" />
           <span>Seria dni</span>
         </div>
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-white">{stats.currentStreak}</span>
-          <span className="text-slate-400 text-sm">dni</span>
+          <span className="text-2xl font-bold text-[var(--foreground)]">{stats.currentStreak}</span>
+          <span className="text-[var(--muted)] text-sm">dni</span>
         </div>
         {stats.currentStreak >= 7 && (
           <div className="text-orange-400 text-sm mt-1">Super! 🔥</div>
@@ -95,8 +95,8 @@ export default function DashboardSummary({
 
       {/* Days Remaining / History */}
       {goal ? (
-        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-          <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+        <div className="bg-[var(--card-bg)] rounded-xl p-4 border border-[var(--card-border)]">
+          <div className="flex items-center gap-2 text-[var(--muted)] text-sm mb-1">
             <Clock className="w-4 h-4" />
             <span>Do celu</span>
           </div>
@@ -108,8 +108,8 @@ export default function DashboardSummary({
             return (
               <>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-white">{Math.max(0, daysLeft)}</span>
-                  <span className="text-slate-400 text-sm">dni</span>
+                  <span className="text-2xl font-bold text-[var(--foreground)]">{Math.max(0, daysLeft)}</span>
+                  <span className="text-[var(--muted)] text-sm">dni</span>
                 </div>
                 {parseFloat(weightLeft) > 0 && (
                   <div className="text-amber-400 text-sm mt-1">
@@ -121,19 +121,19 @@ export default function DashboardSummary({
           })()}
         </div>
       ) : (
-        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-          <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+        <div className="bg-[var(--card-bg)] rounded-xl p-4 border border-[var(--card-border)]">
+          <div className="flex items-center gap-2 text-[var(--muted)] text-sm mb-1">
             <Clock className="w-4 h-4" />
             <span>Historia</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-white">{goalHistory.length}</span>
-            <span className="text-slate-400 text-sm">celow</span>
+            <span className="text-2xl font-bold text-[var(--foreground)]">{goalHistory.length}</span>
+            <span className="text-[var(--muted)] text-sm">celow</span>
           </div>
           {goalHistory.length > 0 && (
             <button
               onClick={onViewHistory}
-              className="text-emerald-400 hover:text-emerald-300 text-sm mt-1"
+              className="text-[var(--accent)] hover:text-[var(--accent-dark)] text-sm mt-1"
             >
               Zobacz historie &rarr;
             </button>

@@ -120,40 +120,40 @@ export default function CalendarView({
   return (
     <div className="max-w-6xl mx-auto">
       {/* Header with navigation and view toggle */}
-      <div className="bg-slate-800/50 rounded-2xl border-2 border-slate-700 p-4 mb-4">
+      <div className="bg-[var(--card-bg)] rounded-2xl border-2 border-[var(--card-border)] p-4 mb-4">
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:justify-between">
           {/* Navigation */}
           <div className="flex items-center gap-3">
             <button
               onClick={viewMode === 'week' ? handlePrevWeek : () => onMonthChange(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-              className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+              className="p-2 hover:bg-[var(--surface)] rounded-lg transition-colors"
             >
-              <ChevronLeft className="w-5 h-5 text-slate-400" />
+              <ChevronLeft className="w-5 h-5 text-[var(--muted)]" />
             </button>
             <div className="text-center min-w-[180px]">
-              <h2 className="text-xl font-bold text-white">
+              <h2 className="text-xl font-bold text-[var(--foreground)]">
                 {viewMode === 'week' ? formatWeekRange(weekStart, weekEnd) : monthName}
               </h2>
               {viewMode === 'week' && isCurrentWeek(currentWeek) && (
-                <span className="text-sm text-emerald-400">Ten tydzień</span>
+                <span className="text-sm text-[var(--accent)]">Ten tydzień</span>
               )}
             </div>
             <button
               onClick={viewMode === 'week' ? handleNextWeek : () => onMonthChange(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-              className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+              className="p-2 hover:bg-[var(--surface)] rounded-lg transition-colors"
             >
-              <ChevronRight className="w-5 h-5 text-slate-400" />
+              <ChevronRight className="w-5 h-5 text-[var(--muted)]" />
             </button>
           </div>
 
           {/* View Mode Toggle */}
-          <div className="flex gap-1 bg-slate-900/50 p-1 rounded-lg">
+          <div className="flex gap-1 bg-[var(--background)] p-1 rounded-lg">
             <button
               onClick={() => setViewMode('week')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 viewMode === 'week'
-                  ? 'bg-emerald-600 text-white'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[var(--accent)] text-white'
+                  : 'text-[var(--muted)] hover:text-[var(--foreground)]'
               }`}
             >
               <CalendarDays className="w-4 h-4" />
@@ -163,8 +163,8 @@ export default function CalendarView({
               onClick={() => setViewMode('month')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 viewMode === 'month'
-                  ? 'bg-emerald-600 text-white'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[var(--accent)] text-white'
+                  : 'text-[var(--muted)] hover:text-[var(--foreground)]'
               }`}
             >
               <Calendar className="w-4 h-4" />
@@ -191,32 +191,32 @@ export default function CalendarView({
                 disabled={isDisabled}
                 className={`relative rounded-2xl p-4 transition-all min-h-[140px] flex flex-col
                   ${isDisabled
-                    ? 'bg-slate-900/30 border-2 border-slate-800 opacity-40 cursor-not-allowed'
+                    ? 'bg-[var(--background)] border-2 border-[var(--card-border)] opacity-40 cursor-not-allowed'
                     : isTodayDate
-                      ? 'bg-emerald-600/30 ring-2 ring-emerald-500'
+                      ? 'bg-[var(--accent)]/30 ring-2 ring-[var(--accent)]'
                       : entry
-                        ? 'bg-slate-800 border-2 border-emerald-500/50'
-                        : 'bg-slate-800/50 border-2 border-slate-700 hover:border-slate-600'
+                        ? 'bg-[var(--card-bg)] border-2 border-[var(--accent)]/50'
+                        : 'bg-[var(--card-bg)] border-2 border-[var(--card-border)] hover:border-[var(--surface)]'
                   }`}
               >
                 {/* Day number */}
-                <div className={`text-3xl font-bold mb-1 ${isDisabled ? 'text-slate-600' : isTodayDate ? 'text-emerald-400' : 'text-white'}`}>
+                <div className={`text-3xl font-bold mb-1 ${isDisabled ? 'text-[var(--muted)]' : isTodayDate ? 'text-[var(--accent)]' : 'text-[var(--foreground)]'}`}>
                   {day.getDate()}
                 </div>
 
                 {/* Day name */}
-                <div className={`text-xs font-semibold mb-3 ${isDisabled ? 'text-slate-600' : isTodayDate ? 'text-emerald-400' : 'text-slate-400'}`}>
+                <div className={`text-xs font-semibold mb-3 ${isDisabled ? 'text-[var(--muted)]' : isTodayDate ? 'text-[var(--accent)]' : 'text-[var(--muted)]'}`}>
                   {DAY_NAMES_SHORT[dayOfWeek]}
                 </div>
 
                 {/* Weight entry */}
                 <div className="mt-auto">
                   {entry ? (
-                    <div className="text-lg font-bold text-emerald-400">
+                    <div className="text-lg font-bold text-[var(--accent)]">
                       {entry.weight} kg
                     </div>
                   ) : (
-                    <div className="text-sm text-slate-500">
+                    <div className="text-sm text-[var(--muted)]">
                       —
                     </div>
                   )}
@@ -229,10 +229,10 @@ export default function CalendarView({
 
       {/* Month View */}
       {viewMode === 'month' && (
-        <div className="bg-slate-800/30 rounded-2xl border-2 border-slate-700 p-4">
+        <div className="bg-[var(--card-bg)] rounded-2xl border-2 border-[var(--card-border)] p-4">
           <div className="grid grid-cols-7 gap-2">
             {['Ndz', 'Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob'].map(day => (
-              <div key={day} className="text-center text-slate-400 font-semibold py-2 text-sm">
+              <div key={day} className="text-center text-[var(--muted)] font-semibold py-2 text-sm">
                 {day}
               </div>
             ))}
@@ -254,17 +254,17 @@ export default function CalendarView({
                       ? 'opacity-30 cursor-not-allowed'
                       : ''
                     }
-                    ${!isDisabled && isTodayDate ? 'ring-2 ring-emerald-500' : ''}
+                    ${!isDisabled && isTodayDate ? 'ring-2 ring-[var(--accent)]' : ''}
                     ${!isDisabled && entry
-                      ? 'bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30'
-                      : 'bg-slate-800/50 hover:bg-slate-800 border border-transparent'
+                      ? 'bg-[var(--accent)]/20 hover:bg-[var(--accent)]/30 border border-[var(--accent)]/30'
+                      : 'bg-[var(--card-bg)] hover:bg-[var(--surface)] border border-transparent'
                     }`}
                 >
-                  <span className={`text-sm mb-1 ${isDisabled ? 'text-slate-600' : isTodayDate ? 'text-emerald-400 font-bold' : 'text-slate-300'}`}>
+                  <span className={`text-sm mb-1 ${isDisabled ? 'text-[var(--muted)]' : isTodayDate ? 'text-[var(--accent)] font-bold' : 'text-[var(--foreground)]'}`}>
                     {day.getDate()}
                   </span>
                   {entry && (
-                    <div className="mt-auto text-xs font-semibold text-emerald-400">
+                    <div className="mt-auto text-xs font-semibold text-[var(--accent)]">
                       {entry.weight} kg
                     </div>
                   )}
@@ -278,7 +278,7 @@ export default function CalendarView({
       {/* Floating Add Button */}
       <button
         onClick={onAddClick}
-        className="fixed bottom-6 right-6 bg-emerald-600 hover:bg-emerald-500 text-white p-4 rounded-full shadow-lg transition-colors z-50"
+        className="fixed bottom-6 right-6 bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white p-4 rounded-full shadow-lg transition-colors z-50"
       >
         <Plus className="w-6 h-6" />
       </button>

@@ -22,14 +22,14 @@ function MeasurementCard({
   unit?: string;
 }) {
   return (
-    <div className="bg-slate-700/50 rounded-xl p-4">
-      <div className="text-slate-400 text-sm mb-1">{label}</div>
+    <div className="bg-[var(--surface)] rounded-xl p-4">
+      <div className="text-[var(--muted)] text-sm mb-1">{label}</div>
       <div className="text-2xl font-bold text-white">
         {value !== undefined ? `${value} ${unit}` : '—'}
       </div>
       {change !== undefined && change !== 0 && (
         <div className={`flex items-center gap-1 text-sm mt-1 ${
-          change < 0 ? 'text-emerald-400' : 'text-red-400'
+          change < 0 ? 'text-[var(--accent)]' : 'text-red-400'
         }`}>
           {change < 0 ? (
             <TrendingDown className="w-3 h-3" />
@@ -40,7 +40,7 @@ function MeasurementCard({
         </div>
       )}
       {change === 0 && (
-        <div className="flex items-center gap-1 text-sm mt-1 text-slate-500">
+        <div className="flex items-center gap-1 text-sm mt-1 text-[var(--muted)]">
           <Minus className="w-3 h-3" />
           <span>bez zmian</span>
         </div>
@@ -64,20 +64,20 @@ function PairedMeasurementCard({
 }) {
   const formatChange = (change?: number) => {
     if (change === undefined) return null;
-    if (change === 0) return <span className="text-slate-500">0</span>;
+    if (change === 0) return <span className="text-[var(--muted)]">0</span>;
     return (
-      <span className={change < 0 ? 'text-emerald-400' : 'text-red-400'}>
+      <span className={change < 0 ? 'text-[var(--accent)]' : 'text-red-400'}>
         {change > 0 ? '+' : ''}{change.toFixed(1)}
       </span>
     );
   };
 
   return (
-    <div className="bg-slate-700/50 rounded-xl p-4">
-      <div className="text-slate-400 text-sm mb-2">{label}</div>
+    <div className="bg-[var(--surface)] rounded-xl p-4">
+      <div className="text-[var(--muted)] text-sm mb-2">{label}</div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <div className="text-xs text-slate-500 mb-1">Lewe</div>
+          <div className="text-xs text-[var(--muted)] mb-1">Lewe</div>
           <div className="text-xl font-bold text-white">
             {leftValue !== undefined ? `${leftValue}` : '—'}
           </div>
@@ -86,7 +86,7 @@ function PairedMeasurementCard({
           )}
         </div>
         <div>
-          <div className="text-xs text-slate-500 mb-1">Prawe</div>
+          <div className="text-xs text-[var(--muted)] mb-1">Prawe</div>
           <div className="text-xl font-bold text-white">
             {rightValue !== undefined ? `${rightValue}` : '—'}
           </div>
@@ -149,7 +149,7 @@ export default function MeasurementsView({ userId }: MeasurementsViewProps) {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-white">Pomiary ciała</h2>
-            <p className="text-slate-400 text-sm">
+            <p className="text-[var(--muted)] text-sm">
               {measurements.length} {measurements.length === 1 ? 'pomiar' : measurements.length < 5 ? 'pomiary' : 'pomiarów'}
             </p>
           </div>
@@ -165,12 +165,12 @@ export default function MeasurementsView({ userId }: MeasurementsViewProps) {
 
       {measurements.length === 0 ? (
         // Empty state
-        <div className="bg-slate-800/50 rounded-xl p-8 text-center border-2 border-dashed border-slate-700">
+        <div className="bg-[var(--card-bg)] rounded-xl p-8 text-center border-2 border-dashed border-[var(--card-border)]">
           <div className="w-16 h-16 bg-indigo-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Ruler className="w-8 h-8 text-indigo-400" />
           </div>
           <h3 className="text-xl font-bold text-white mb-2">Brak pomiarów</h3>
-          <p className="text-slate-400 mb-4">
+          <p className="text-[var(--muted)] mb-4">
             Dodaj pierwszy pomiar ciała, aby śledzić swoje postępy
           </p>
           <button
@@ -186,13 +186,13 @@ export default function MeasurementsView({ userId }: MeasurementsViewProps) {
           {/* View mode toggle */}
           {measurements.length > 1 && (
             <div className="flex justify-end">
-              <div className="flex bg-slate-800/50 rounded-lg p-1 border border-slate-700">
+              <div className="flex bg-[var(--card-bg)] rounded-lg p-1 border border-[var(--card-border)]">
                 <button
                   onClick={() => setViewMode('latest')}
                   className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     viewMode === 'latest'
                       ? 'bg-indigo-600 text-white'
-                      : 'text-slate-400 hover:text-white'
+                      : 'text-[var(--muted)] hover:text-white'
                   }`}
                 >
                   Od ostatniego
@@ -202,7 +202,7 @@ export default function MeasurementsView({ userId }: MeasurementsViewProps) {
                   className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     viewMode === 'total'
                       ? 'bg-indigo-600 text-white'
-                      : 'text-slate-400 hover:text-white'
+                      : 'text-[var(--muted)] hover:text-white'
                   }`}
                 >
                   Od początku
@@ -213,11 +213,11 @@ export default function MeasurementsView({ userId }: MeasurementsViewProps) {
 
           {/* Latest measurement */}
           {latest && (
-            <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
+            <div className="bg-[var(--card-bg)] rounded-xl p-6 border-2 border-[var(--card-border)]">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-400 text-sm">
+                  <Calendar className="w-4 h-4 text-[var(--muted)]" />
+                  <span className="text-[var(--muted)] text-sm">
                     Ostatni pomiar: {new Date(latest.date).toLocaleDateString('pl-PL', {
                       day: 'numeric',
                       month: 'long',
@@ -227,7 +227,7 @@ export default function MeasurementsView({ userId }: MeasurementsViewProps) {
                 </div>
                 <button
                   onClick={() => handleEditClick(latest)}
-                  className="text-slate-400 hover:text-indigo-400 transition-colors p-2"
+                  className="text-[var(--muted)] hover:text-indigo-400 transition-colors p-2"
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
@@ -278,8 +278,8 @@ export default function MeasurementsView({ userId }: MeasurementsViewProps) {
               </div>
 
               {latest.notes && (
-                <div className="mt-4 pt-4 border-t border-slate-700">
-                  <p className="text-slate-400 text-sm">{latest.notes}</p>
+                <div className="mt-4 pt-4 border-t border-[var(--card-border)]">
+                  <p className="text-[var(--muted)] text-sm">{latest.notes}</p>
                 </div>
               )}
             </div>
@@ -287,15 +287,15 @@ export default function MeasurementsView({ userId }: MeasurementsViewProps) {
 
           {/* History */}
           {measurements.length > 1 && (
-            <div className="bg-slate-800/50 rounded-xl border-2 border-slate-700 overflow-hidden">
-              <div className="p-4 border-b border-slate-700">
+            <div className="bg-[var(--card-bg)] rounded-xl border-2 border-[var(--card-border)] overflow-hidden">
+              <div className="p-4 border-b border-[var(--card-border)]">
                 <h3 className="text-lg font-semibold text-white">Historia pomiarów</h3>
               </div>
               <div className="divide-y divide-slate-700/50">
                 {measurements.slice(1).map((m) => (
                   <div
                     key={m.id}
-                    className="p-4 flex items-center justify-between hover:bg-slate-700/30 transition-colors"
+                    className="p-4 flex items-center justify-between hover:bg-[var(--surface)]/30 transition-colors"
                   >
                     <div className="flex-1">
                       <div className="text-white font-medium">
@@ -305,7 +305,7 @@ export default function MeasurementsView({ userId }: MeasurementsViewProps) {
                           year: 'numeric',
                         })}
                       </div>
-                      <div className="text-slate-400 text-sm flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                      <div className="text-[var(--muted)] text-sm flex flex-wrap gap-x-3 gap-y-1 mt-1">
                         {m.waist && <span>T: {m.waist}</span>}
                         {m.hips && <span>B: {m.hips}</span>}
                         {m.chest && <span>K: {m.chest}</span>}
@@ -322,7 +322,7 @@ export default function MeasurementsView({ userId }: MeasurementsViewProps) {
                     </div>
                     <button
                       onClick={() => handleEditClick(m)}
-                      className="text-slate-400 hover:text-indigo-400 transition-colors p-2"
+                      className="text-[var(--muted)] hover:text-indigo-400 transition-colors p-2"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>

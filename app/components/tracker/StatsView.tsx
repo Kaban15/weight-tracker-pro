@@ -140,10 +140,10 @@ export default function StatsView({
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-emerald-600/20 to-emerald-600/10 rounded-xl p-6 border-2 border-emerald-500/20">
-          <div className="text-emerald-400 text-sm mb-2 font-semibold">Aktualna waga</div>
+        <div className="bg-gradient-to-br from-[var(--accent)]/20 to-[var(--accent)]/10 rounded-xl p-6 border-2 border-[var(--accent)]/20">
+          <div className="text-[var(--accent)] text-sm mb-2 font-semibold">Aktualna waga</div>
           <div className="text-3xl font-bold text-white">{currentWeight.toFixed(1)} kg</div>
-          <div className="text-slate-400 text-xs mt-1">
+          <div className="text-[var(--muted)] text-xs mt-1">
             {stats.totalWeightChange > 0 ? '+' : ''}{stats.totalWeightChange.toFixed(1)}kg od startu
           </div>
         </div>
@@ -155,7 +155,7 @@ export default function StatsView({
             {stats.avgCalories > 0 ? Math.round(stats.avgCalories) : '—'}
           </div>
           {goal?.daily_calories_limit && (
-            <div className="text-slate-400 text-xs mt-1">Cel: {goal.daily_calories_limit}/dzień</div>
+            <div className="text-[var(--muted)] text-xs mt-1">Cel: {goal.daily_calories_limit}/dzień</div>
           )}
         </div>
         <div className="bg-gradient-to-br from-blue-600/20 to-blue-600/10 rounded-xl p-6 border-2 border-blue-500/20">
@@ -166,7 +166,7 @@ export default function StatsView({
             {stats.avgSteps > 0 ? Math.round(stats.avgSteps).toLocaleString() : '—'}
           </div>
           {goal?.daily_steps_goal && (
-            <div className="text-slate-400 text-xs mt-1">Cel: {goal.daily_steps_goal.toLocaleString()}/dzień</div>
+            <div className="text-[var(--muted)] text-xs mt-1">Cel: {goal.daily_steps_goal.toLocaleString()}/dzień</div>
           )}
         </div>
         <div className="bg-gradient-to-br from-purple-600/20 to-purple-600/10 rounded-xl p-6 border-2 border-purple-500/20">
@@ -175,34 +175,34 @@ export default function StatsView({
           </div>
           <div className="text-3xl font-bold text-white">{stats.totalWorkouts}</div>
           {goal?.weekly_training_hours && (
-            <div className="text-slate-400 text-xs mt-1">Cel: {goal.weekly_training_hours}h/tydz.</div>
+            <div className="text-[var(--muted)] text-xs mt-1">Cel: {goal.weekly_training_hours}h/tydz.</div>
           )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
-          <div className="flex items-center gap-2 text-emerald-400 text-sm mb-2 font-semibold">
+        <div className="bg-[var(--card-bg)] rounded-xl p-6 border-2 border-[var(--card-border)]">
+          <div className="flex items-center gap-2 text-[var(--accent)] text-sm mb-2 font-semibold">
             <Award className="w-5 h-5" />Seria
           </div>
           <div className="text-5xl font-bold text-white mb-2">{stats.currentStreak}</div>
-          <div className="text-slate-400">dni z rzędu!</div>
+          <div className="text-[var(--muted)]">dni z rzędu!</div>
         </div>
-        <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
-          <div className="flex items-center gap-2 text-emerald-400 text-sm mb-2 font-semibold">
+        <div className="bg-[var(--card-bg)] rounded-xl p-6 border-2 border-[var(--card-border)]">
+          <div className="flex items-center gap-2 text-[var(--accent)] text-sm mb-2 font-semibold">
             <LineChart className="w-5 h-5" />Statystyki
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-slate-400">Wszystkie wpisy:</span>
+              <span className="text-[var(--muted)]">Wszystkie wpisy:</span>
               <span className="text-white font-semibold">{stats.totalEntries}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Najlepsza waga:</span>
+              <span className="text-[var(--muted)]">Najlepsza waga:</span>
               <span className="text-white font-semibold">{stats.bestWeight.toFixed(1)}kg</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Średnia waga:</span>
+              <span className="text-[var(--muted)]">Średnia waga:</span>
               <span className="text-white font-semibold">{stats.avgWeight.toFixed(1)}kg</span>
             </div>
           </div>
@@ -210,37 +210,37 @@ export default function StatsView({
       </div>
 
       {goal && (
-        <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
+        <div className="bg-[var(--card-bg)] rounded-xl p-6 border-2 border-[var(--card-border)]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold text-white">Postęp celu</h3>
-            <button onClick={onEditGoal} className="text-emerald-400 hover:text-emerald-300 text-sm">
+            <button onClick={onEditGoal} className="text-[var(--accent)] hover:text-[var(--accent-dark)] text-sm">
               Edytuj
             </button>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-400">
+              <span className="text-[var(--muted)]">
                 Cel: {goal.target_weight}kg do {new Date(goal.target_date).toLocaleDateString('pl-PL')}
               </span>
-              <span className="text-emerald-400 font-semibold">
+              <span className="text-[var(--accent)] font-semibold">
                 {Math.max(0, Math.min(100, progress)).toFixed(0)}%
               </span>
             </div>
-            <div className="h-4 bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-4 bg-[var(--surface)] rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-500"
+                className="h-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent-dark)] transition-all duration-500"
                 style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
               />
             </div>
-            <div className="flex justify-between text-sm text-slate-400">
+            <div className="flex justify-between text-sm text-[var(--muted)]">
               <span>Start: {goal.current_weight}kg</span>
               <span>Teraz: {currentWeight.toFixed(1)}kg</span>
               <span>Cel: {goal.target_weight}kg</span>
             </div>
           </div>
           {goal.monitoring_method && (
-            <div className="mt-4 pt-4 border-t border-slate-700">
-              <p className="text-slate-400 text-sm">
+            <div className="mt-4 pt-4 border-t border-[var(--card-border)]">
+              <p className="text-[var(--muted)] text-sm">
                 <strong>Metoda monitorowania:</strong> {goal.monitoring_method}
               </p>
             </div>
@@ -252,16 +252,16 @@ export default function StatsView({
       {goalHistory.length > 0 && onViewHistory && (
         <button
           onClick={onViewHistory}
-          className="w-full bg-slate-800/50 hover:bg-slate-800 rounded-xl p-6 border-2 border-slate-700 hover:border-emerald-500/50 transition-all text-left group"
+          className="w-full bg-[var(--card-bg)] hover:bg-[var(--card-bg)] rounded-xl p-6 border-2 border-[var(--card-border)] hover:border-[var(--accent)]/50 transition-all text-left group"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-slate-700 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
-                <History className="w-6 h-6 text-slate-400 group-hover:text-emerald-400 transition-colors" />
+              <div className="w-12 h-12 bg-[var(--surface)] rounded-xl flex items-center justify-center group-hover:bg-[var(--accent)]/20 transition-colors">
+                <History className="w-6 h-6 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white">Historia celów</h3>
-                <p className="text-slate-400 text-sm">
+                <p className="text-[var(--muted)] text-sm">
                   {goalHistory.length} {goalHistory.length === 1 ? 'zakończony cel' :
                     goalHistory.length < 5 ? 'zakończone cele' : 'zakończonych celów'}
                 </p>
@@ -269,14 +269,14 @@ export default function StatsView({
             </div>
             <div className="flex items-center gap-3">
               {goalHistory.filter(g => g.completion_type === 'target_reached').length > 0 && (
-                <div className="flex items-center gap-1 bg-emerald-500/20 px-3 py-1 rounded-full">
-                  <Trophy className="w-4 h-4 text-emerald-400" />
-                  <span className="text-emerald-400 text-sm font-medium">
+                <div className="flex items-center gap-1 bg-[var(--accent)]/20 px-3 py-1 rounded-full">
+                  <Trophy className="w-4 h-4 text-[var(--accent)]" />
+                  <span className="text-[var(--accent)] text-sm font-medium">
                     {goalHistory.filter(g => g.completion_type === 'target_reached').length}
                   </span>
                 </div>
               )}
-              <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-emerald-400 transition-colors" />
+              <ChevronRight className="w-5 h-5 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors" />
             </div>
           </div>
         </button>
@@ -291,11 +291,11 @@ export default function StatsView({
 
       {/* Export Section */}
       {entries.length > 0 && (
-        <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
+        <div className="bg-[var(--card-bg)] rounded-xl p-6 border-2 border-[var(--card-border)]">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h3 className="text-lg font-bold text-white mb-1">Eksport danych</h3>
-              <p className="text-slate-400 text-sm">
+              <p className="text-[var(--muted)] text-sm">
                 {hasMoreEntries ? (
                   <>Załadowano {entries.length} wpisów. Eksport pobierze wszystkie dane.</>
                 ) : (
@@ -313,7 +313,7 @@ export default function StatsView({
               <button
                 onClick={exportToCSV}
                 disabled={exporting || loadingMore}
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:cursor-wait text-white font-semibold py-3 px-5 rounded-xl transition-colors"
+                className="flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-dark)] disabled:bg-[var(--surface)] disabled:cursor-wait text-white font-semibold py-3 px-5 rounded-xl transition-colors"
               >
                 {exporting || loadingMore ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -325,7 +325,7 @@ export default function StatsView({
               <button
                 onClick={exportToJSON}
                 disabled={exporting || loadingMore}
-                className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:cursor-wait text-white font-semibold py-3 px-5 rounded-xl transition-colors"
+                className="flex items-center gap-2 bg-[var(--surface)] hover:bg-[var(--surface)] disabled:bg-[var(--card-bg)] disabled:cursor-wait text-white font-semibold py-3 px-5 rounded-xl transition-colors"
               >
                 {exporting || loadingMore ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

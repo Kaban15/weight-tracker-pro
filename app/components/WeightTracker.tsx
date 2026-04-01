@@ -195,8 +195,8 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[var(--accent)]/30 border-t-[var(--accent)] rounded-full animate-spin" />
       </div>
     );
   }
@@ -285,24 +285,24 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
   // If user has entries but no goal, they're in free tracking mode - show main app
   if (!goal && entries.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 flex items-center justify-center p-4">
-        <div className="bg-slate-900/50 backdrop-blur-xl rounded-3xl p-8 max-w-md w-full border-2 border-emerald-500/20">
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
+        <div className="bg-[var(--card-bg)] backdrop-blur-xl rounded-3xl p-8 max-w-md w-full border-2 border-[var(--accent)]/20">
           <div className="text-center mb-6">
-            <div className="w-20 h-20 bg-emerald-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Target className="w-10 h-10 text-emerald-400" />
+            <div className="w-20 h-20 bg-[var(--accent)]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Target className="w-10 h-10 text-[var(--accent)]" />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Weight Tracker Pro</h1>
-            <p className="text-slate-400">Sledz wage, kalorie, kroki i treningi</p>
+            <h1 className="text-3xl font-bold text-[var(--foreground)] mb-2">Weight Tracker Pro</h1>
+            <p className="text-[var(--muted)]">Sledz wage, kalorie, kroki i treningi</p>
           </div>
           <button
             onClick={() => setShowGoalModal(true)}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-4 rounded-xl transition-colors"
+            className="w-full bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white font-semibold py-4 rounded-xl transition-colors"
           >
             Ustal swoj plan
           </button>
           <button
             onClick={signOut}
-            className="w-full mt-4 text-slate-400 hover:text-white transition-colors flex items-center justify-center gap-2"
+            className="w-full mt-4 text-[var(--muted)] hover:text-[var(--foreground)] transition-colors flex items-center justify-center gap-2"
           >
             <LogOut className="w-4 h-4" />Wyloguj sie
           </button>
@@ -323,32 +323,32 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
 
   // Main App
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-4 md:p-8">
+    <div className="min-h-screen bg-[var(--background)] p-4 md:p-8">
       <div className="max-w-6xl mx-auto mb-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             {onBack && (
-              <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors flex items-center gap-2">
+              <button onClick={onBack} className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors flex items-center gap-2">
                 <ArrowLeft className="w-5 h-5" />
               </button>
             )}
             <div>
-              <h1 className="text-3xl font-bold text-white">Progress Tracker</h1>
-              <p className="text-slate-400 text-sm">Kompleksowe śledzenie postępów</p>
+              <h1 className="text-3xl font-bold text-[var(--foreground)]">Progress Tracker</h1>
+              <p className="text-[var(--muted)] text-sm">Kompleksowe śledzenie postępów</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={() => setShowGoalModal(true)} className="text-emerald-400 hover:text-emerald-300 text-sm font-medium">
+            <button onClick={() => setShowGoalModal(true)} className="text-[var(--accent)] hover:text-[var(--accent-dark)] text-sm font-medium">
               {goal ? 'Edytuj plan' : 'Ustal cel'}
             </button>
             <button
               onClick={() => setShowNotificationSettings(true)}
-              className="text-slate-400 hover:text-emerald-400 transition-colors p-2"
+              className="text-[var(--muted)] hover:text-[var(--accent)] transition-colors p-2"
               aria-label="Ustawienia powiadomień"
             >
               <Bell className="w-5 h-5" />
             </button>
-            <button onClick={signOut} className="text-slate-400 hover:text-white transition-colors flex items-center gap-2">
+            <button onClick={signOut} className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors flex items-center gap-2">
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">Wyloguj</span>
             </button>
@@ -369,7 +369,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
         )}
 
         {/* View Toggle */}
-        <div className="flex gap-1 bg-slate-800/50 p-1 rounded-xl border-2 border-slate-700 overflow-x-auto">
+        <div className="flex gap-1 bg-[var(--card-bg)] p-1 rounded-xl border-2 border-[var(--card-border)] overflow-x-auto">
             {[
               { id: 'calendar', icon: Calendar, label: 'Kalendarz' },
               { id: 'table', icon: Table, label: 'Tabela' },
@@ -380,7 +380,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
                 key={id}
                 onClick={() => setView(id as typeof view)}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-lg transition-all min-w-[100px]
-                  ${view === id ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                  ${view === id ? 'bg-[var(--accent)] text-white' : 'text-[var(--muted)] hover:text-[var(--foreground)]'}`}
               >
                 <Icon className="w-5 h-5" />
                 <span className="font-semibold text-sm">{label}</span>
@@ -396,7 +396,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
             {/* Row: Range selector (left) + Data filter (right), stacked on mobile */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               {/* Chart time range selector */}
-              <div className="flex bg-slate-800/50 rounded-lg p-1 border border-slate-700 self-center sm:self-auto">
+              <div className="flex bg-[var(--card-bg)] rounded-lg p-1 border border-[var(--card-border)] self-center sm:self-auto">
                 {([
                   { id: 'week' as ChartRange, icon: Calendar, label: 'Tydzień' },
                   { id: 'month' as ChartRange, icon: Calendar, label: 'Miesiąc' },
@@ -408,8 +408,8 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
                     onClick={() => setChartRange(id)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                       chartRange === id
-                        ? 'bg-emerald-600 text-white'
-                        : 'text-slate-400 hover:text-white'
+                        ? 'bg-[var(--accent)] text-white'
+                        : 'text-[var(--muted)] hover:text-[var(--foreground)]'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -419,13 +419,13 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
               </div>
 
               {/* Data filter (all / current-goal) */}
-              <div className="flex bg-slate-800/50 rounded-lg p-1 border border-slate-700 self-center sm:self-auto">
+              <div className="flex bg-[var(--card-bg)] rounded-lg p-1 border border-[var(--card-border)] self-center sm:self-auto">
                 <button
                   onClick={() => setChartMode('all')}
                   className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     chartMode === 'all'
-                      ? 'bg-emerald-600 text-white'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-[var(--accent)] text-white'
+                      : 'text-[var(--muted)] hover:text-[var(--foreground)]'
                   }`}
                 >
                   Wszystkie wpisy
@@ -435,8 +435,8 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
                   disabled={!goal?.start_date}
                   className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     chartMode === 'current-goal'
-                      ? 'bg-emerald-600 text-white'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-[var(--accent)] text-white'
+                      : 'text-[var(--muted)] hover:text-[var(--foreground)]'
                   } ${!goal?.start_date ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   Biezacy cel
@@ -451,14 +451,14 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
                   type="date"
                   value={customStartDate}
                   onChange={(e) => setCustomStartDate(e.target.value)}
-                  className="bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-1.5 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none [color-scheme:dark]"
+                  className="bg-[var(--card-bg)] border border-[var(--card-border)] text-white rounded-lg px-3 py-1.5 text-sm focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] outline-none [color-scheme:dark]"
                 />
-                <span className="text-slate-500 text-sm">—</span>
+                <span className="text-[var(--muted)] text-sm">—</span>
                 <input
                   type="date"
                   value={customEndDate}
                   onChange={(e) => setCustomEndDate(e.target.value)}
-                  className="bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-1.5 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none [color-scheme:dark]"
+                  className="bg-[var(--card-bg)] border border-[var(--card-border)] text-white rounded-lg px-3 py-1.5 text-sm focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] outline-none [color-scheme:dark]"
                 />
               </div>
             )}
@@ -489,20 +489,20 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
             <div className="max-w-6xl mx-auto mt-6 space-y-6">
               {/* Header */}
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-white">
+                <h3 className="text-xl font-bold text-[var(--foreground)]">
                   Statystyki {chartMode === 'current-goal' ? 'bieżącego celu' : 'ogólne'}
                 </h3>
-                <span className="text-slate-400 text-sm">
+                <span className="text-[var(--muted)] text-sm">
                   {filteredStats.totalEntries} {filteredStats.totalEntries === 1 ? 'wpis' : filteredStats.totalEntries < 5 ? 'wpisy' : 'wpisów'}
                 </span>
               </div>
 
               {/* Main Stats Grid */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-gradient-to-br from-emerald-600/20 to-emerald-600/10 rounded-xl p-6 border-2 border-emerald-500/20">
-                  <div className="text-emerald-400 text-sm mb-2 font-semibold">Aktualna waga</div>
-                  <div className="text-3xl font-bold text-white">{filteredStats.currentWeight.toFixed(1)} kg</div>
-                  <div className="text-slate-400 text-xs mt-1">
+                <div className="bg-[var(--accent)]/10 rounded-xl p-6 border-2 border-[var(--accent)]/20">
+                  <div className="text-[var(--accent)] text-sm mb-2 font-semibold">Aktualna waga</div>
+                  <div className="text-3xl font-bold text-[var(--foreground)]">{filteredStats.currentWeight.toFixed(1)} kg</div>
+                  <div className="text-[var(--muted)] text-xs mt-1">
                     {filteredStats.totalWeightChange > 0 ? '+' : ''}{filteredStats.totalWeightChange.toFixed(1)}kg od startu
                   </div>
                 </div>
@@ -510,59 +510,59 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
                   <div className="flex items-center gap-2 text-orange-400 text-sm mb-2 font-semibold">
                     <Flame className="w-4 h-4" />Śr. kalorie
                   </div>
-                  <div className="text-3xl font-bold text-white">
+                  <div className="text-3xl font-bold text-[var(--foreground)]">
                     {filteredStats.avgCalories > 0 ? Math.round(filteredStats.avgCalories) : '—'}
                   </div>
                   {goal?.daily_calories_limit && (
-                    <div className="text-slate-400 text-xs mt-1">Cel: {goal.daily_calories_limit}/dzień</div>
+                    <div className="text-[var(--muted)] text-xs mt-1">Cel: {goal.daily_calories_limit}/dzień</div>
                   )}
                 </div>
                 <div className="bg-gradient-to-br from-blue-600/20 to-blue-600/10 rounded-xl p-6 border-2 border-blue-500/20">
                   <div className="flex items-center gap-2 text-blue-400 text-sm mb-2 font-semibold">
                     <Footprints className="w-4 h-4" />Śr. kroki
                   </div>
-                  <div className="text-3xl font-bold text-white">
+                  <div className="text-3xl font-bold text-[var(--foreground)]">
                     {filteredStats.avgSteps > 0 ? Math.round(filteredStats.avgSteps).toLocaleString() : '—'}
                   </div>
                   {goal?.daily_steps_goal && (
-                    <div className="text-slate-400 text-xs mt-1">Cel: {goal.daily_steps_goal.toLocaleString()}/dzień</div>
+                    <div className="text-[var(--muted)] text-xs mt-1">Cel: {goal.daily_steps_goal.toLocaleString()}/dzień</div>
                   )}
                 </div>
                 <div className="bg-gradient-to-br from-purple-600/20 to-purple-600/10 rounded-xl p-6 border-2 border-purple-500/20">
                   <div className="flex items-center gap-2 text-purple-400 text-sm mb-2 font-semibold">
                     <Dumbbell className="w-4 h-4" />Treningi
                   </div>
-                  <div className="text-3xl font-bold text-white">{filteredStats.totalWorkouts}</div>
+                  <div className="text-3xl font-bold text-[var(--foreground)]">{filteredStats.totalWorkouts}</div>
                   {goal?.weekly_training_hours && (
-                    <div className="text-slate-400 text-xs mt-1">Cel: {goal.weekly_training_hours}h/tydz.</div>
+                    <div className="text-[var(--muted)] text-xs mt-1">Cel: {goal.weekly_training_hours}h/tydz.</div>
                   )}
                 </div>
               </div>
 
               {/* Streak and Stats */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
-                  <div className="flex items-center gap-2 text-emerald-400 text-sm mb-2 font-semibold">
+                <div className="bg-[var(--card-bg)] rounded-xl p-6 border-2 border-[var(--card-border)]">
+                  <div className="flex items-center gap-2 text-[var(--accent)] text-sm mb-2 font-semibold">
                     <Award className="w-5 h-5" />Seria
                   </div>
-                  <div className="text-5xl font-bold text-white mb-2">{filteredStats.currentStreak}</div>
-                  <div className="text-slate-400">dni z rzędu!</div>
+                  <div className="text-5xl font-bold text-[var(--foreground)] mb-2">{filteredStats.currentStreak}</div>
+                  <div className="text-[var(--muted)]">dni z rzędu!</div>
                 </div>
-                <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
-                  <div className="flex items-center gap-2 text-emerald-400 text-sm mb-2 font-semibold">
+                <div className="bg-[var(--card-bg)] rounded-xl p-6 border-2 border-[var(--card-border)]">
+                  <div className="flex items-center gap-2 text-[var(--accent)] text-sm mb-2 font-semibold">
                     <LineChart className="w-5 h-5" />Podsumowanie
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Wszystkie wpisy:</span>
+                      <span className="text-[var(--muted)]">Wszystkie wpisy:</span>
                       <span className="text-white font-semibold">{filteredStats.totalEntries}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Najlepsza waga:</span>
+                      <span className="text-[var(--muted)]">Najlepsza waga:</span>
                       <span className="text-white font-semibold">{filteredStats.bestWeight.toFixed(1)}kg</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Średnia waga:</span>
+                      <span className="text-[var(--muted)]">Średnia waga:</span>
                       <span className="text-white font-semibold">{filteredStats.avgWeight.toFixed(1)}kg</span>
                     </div>
                   </div>
@@ -571,37 +571,37 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
 
               {/* Goal Progress - only in current-goal mode */}
               {chartMode === 'current-goal' && goal && (
-                <div className="bg-slate-800/50 rounded-xl p-6 border-2 border-slate-700">
+                <div className="bg-[var(--card-bg)] rounded-xl p-6 border-2 border-[var(--card-border)]">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-white">Postęp celu</h3>
-                    <button onClick={() => setShowGoalModal(true)} className="text-emerald-400 hover:text-emerald-300 text-sm">
+                    <h3 className="text-xl font-bold text-[var(--foreground)]">Postęp celu</h3>
+                    <button onClick={() => setShowGoalModal(true)} className="text-[var(--accent)] hover:text-[var(--accent-dark)] text-sm">
                       Edytuj
                     </button>
                   </div>
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">
+                      <span className="text-[var(--muted)]">
                         Cel: {goal.target_weight}kg do {new Date(goal.target_date).toLocaleDateString('pl-PL')}
                       </span>
-                      <span className="text-emerald-400 font-semibold">
+                      <span className="text-[var(--accent)] font-semibold">
                         {Math.max(0, Math.min(100, progress)).toFixed(0)}%
                       </span>
                     </div>
-                    <div className="h-4 bg-slate-700 rounded-full overflow-hidden">
+                    <div className="h-4 bg-[var(--surface)] rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent-dark)] transition-all duration-500"
                         style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
                       />
                     </div>
-                    <div className="flex justify-between text-sm text-slate-400">
+                    <div className="flex justify-between text-sm text-[var(--muted)]">
                       <span>Start: {goal.current_weight}kg</span>
                       <span>Teraz: {filteredStats.currentWeight.toFixed(1)}kg</span>
                       <span>Cel: {goal.target_weight}kg</span>
                     </div>
                   </div>
                   {goal.monitoring_method && (
-                    <div className="mt-4 pt-4 border-t border-slate-700">
-                      <p className="text-slate-400 text-sm">
+                    <div className="mt-4 pt-4 border-t border-[var(--card-border)]">
+                      <p className="text-[var(--muted)] text-sm">
                         <strong>Metoda monitorowania:</strong> {goal.monitoring_method}
                       </p>
                     </div>
@@ -613,16 +613,16 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
               {chartMode === 'all' && goalHistory.length > 0 && (
                 <button
                   onClick={() => setView('history')}
-                  className="w-full bg-slate-800/50 hover:bg-slate-800 rounded-xl p-6 border-2 border-slate-700 hover:border-emerald-500/50 transition-all text-left group"
+                  className="w-full bg-[var(--card-bg)] hover:bg-[var(--surface)] rounded-xl p-6 border-2 border-[var(--card-border)] hover:border-[var(--accent)]/50 transition-all text-left group"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-slate-700 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
-                        <History className="w-6 h-6 text-slate-400 group-hover:text-emerald-400 transition-colors" />
+                      <div className="w-12 h-12 bg-[var(--surface)] rounded-xl flex items-center justify-center group-hover:bg-[var(--accent)]/20 transition-colors">
+                        <History className="w-6 h-6 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-white">Historia celów</h3>
-                        <p className="text-slate-400 text-sm">
+                        <h3 className="text-lg font-bold text-[var(--foreground)]">Historia celów</h3>
+                        <p className="text-[var(--muted)] text-sm">
                           {goalHistory.length} {goalHistory.length === 1 ? 'zakończony cel' :
                             goalHistory.length < 5 ? 'zakończone cele' : 'zakończonych celów'}
                         </p>
@@ -630,14 +630,14 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
                     </div>
                     <div className="flex items-center gap-3">
                       {goalHistory.filter(g => g.completion_type === 'target_reached').length > 0 && (
-                        <div className="flex items-center gap-1 bg-emerald-500/20 px-3 py-1 rounded-full">
-                          <Trophy className="w-4 h-4 text-emerald-400" />
-                          <span className="text-emerald-400 text-sm font-medium">
+                        <div className="flex items-center gap-1 bg-[var(--accent)]/20 px-3 py-1 rounded-full">
+                          <Trophy className="w-4 h-4 text-[var(--accent)]" />
+                          <span className="text-[var(--accent)] text-sm font-medium">
                             {goalHistory.filter(g => g.completion_type === 'target_reached').length}
                           </span>
                         </div>
                       )}
-                      <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                      <ChevronRight className="w-5 h-5 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors" />
                     </div>
                   </div>
                 </button>

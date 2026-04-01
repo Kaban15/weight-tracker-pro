@@ -171,33 +171,33 @@ export default function GoalWizard({
 
         <div className="flex gap-2 mb-6">
           {[1, 2, 3, 4].map(s => (
-            <div key={s} className={`h-2 flex-1 rounded-full ${s <= step ? 'bg-emerald-500' : 'bg-slate-700'}`} />
+            <div key={s} className={`h-2 flex-1 rounded-full ${s <= step ? 'bg-[var(--accent)]' : 'bg-[var(--surface)]'}`} />
           ))}
         </div>
 
         {step === 1 && (
           <div className="space-y-4">
             <div>
-              <label className="flex items-center gap-2 text-slate-300 mb-2 font-semibold">
-                <Scale className="w-4 h-4 text-emerald-400" />
+              <label className="flex items-center gap-2 text-[var(--foreground)] mb-2 font-semibold">
+                <Scale className="w-4 h-4 text-[var(--accent)]" />
                 Aktualna waga (kg) *
               </label>
               <input type="number" step="0.1" value={currentWeightInput} onChange={(e) => setCurrentWeightInput(e.target.value)}
-                className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none" />
+                className="w-full bg-[var(--card-bg)] text-white rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none" />
             </div>
 
             <div>
-              <label className="flex items-center gap-2 text-slate-300 mb-2 font-semibold">
+              <label className="flex items-center gap-2 text-[var(--foreground)] mb-2 font-semibold">
                 <Target className="w-4 h-4 text-amber-400" />
                 Waga docelowa (kg) *
               </label>
               <input type="number" step="0.1" value={targetWeight} onChange={(e) => setTargetWeight(e.target.value)}
-                className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none" />
+                className="w-full bg-[var(--card-bg)] text-white rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none" />
             </div>
 
             {totalLoss > 0 && (
-              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                <p className="text-emerald-400">
+              <div className="p-4 bg-[var(--accent)]/10 border border-[var(--accent)]/20 rounded-xl">
+                <p className="text-[var(--accent)]">
                   <TrendingDown className="w-4 h-4 inline mr-2" />
                   Do zrzucenia: <strong>{totalLoss.toFixed(1)} kg</strong>
                 </p>
@@ -205,19 +205,19 @@ export default function GoalWizard({
             )}
 
             <button onClick={() => setStep(2)} disabled={!currentWeightInput || !targetWeight || cw <= tw}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors">
+              className="w-full bg-[var(--accent)] hover:bg-[var(--accent-dark)] disabled:bg-[var(--surface)] disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors">
               Dalej
             </button>
 
             {goal?.id && (
-              <div className="pt-4 mt-4 border-t border-slate-700">
+              <div className="pt-4 mt-4 border-t border-[var(--card-border)]">
                 <p className="flex items-center gap-2 text-red-400 text-sm font-semibold mb-3">
                   <AlertTriangle className="w-4 h-4" />
                   Strefa niebezpieczna
                 </p>
                 <div className="space-y-2">
                   <button onClick={() => onReset(false)}
-                    className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white py-2 px-4 rounded-xl transition-colors text-sm">
+                    className="w-full flex items-center justify-center gap-2 bg-[var(--card-bg)] hover:bg-[var(--surface)] text-[var(--foreground)] hover:text-white py-2 px-4 rounded-xl transition-colors text-sm">
                     <RotateCcw className="w-4 h-4" />
                     Resetuj plan (zachowaj wpisy)
                   </button>
@@ -235,17 +235,17 @@ export default function GoalWizard({
         {step === 2 && (
           <div className="space-y-4">
             <div>
-              <label className="block text-slate-300 mb-2 font-semibold">Data startu *</label>
+              <label className="block text-[var(--foreground)] mb-2 font-semibold">Data startu *</label>
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
-                className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none" />
+                className="w-full bg-[var(--card-bg)] text-white rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none" />
             </div>
 
-            <div className="p-4 bg-slate-800/50 rounded-xl border border-slate-700">
-              <p className="text-slate-400 text-sm mb-3">Wybierz sposób planowania:</p>
+            <div className="p-4 bg-[var(--card-bg)] rounded-xl border border-[var(--card-border)]">
+              <p className="text-[var(--muted)] text-sm mb-3">Wybierz sposób planowania:</p>
 
               <div className="space-y-3">
                 <div>
-                  <label className="block text-slate-300 mb-2 font-semibold">Tempo: kg na tydzień</label>
+                  <label className="block text-[var(--foreground)] mb-2 font-semibold">Tempo: kg na tydzień</label>
                   <input type="number" step="0.1" value={weeklyWeightLoss}
                     onChange={(e) => {
                       setWeeklyWeightLoss(e.target.value);
@@ -256,13 +256,13 @@ export default function GoalWizard({
                         setTargetDate(formatDate(end));
                       }
                     }}
-                    className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none" />
+                    className="w-full bg-[var(--card-bg)] text-white rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none" />
                 </div>
 
-                <p className="text-center text-slate-500">lub</p>
+                <p className="text-center text-[var(--muted)]">lub</p>
 
                 <div>
-                  <label className="block text-slate-300 mb-2 font-semibold">Data końcowa</label>
+                  <label className="block text-[var(--foreground)] mb-2 font-semibold">Data końcowa</label>
                   <div className="flex gap-2 mb-3">
                     {[
                       { id: 'date', label: 'Data' },
@@ -273,7 +273,7 @@ export default function GoalWizard({
                       <button key={id} type="button"
                         onClick={() => { setDateMode(id as typeof dateMode); setDurationValue(''); }}
                         className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                          dateMode === id ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          dateMode === id ? 'bg-[var(--accent)] text-white' : 'bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface)]'
                         }`}>
                         {label}
                       </button>
@@ -287,13 +287,13 @@ export default function GoalWizard({
                         const calculated = calculateWeeklyLoss();
                         if (calculated) setWeeklyWeightLoss(calculated);
                       }}
-                      className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none" />
+                      className="w-full bg-[var(--card-bg)] text-white rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none" />
                   ) : (
                     <div className="flex gap-2 items-center">
                       <input type="number" value={durationValue}
                         onChange={(e) => { setDurationValue(e.target.value); if (e.target.value) calculateDateFromDuration(e.target.value, dateMode); }}
-                        className="flex-1 bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none" />
-                      <span className="text-slate-400 text-sm min-w-[80px]">
+                        className="flex-1 bg-[var(--card-bg)] text-white rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none" />
+                      <span className="text-[var(--muted)] text-sm min-w-[80px]">
                         {dateMode === 'days' && 'dni'}
                         {dateMode === 'weeks' && 'tygodni'}
                         {dateMode === 'months' && 'miesięcy'}
@@ -320,48 +320,48 @@ export default function GoalWizard({
             )}
 
             <div className="flex gap-3">
-              <button onClick={() => setStep(1)} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-xl transition-colors">Wstecz</button>
+              <button onClick={() => setStep(1)} className="flex-1 bg-[var(--surface)] hover:bg-[var(--surface)] text-white font-semibold py-3 rounded-xl transition-colors">Wstecz</button>
               <button onClick={() => { if (validateDates()) setStep(3); }} disabled={!targetDate || !startDate}
-                className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors">Dalej</button>
+                className="flex-1 bg-[var(--accent)] hover:bg-[var(--accent-dark)] disabled:bg-[var(--surface)] disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors">Dalej</button>
             </div>
           </div>
         )}
 
         {step === 3 && (
           <div className="space-y-4">
-            <p className="text-slate-400 text-sm mb-2">Podaj dane do obliczenia zapotrzebowania kalorycznego:</p>
+            <p className="text-[var(--muted)] text-sm mb-2">Podaj dane do obliczenia zapotrzebowania kalorycznego:</p>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-300 mb-2 font-semibold text-sm">Wiek (lata)</label>
+                <label className="block text-[var(--foreground)] mb-2 font-semibold text-sm">Wiek (lata)</label>
                 <input type="number" value={age} onChange={(e) => setAge(e.target.value)}
-                  className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none" />
+                  className="w-full bg-[var(--card-bg)] text-white rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none" />
               </div>
               <div>
-                <label className="block text-slate-300 mb-2 font-semibold text-sm">Wzrost (cm)</label>
+                <label className="block text-[var(--foreground)] mb-2 font-semibold text-sm">Wzrost (cm)</label>
                 <input type="number" value={height} onChange={(e) => setHeight(e.target.value)}
-                  className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none" />
+                  className="w-full bg-[var(--card-bg)] text-white rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none" />
               </div>
             </div>
 
             <div>
-              <label className="block text-slate-300 mb-2 font-semibold text-sm">Płeć</label>
+              <label className="block text-[var(--foreground)] mb-2 font-semibold text-sm">Płeć</label>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setGender('male')}
-                  className={`flex-1 py-3 rounded-xl font-medium transition-colors ${gender === 'male' ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
+                  className={`flex-1 py-3 rounded-xl font-medium transition-colors ${gender === 'male' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--surface)] text-[var(--foreground)]'}`}>
                   Mężczyzna
                 </button>
                 <button type="button" onClick={() => setGender('female')}
-                  className={`flex-1 py-3 rounded-xl font-medium transition-colors ${gender === 'female' ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-300'}`}>
+                  className={`flex-1 py-3 rounded-xl font-medium transition-colors ${gender === 'female' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--surface)] text-[var(--foreground)]'}`}>
                   Kobieta
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-slate-300 mb-2 font-semibold text-sm">Poziom aktywności</label>
+              <label className="block text-[var(--foreground)] mb-2 font-semibold text-sm">Poziom aktywności</label>
               <select value={activityLevel} onChange={(e) => setActivityLevel(e.target.value)}
-                className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none">
+                className="w-full bg-[var(--card-bg)] text-white rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none">
                 <option value="1.2">Siedzący (praca biurowa)</option>
                 <option value="1.375">Lekko aktywny (1-2 treningi/tydz.)</option>
                 <option value="1.55">Umiarkowanie aktywny (3-4 treningi/tydz.)</option>
@@ -372,20 +372,20 @@ export default function GoalWizard({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="flex items-center gap-2 text-slate-300 mb-2 font-semibold text-sm">
+                <label className="flex items-center gap-2 text-[var(--foreground)] mb-2 font-semibold text-sm">
                   <Footprints className="w-4 h-4 text-blue-400" />
                   Cel kroków/dzień
                 </label>
                 <input type="number" value={dailySteps} onChange={(e) => setDailySteps(e.target.value)}
-                  className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none" />
+                  className="w-full bg-[var(--card-bg)] text-white rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none" />
               </div>
               <div>
-                <label className="flex items-center gap-2 text-slate-300 mb-2 font-semibold text-sm">
+                <label className="flex items-center gap-2 text-[var(--foreground)] mb-2 font-semibold text-sm">
                   <Dumbbell className="w-4 h-4 text-purple-400" />
                   Trening h/tydz.
                 </label>
                 <input type="number" step="0.5" value={weeklyTraining} onChange={(e) => setWeeklyTraining(e.target.value)}
-                  className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none" />
+                  className="w-full bg-[var(--card-bg)] text-white rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none" />
               </div>
             </div>
 
@@ -396,11 +396,11 @@ export default function GoalWizard({
                   Obliczone zapotrzebowanie
                 </p>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="text-slate-400">BMR:</div>
+                  <div className="text-[var(--muted)]">BMR:</div>
                   <div className="text-white font-medium">{calorieData.bmr} kcal</div>
-                  <div className="text-slate-400">TDEE:</div>
+                  <div className="text-[var(--muted)]">TDEE:</div>
                   <div className="text-white font-medium">{calorieData.tdee} kcal</div>
-                  <div className="text-slate-400">Deficyt:</div>
+                  <div className="text-[var(--muted)]">Deficyt:</div>
                   <div className="text-red-400 font-medium">-{calorieData.dailyDeficit} kcal</div>
                 </div>
                 <div className="pt-3 border-t border-orange-500/20">
@@ -417,17 +417,17 @@ export default function GoalWizard({
             )}
 
             <div>
-              <label className="flex items-center gap-2 text-slate-300 mb-2 font-semibold text-sm">
+              <label className="flex items-center gap-2 text-[var(--foreground)] mb-2 font-semibold text-sm">
                 <Flame className="w-4 h-4 text-orange-400" />
                 Dzienny limit kalorii
               </label>
               <input type="number" value={dailyCalories} onChange={(e) => setDailyCalories(e.target.value)}
-                className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none" />
+                className="w-full bg-[var(--card-bg)] text-white rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none" />
             </div>
 
             <div className="flex gap-3">
-              <button onClick={() => setStep(2)} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-xl transition-colors">Wstecz</button>
-              <button onClick={() => setStep(4)} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition-colors">Dalej</button>
+              <button onClick={() => setStep(2)} className="flex-1 bg-[var(--surface)] hover:bg-[var(--surface)] text-white font-semibold py-3 rounded-xl transition-colors">Wstecz</button>
+              <button onClick={() => setStep(4)} className="flex-1 bg-[var(--accent)] hover:bg-[var(--accent-dark)] text-white font-semibold py-3 rounded-xl transition-colors">Dalej</button>
             </div>
           </div>
         )}
@@ -435,16 +435,16 @@ export default function GoalWizard({
         {step === 4 && (
           <div className="space-y-4">
             <div>
-              <label className="flex items-center gap-2 text-slate-300 mb-2 font-semibold">
-                <FileText className="w-4 h-4 text-slate-400" />
+              <label className="flex items-center gap-2 text-[var(--foreground)] mb-2 font-semibold">
+                <FileText className="w-4 h-4 text-[var(--muted)]" />
                 Metoda monitorowania
               </label>
               <textarea value={monitoringMethod} onChange={(e) => setMonitoringMethod(e.target.value)} rows={4}
-                className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 border-2 border-slate-700 focus:border-emerald-500 outline-none resize-none" />
+                className="w-full bg-[var(--card-bg)] text-white rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none resize-none" />
             </div>
 
-            <div className="p-4 bg-slate-800/50 rounded-xl border border-slate-700 space-y-2 text-sm">
-              <p className="text-slate-400 font-semibold mb-2">Podsumowanie planu:</p>
+            <div className="p-4 bg-[var(--card-bg)] rounded-xl border border-[var(--card-border)] space-y-2 text-sm">
+              <p className="text-[var(--muted)] font-semibold mb-2">Podsumowanie planu:</p>
               <p className="text-white">Cel: {currentWeightInput} kg → {targetWeight} kg</p>
               <p className="text-white">Tempo: -{weeklyWeightLoss || '?'} kg/tydzień</p>
               <p className="text-white">Data: {startDate && new Date(startDate).toLocaleDateString('pl-PL')} → {targetDate && new Date(targetDate).toLocaleDateString('pl-PL')}</p>
@@ -454,9 +454,9 @@ export default function GoalWizard({
             </div>
 
             <div className="flex gap-3">
-              <button onClick={() => setStep(3)} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-xl transition-colors">Wstecz</button>
+              <button onClick={() => setStep(3)} className="flex-1 bg-[var(--surface)] hover:bg-[var(--surface)] text-white font-semibold py-3 rounded-xl transition-colors">Wstecz</button>
               <button onClick={handleSave} disabled={saving}
-                className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center">
+                className="flex-1 bg-[var(--accent)] hover:bg-[var(--accent-dark)] disabled:bg-[var(--surface)] text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center">
                 {saving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Zapisz plan'}
               </button>
             </div>

@@ -200,7 +200,7 @@ export default function MeasurementModal({
         <form onSubmit={handleSubmit} className="overflow-y-auto p-4 space-y-5 flex-1 -m-6 p-6 mt-0 pt-4">{/* adjust margins to offset Modal padding */}
           {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
               Data pomiaru
             </label>
             <input
@@ -208,7 +208,7 @@ export default function MeasurementModal({
               value={formData.date}
               onChange={(e) => handleChange('date', e.target.value)}
               max={formatDate(new Date())}
-              className="w-full bg-slate-800 border-2 border-slate-700 rounded-xl px-4 py-3 text-base text-white focus:outline-none focus:border-indigo-500"
+              className="w-full bg-[var(--card-bg)] border-2 border-[var(--card-border)] rounded-xl px-4 py-3 text-base text-white focus:outline-none focus:border-indigo-500"
               required
             />
           </div>
@@ -218,15 +218,15 @@ export default function MeasurementModal({
             <div key={section.title}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-lg">{section.icon}</span>
-                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
+                <h3 className="text-sm font-semibold text-[var(--muted)] uppercase tracking-wider">
                   {section.title}
                 </h3>
-                <div className="flex-1 h-px bg-slate-700/50" />
+                <div className="flex-1 h-px bg-[var(--surface)]" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {section.fields.map(({ key, label }) => (
                   <div key={key}>
-                    <label className="block text-sm font-medium text-slate-300 mb-1">
+                    <label className="block text-sm font-medium text-[var(--foreground)] mb-1">
                       {label}
                     </label>
                     <div className="relative">
@@ -238,9 +238,9 @@ export default function MeasurementModal({
                         value={formData[key as keyof FormData]}
                         onChange={(e) => handleChange(key as keyof FormData, e.target.value)}
                         placeholder="—"
-                        className="w-full bg-slate-800 border-2 border-slate-700 rounded-xl px-4 py-2.5 text-base text-white focus:outline-none focus:border-indigo-500 pr-12"
+                        className="w-full bg-[var(--card-bg)] border-2 border-[var(--card-border)] rounded-xl px-4 py-2.5 text-base text-white focus:outline-none focus:border-indigo-500 pr-12"
                       />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--muted)] text-sm">
                         cm
                       </span>
                     </div>
@@ -252,7 +252,7 @@ export default function MeasurementModal({
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
               Notatki (opcjonalnie)
             </label>
             <textarea
@@ -260,7 +260,7 @@ export default function MeasurementModal({
               onChange={(e) => handleChange('notes', e.target.value)}
               placeholder="Dodatkowe uwagi..."
               rows={2}
-              className="w-full bg-slate-800 border-2 border-slate-700 rounded-xl px-4 py-3 text-base text-white focus:outline-none focus:border-indigo-500 resize-none"
+              className="w-full bg-[var(--card-bg)] border-2 border-[var(--card-border)] rounded-xl px-4 py-3 text-base text-white focus:outline-none focus:border-indigo-500 resize-none"
             />
           </div>
 
@@ -280,7 +280,7 @@ export default function MeasurementModal({
                     <button
                       type="button"
                       onClick={() => setShowDeleteConfirm(false)}
-                      className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-semibold transition-colors"
+                      className="flex-1 bg-[var(--surface)] hover:bg-[var(--surface)] text-white py-3 rounded-xl font-semibold transition-colors"
                     >
                       Anuluj
                     </button>
@@ -288,7 +288,7 @@ export default function MeasurementModal({
                       type="button"
                       onClick={handleDelete}
                       disabled={deleting}
-                      className="flex-1 bg-red-600 hover:bg-red-500 disabled:bg-slate-700 text-white py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+                      className="flex-1 bg-red-600 hover:bg-red-500 disabled:bg-[var(--surface)] text-white py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
                     >
                       {deleting ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -304,7 +304,7 @@ export default function MeasurementModal({
                   <button
                     type="button"
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="bg-slate-800 hover:bg-red-600/20 text-red-400 hover:text-red-300 p-3 rounded-xl transition-colors"
+                    className="bg-[var(--card-bg)] hover:bg-red-600/20 text-red-400 hover:text-red-300 p-3 rounded-xl transition-colors"
                     aria-label="Usuń pomiar"
                   >
                     <Trash2 className="w-5 h-5" />
@@ -315,7 +315,7 @@ export default function MeasurementModal({
             <button
               type="submit"
               disabled={saving}
-              className={`flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 text-white py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 ${
+              className={`flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-[var(--surface)] text-white py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 ${
                 showDeleteConfirm ? 'hidden' : ''
               }`}
             >

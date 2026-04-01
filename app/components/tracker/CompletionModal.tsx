@@ -54,15 +54,15 @@ export default function CompletionModal({
       {/* Header with icon */}
       <div className="text-center mb-6">
         <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 ${
-          isSuccess ? 'bg-emerald-500/20' : 'bg-amber-500/20'
+          isSuccess ? 'bg-[var(--accent)]/20' : 'bg-amber-500/20'
         }`}>
           {isSuccess ? (
-            <Trophy className="w-10 h-10 text-emerald-400" />
+            <Trophy className="w-10 h-10 text-[var(--accent)]" />
           ) : (
             <Calendar className="w-10 h-10 text-amber-400" />
           )}
         </div>
-        <p className="text-slate-400">
+        <p className="text-[var(--muted)]">
           {isSuccess
             ? 'Gratulacje! Osiagnales swoja wage docelowa!'
             : 'Twoj plan dobiegl konca. Oto podsumowanie.'}
@@ -70,39 +70,39 @@ export default function CompletionModal({
       </div>
 
       {/* Stats Summary */}
-      <div className="bg-slate-800/50 rounded-xl p-4 mb-6 space-y-3">
+      <div className="bg-[var(--card-bg)] rounded-xl p-4 mb-6 space-y-3">
         <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2 text-slate-400">
+          <div className="flex items-center gap-2 text-[var(--muted)]">
             <Target className="w-4 h-4" />
             <span>Cel</span>
           </div>
-          <span className="text-white font-semibold">
+          <span className="text-[var(--foreground)] font-semibold">
             {goal.current_weight}kg &rarr; {goal.target_weight}kg
           </span>
         </div>
 
         <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2 text-slate-400">
+          <div className="flex items-center gap-2 text-[var(--muted)]">
             <TrendingDown className="w-4 h-4" />
             <span>Zmiana wagi</span>
           </div>
-          <span className={`font-semibold ${weightLost > 0 ? 'text-emerald-400' : weightLost < 0 ? 'text-red-400' : 'text-slate-400'}`}>
+          <span className={`font-semibold ${weightLost > 0 ? 'text-[var(--accent)]' : weightLost < 0 ? 'text-red-400' : 'text-[var(--muted)]'}`}>
             {weightLost > 0 ? '-' : weightLost < 0 ? '+' : ''}{Math.abs(weightLost).toFixed(1)} kg
           </span>
         </div>
 
         <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2 text-slate-400">
+          <div className="flex items-center gap-2 text-[var(--muted)]">
             <Award className="w-4 h-4" />
             <span>Postep</span>
           </div>
-          <span className="text-white font-semibold">
+          <span className="text-[var(--foreground)] font-semibold">
             {Math.max(0, progressPct).toFixed(0)}%
           </span>
         </div>
 
         <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2 text-slate-400">
+          <div className="flex items-center gap-2 text-[var(--muted)]">
             <Flame className="w-4 h-4 text-orange-400" />
             <span>Najdluzsza seria</span>
           </div>
@@ -113,9 +113,9 @@ export default function CompletionModal({
       </div>
 
       {/* Final weight display */}
-      <div className="text-center mb-6 py-4 bg-slate-800/30 rounded-xl">
-        <div className="text-slate-400 text-sm mb-1">Aktualna waga</div>
-        <div className="text-3xl font-bold text-white">{finalWeight.toFixed(1)} kg</div>
+      <div className="text-center mb-6 py-4 bg-[var(--card-bg)] rounded-xl">
+        <div className="text-[var(--muted)] text-sm mb-1">Aktualna waga</div>
+        <div className="text-3xl font-bold text-[var(--foreground)]">{finalWeight.toFixed(1)} kg</div>
       </div>
 
       {/* Action Buttons */}
@@ -123,7 +123,7 @@ export default function CompletionModal({
         <button
           onClick={() => handleAction('new')}
           disabled={processing}
-          className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 text-white font-semibold py-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+          className="w-full bg-[var(--accent)] hover:bg-[var(--accent-dark)] disabled:bg-[var(--surface)] text-white font-semibold py-4 rounded-xl transition-colors flex items-center justify-center gap-2"
         >
           {processing ? (
             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -137,7 +137,7 @@ export default function CompletionModal({
         <button
           onClick={() => handleAction('continue')}
           disabled={processing}
-          className="w-full bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 text-white font-semibold py-4 rounded-xl transition-colors"
+          className="w-full bg-[var(--surface)] hover:bg-[var(--card-border)] disabled:bg-[var(--card-bg)] text-[var(--foreground)] font-semibold py-4 rounded-xl transition-colors"
         >
           Kontynuuj bez celu
         </button>
