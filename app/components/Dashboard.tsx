@@ -6,7 +6,7 @@ import { HeroCard, StatCard, SubtleCard } from "./ui";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigation } from "@/lib/NavigationContext";
 import { useWeightTracker } from "./tracker";
-import { useChallenges, getChallengeProgress } from "./challenge";
+import { useChallenges } from "./challenge";
 import { useTasks } from "./todo";
 import { initializeNotifications } from "@/lib/notifications";
 import { formatDate } from "./shared/dateUtils";
@@ -36,10 +36,7 @@ export default function Dashboard() {
 
   const today = formatDate(new Date());
   const activeChallenges = challenges?.filter(c => c.startDate <= today && c.endDate >= today) ?? [];
-  const todayDone = activeChallenges.filter(c => {
-    const progress = getChallengeProgress(c);
-    return progress?.isCompleted;
-  }).length;
+  const todayDone = activeChallenges.filter(c => c.completedDays[today] > 0).length;
 
   const todayTasks = tasks?.filter(t => !t.completed) ?? [];
 
