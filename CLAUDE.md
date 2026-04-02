@@ -38,7 +38,7 @@ The navigation flow is: **Auth** -> **WelcomeModal** (first visit) -> **AppShell
 - `challenge` - Daily habit tracking (e.g., push-ups, exercises)
 - `todo` - Task management with priorities, categories, deadlines
 - `schedule` - Combined daily view aggregating tasks + habits
-- `meals` - Meal planning, AI suggestions, pantry, shopping list
+- `meals` - Meal planning, AI suggestions, pantry, shopping list, auto macro calculation, cost estimation
 - `admin` - Admin dashboard (email-gated)
 
 ### Navigation System
@@ -59,6 +59,7 @@ PostHogProvider > ThemeProvider > ErrorBoundary > AuthProvider > OnboardingProvi
 - **Challenges/Habits** (`app/components/challenge/useChallenges.ts`): Supabase `challenges` table with offline sync support.
 - **Tasks** (`app/components/todo/useTasks.ts`): Supabase `tasks` table with localStorage fallback/migration.
 - **Schedule** (`app/components/schedule/useSchedule.ts`): Aggregates data from tasks + challenges modules. Has its own `schedule_items` Supabase table for custom items.
+- **Meals** (`app/components/meals/useMeals.ts`): Supabase `meal_plans` + `meal_preferences` tables. AI-generated meals via Gemini. Nutrition lookup (`useNutritionLookup.ts`) calls Gemini per ingredient with 800ms debounce and localStorage cache (30-day TTL, normalized per 100g/ml). Cost estimation (`costUtils.ts`) matches ingredients to pantry items by name+unit without deducting. Pantry deduction happens only on "Zjedzony".
 - **Onboarding state**: localStorage only (per-user key).
 - **Theme preference**: localStorage only.
 
@@ -68,11 +69,12 @@ IndexedDB-based offline storage (`lib/offlineStorage.ts`) with a sync queue (`li
 
 ### API Routes
 
-Only two server-side API routes exist:
 - `app/api/feedback/route.ts` - Saves feedback to Supabase + sends email via Resend
 - `app/api/admin/stats/route.ts` - Admin statistics endpoint (uses Supabase service role key to bypass RLS)
+- `app/api/meals/chat/route.ts` - AI meal generation via Gemini 2.0 Flash (or GPT-4o-mini fallback). Rate limited to 30/day.
+- `app/api/meals/nutrition/route.ts` - Gemini-powered nutrition lookup for single ingredients. Returns `{calories, protein, carbs, fat}`. Rate limited to 60/day.
 
-Both use server-side rate limiting from `lib/serverRateLimiter.ts`.
+All use server-side rate limiting from `lib/serverRateLimiter.ts`.
 
 ### Path Alias
 
