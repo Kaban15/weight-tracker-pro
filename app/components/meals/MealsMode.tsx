@@ -10,6 +10,8 @@ import { MealPlan, MealPreferences, AIGeneratedMeal, MealIngredient, formatDate 
 import { useMeals } from './useMeals';
 import { usePantry } from './usePantry';
 import { useShoppingList } from './useShoppingList';
+import { useNutritionLookup } from './useNutritionLookup';
+import { ZERO_CALORIE_INGREDIENTS } from './constants';
 import MealWizard from './MealWizard';
 import MealWizardAIInterview from './MealWizardAIInterview';
 import MealDashboard from './MealDashboard';
@@ -37,6 +39,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
 
   const pantry = usePantry(user?.id);
   const shopping = useShoppingList(user?.id);
+  const { lookupNutrition } = useNutritionLookup();
 
   const [view, setView] = useState<View>('loading');
   const [wizardData, setWizardData] = useState<Partial<MealPreferences> | null>(null);
@@ -85,9 +88,32 @@ export default function MealsMode({ onBack }: MealsModeProps) {
   const handleAcceptMeals = async (date: string, meals: AIGeneratedMeal[]) => {
     const result = await acceptMeals(date, meals);
     if (result?.data) {
-      // Estimate cost from pantry for each new meal
       for (const savedMeal of result.data as MealPlan[]) {
-        const { costs, totalCost } = pantry.estimateCost(savedMeal.ingredients as MealIngredient[]);
+        const ingredients = savedMeal.ingredients as MealIngredient[];
+
+        // Enrich macros if AI returned zeros
+        const hasZeroMacros = ingredients.some(ing => {
+          const isZeroCal = ZERO_CALORIE_INGREDIENTS.some(z => ing.name.toLowerCase().includes(z));
+          return !isZeroCal && ing.calories === 0;
+        });
+
+        if (hasZeroMacros) {
+          const enriched = await enrichIngredientsWithNutrition(ingredients);
+          const totalCal = enriched.reduce((s, i) => s + i.calories, 0);
+          const totalPro = enriched.reduce((s, i) => s + i.protein, 0);
+          const totalCarb = enriched.reduce((s, i) => s + i.carbs, 0);
+          const totalFat = enriched.reduce((s, i) => s + i.fat, 0);
+          await updateMealPlan(savedMeal.id, {
+            ingredients: enriched,
+            calories: totalCal,
+            protein: totalPro,
+            carbs: totalCarb,
+            fat: totalFat,
+          });
+        }
+
+        // Estimate cost from pantry
+        const { costs, totalCost } = pantry.estimateCost(ingredients);
         if (totalCost > 0 || costs.size > 0) {
           const costObj: Record<string, number | null> = {};
           costs.forEach((v, k) => { costObj[k] = v; });
@@ -98,6 +124,22 @@ export default function MealsMode({ onBack }: MealsModeProps) {
         }
       }
     }
+  };
+
+  /** Look up nutrition for each ingredient with 0 macros */
+  const enrichIngredientsWithNutrition = async (ingredients: MealIngredient[]): Promise<MealIngredient[]> => {
+    const results = await Promise.all(
+      ingredients.map(async (ing) => {
+        const isZeroCal = ZERO_CALORIE_INGREDIENTS.some(z => ing.name.toLowerCase().includes(z));
+        if (isZeroCal || ing.calories > 0) return ing;
+
+        const nutrition = await lookupNutrition(ing.name, ing.amount, ing.unit);
+        if (!nutrition) return ing;
+
+        return { ...ing, ...nutrition };
+      })
+    );
+    return results;
   };
 
   const handleMarkEaten = async (id: string) => {
