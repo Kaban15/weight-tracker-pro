@@ -4,6 +4,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { MealPreferences, MealPlan, PantryItem } from './types';
+import { ZERO_CALORIE_INGREDIENTS } from './constants';
 
 interface UseMealAIOptions {
   preferences: MealPreferences | null;
@@ -75,6 +76,8 @@ function buildSystemPrompt(options: UseMealAIOptions): string {
     preferences.has_thermomix ? '- Dla przepisów Thermomix podaj: czas, temperaturę, prędkość ostrzy dla każdego kroku' : '',
     `- Dopasuj posiłek do limitu kalorycznego: ${preferences.target_calories} kcal/dzień`,
     '- Nie powtarzaj posiłków z ostatnich dni (chyba że to ulubione i użytkownik prosi)',
+    '- KRYTYCZNE: Każdy składnik MUSI mieć realistyczne, NIEZEROWE wartości kcal, białka, węglowodanów i tłuszczów. NIGDY nie zwracaj zer (wyjątek: woda, sól, pieprz, przyprawy).',
+    '- Przykład: pierś z kurczaka 500g ≈ 550 kcal, 103g białka, 0g węgli, 12g tłuszczu. Ryż 100g ≈ 130 kcal, 2.7g białka, 28g węgli, 0.3g tłuszczu.',
   );
 
   return lines.filter(l => l !== undefined && l !== '').join('\n');
@@ -99,6 +102,18 @@ function buildInterviewSystemPrompt(): string {
     'Po zebraniu informacji ustaw is_complete na true i zwróć podsumowanie w extracted_preferences.',
     'Bądź naturalny i konwersacyjny, nie jak formularz.',
   ].join('\n');
+}
+
+function hasZeroMacroIngredients(meals: Array<{ ingredients: Array<{ name: string; calories: number }> }>): boolean {
+  for (const meal of meals) {
+    for (const ing of meal.ingredients) {
+      const isZeroCal = ZERO_CALORIE_INGREDIENTS.some(z =>
+        ing.name.toLowerCase().includes(z)
+      );
+      if (!isZeroCal && ing.calories === 0) return true;
+    }
+  }
+  return false;
 }
 
 export function useMealAI(options: UseMealAIOptions) {
@@ -142,6 +157,30 @@ export function useMealAI(options: UseMealAIOptions) {
       }
 
       const { data } = await res.json();
+
+      // Validate macros — retry once if AI returned zeros
+      if (mode === 'chat' && data.meals && hasZeroMacroIngredients(data.meals)) {
+        const retryMessages = [
+          ...messages,
+          { role: 'assistant' as const, content: JSON.stringify(data) },
+          { role: 'user' as const, content: 'Błąd: składniki mają 0 kcal. Przelicz ponownie wartości odżywcze dla KAŻDEGO składnika. Użyj realistycznych wartości.' },
+        ];
+        const retryRes = await fetch('/api/meals/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ messages: retryMessages, systemPrompt, mode }),
+        });
+        if (retryRes.ok) {
+          const { data: retryData } = await retryRes.json();
+          if (retryData && !hasZeroMacroIngredients(retryData.meals || [])) {
+            return retryData;
+          }
+        }
+      }
+
       return data;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Nieznany błąd';
