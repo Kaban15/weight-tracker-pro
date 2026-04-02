@@ -6,7 +6,7 @@ import { ArrowLeft, Settings, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useNavigation } from '@/lib/NavigationContext';
 import { supabase } from '@/lib/supabase';
-import { MealPreferences, AIGeneratedMeal, MealIngredient, formatDate } from './types';
+import { MealPlan, MealPreferences, AIGeneratedMeal, MealIngredient, formatDate } from './types';
 import { useMeals } from './useMeals';
 import { usePantry } from './usePantry';
 import { useShoppingList } from './useShoppingList';
@@ -83,7 +83,21 @@ export default function MealsMode({ onBack }: MealsModeProps) {
   };
 
   const handleAcceptMeals = async (date: string, meals: AIGeneratedMeal[]) => {
-    await acceptMeals(date, meals);
+    const result = await acceptMeals(date, meals);
+    if (result?.data) {
+      // Estimate cost from pantry for each new meal
+      for (const savedMeal of result.data as MealPlan[]) {
+        const { costs, totalCost } = pantry.estimateCost(savedMeal.ingredients as MealIngredient[]);
+        if (totalCost > 0 || costs.size > 0) {
+          const costObj: Record<string, number | null> = {};
+          costs.forEach((v, k) => { costObj[k] = v; });
+          await updateMealPlan(savedMeal.id, {
+            estimated_cost: totalCost,
+            ingredient_costs: costObj,
+          });
+        }
+      }
+    }
   };
 
   const handleMarkEaten = async (id: string) => {
@@ -111,6 +125,11 @@ export default function MealsMode({ onBack }: MealsModeProps) {
     name: string; meal_slot: string; ingredients: MealIngredient[];
     calories: number; protein: number; carbs: number; fat: number; recipe_steps: string[];
   }) => {
+    // Estimate cost before saving
+    const { costs, totalCost } = pantry.estimateCost(meal.ingredients);
+    const costObj: Record<string, number | null> = {};
+    costs.forEach((v, k) => { costObj[k] = v; });
+
     await saveMealPlan({
       date: formatDate(new Date()),
       meal_slot: meal.meal_slot,
@@ -121,8 +140,8 @@ export default function MealsMode({ onBack }: MealsModeProps) {
       carbs: meal.carbs,
       fat: meal.fat,
       recipe_steps: meal.recipe_steps,
-      estimated_cost: null,
-      ingredient_costs: null,
+      estimated_cost: totalCost,
+      ingredient_costs: costObj,
       status: 'accepted',
       rating: null,
       rating_comment: null,
@@ -182,6 +201,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
             onMarkEaten={handleMarkEaten}
             onSaveManualMeal={handleSaveManualMeal}
             onNavigate={(v) => setView(v as View)}
+            onEstimateCost={pantry.estimateCost}
           />
         )}
 
