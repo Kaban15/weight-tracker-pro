@@ -36,24 +36,28 @@ export default function Dashboard() {
 
   const today = formatDate(new Date());
   const activeChallenges = challenges?.filter(c => c.startDate <= today && c.endDate >= today) ?? [];
-  const todayDone = activeChallenges.filter(c => c.completedDays[today] > 0).length;
+  const isChallengeCompletedToday = (c: typeof activeChallenges[number]) => (c.completedDays[today] ?? 0) > 0;
+  const todayDone = activeChallenges.filter(isChallengeCompletedToday).length;
 
-  const todayTasks = tasks?.filter(t => !t.completed && t.status !== 'done' && t.status !== 'cancelled') ?? [];
+  const pendingTasks = tasks?.filter(t => !t.completed && t.status !== 'done' && t.status !== 'cancelled') ?? [];
 
-  // Calculate streak: consecutive days where ALL active challenges were completed
+  // Calculate streak: consecutive days (including today if all done) where ALL active challenges were completed
   const streak = (() => {
     if (activeChallenges.length === 0) return 0;
     let count = 0;
     const d = new Date();
-    // Start from yesterday (today might not be done yet)
-    d.setDate(d.getDate() - 1);
-    while (true) {
+    // Start from today — if all done today, count it
+    const todayAllDone = activeChallenges.every(c => (c.completedDays[today] ?? 0) > 0);
+    if (!todayAllDone) {
+      // Today not done yet, start checking from yesterday
+      d.setDate(d.getDate() - 1);
+    }
+    for (let i = 0; i < 365; i++) {
       const dayStr = formatDate(d);
-      const allDone = activeChallenges.every(c => {
-        // Only count days within the challenge's date range
-        if (dayStr < c.startDate || dayStr > c.endDate) return true;
-        return c.completedDays[dayStr] > 0;
-      });
+      // At least one challenge must be active on this day for the day to count
+      const activeOnDay = activeChallenges.filter(c => dayStr >= c.startDate && dayStr <= c.endDate);
+      if (activeOnDay.length === 0) break;
+      const allDone = activeOnDay.every(c => (c.completedDays[dayStr] ?? 0) > 0);
       if (!allDone) break;
       count++;
       d.setDate(d.getDate() - 1);
@@ -83,7 +87,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
         <StatCard label="Wyzwania" value={`${todayDone}/${activeChallenges.length}`} description="na dziś" color="text-amber-500" />
-        <StatCard label="Zadania" value={todayTasks.length} description="do zrobienia" color="text-blue-500" />
+        <StatCard label="Zadania" value={pendingTasks.length} description="do zrobienia" color="text-blue-500" />
         <StatCard label="Streak" value={streak || "—"} description="dni z rzędu" color="text-[var(--accent)]" className="hidden md:block" />
       </div>
 
@@ -99,21 +103,21 @@ export default function Dashboard() {
       <div>
         <h2 className="text-lg font-semibold text-[var(--foreground)] mb-3">Nadchodzące</h2>
         <div className="space-y-2">
-          {todayTasks.slice(0, 5).map(task => (
+          {pendingTasks.slice(0, 5).map(task => (
             <div key={task.id} className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:shadow-md transition-all" onClick={() => navigateTo("todo")}>
               <CheckSquare className="w-4 h-4 text-blue-500 flex-shrink-0" />
               <span className="text-sm text-[var(--foreground)] truncate">{task.title}</span>
               {task.deadline && <span className="text-xs text-[var(--muted)] ml-auto flex-shrink-0">{task.deadline}</span>}
             </div>
           ))}
-          {activeChallenges.filter(c => !c.completedDays[today]).slice(0, 3).map(challenge => (
+          {activeChallenges.filter(c => !isChallengeCompletedToday(c)).slice(0, 3).map(challenge => (
             <div key={challenge.id} className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:shadow-md transition-all" onClick={() => navigateTo("challenge")}>
               <Target className="w-4 h-4 text-amber-500 flex-shrink-0" />
               <span className="text-sm text-[var(--foreground)] truncate">{challenge.name}</span>
               <span className="text-xs text-[var(--accent)] ml-auto flex-shrink-0">do zrobienia</span>
             </div>
           ))}
-          {todayTasks.length === 0 && activeChallenges.filter(c => !c.completedDays[today]).length === 0 && (
+          {pendingTasks.length === 0 && activeChallenges.filter(c => !isChallengeCompletedToday(c)).length === 0 && (
             <SubtleCard>
               <p className="text-[var(--muted)]">Brak nadchodzących zadań. Dobra robota! 💪</p>
             </SubtleCard>
