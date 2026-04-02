@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { PantryItem, MealIngredient, formatDate } from './types';
 import { UNIT_CONVERSIONS } from './constants';
+import { estimateCostFromPantry } from './costUtils';
 
 export function usePantry(userId: string | undefined) {
   const [items, setItems] = useState<PantryItem[]>([]);
@@ -113,6 +114,11 @@ export function usePantry(userId: string | undefined) {
     return { costs, totalCost: Math.round(totalCost * 100) / 100 };
   }, [items, updateItem]);
 
+  /** Estimate cost from pantry without deducting — for preview display */
+  const estimateCost = useCallback((ingredients: MealIngredient[]) => {
+    return estimateCostFromPantry(ingredients, items);
+  }, [items]);
+
   useEffect(() => {
     async function init() {
       setIsLoading(true);
@@ -122,5 +128,5 @@ export function usePantry(userId: string | undefined) {
     if (userId) init();
   }, [userId, loadItems]);
 
-  return { items, isLoading, addItem, updateItem, deleteItem, deductIngredients, loadItems };
+  return { items, isLoading, addItem, updateItem, deleteItem, deductIngredients, estimateCost, loadItems };
 }
