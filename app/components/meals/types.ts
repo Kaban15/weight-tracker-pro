@@ -134,6 +134,16 @@ export const aiMealSchema = z.object({
 
 export type AIGeneratedMeal = z.infer<typeof aiMealSchema>['meals'][number];
 
+/** Schema for Gemini nutrition lookup response */
+export const nutritionSchema = z.object({
+  calories: z.number(),
+  protein: z.number(),
+  carbs: z.number(),
+  fat: z.number(),
+});
+
+export type NutritionData = z.infer<typeof nutritionSchema>;
+
 // ── AI Interview Schema ──
 export const aiInterviewSchema = z.object({
   message: z.string().describe('Kolejne pytanie lub podsumowanie po polsku'),
