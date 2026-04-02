@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Star, RefreshCw, Check, X, Heart, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Star, RefreshCw, Check, X, Heart, Pencil, Plus, Trash2, Loader2 } from 'lucide-react';
 import { MealPlan, MealIngredient, PantryUnit } from './types';
 
 interface MealCardProps {
@@ -14,9 +14,11 @@ interface MealCardProps {
   onMarkEaten: (id: string) => void;
   onToggleFavorite: (id: string) => void;
   onUpdateIngredients: (id: string, ingredients: MealIngredient[]) => void;
+  onNutritionLookup?: (index: number, name: string, amount: number, unit: PantryUnit, onResult: (index: number, data: { calories: number; protein: number; carbs: number; fat: number }) => void) => void;
+  nutritionLoading?: Set<number>;
 }
 
-export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, onMarkEaten, onToggleFavorite, onUpdateIngredients }: MealCardProps) {
+export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, onMarkEaten, onToggleFavorite, onUpdateIngredients, onNutritionLookup, nutritionLoading }: MealCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -38,32 +40,66 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
     rejected: 'Odrzucony',
   };
 
+  const [manualOverride, setManualOverride] = useState<Set<number>>(new Set());
+
   const costs = meal.ingredient_costs || {};
   const totalCost = Object.values(costs).reduce((s: number, c) => s + (c || 0), 0);
 
-  const handleAmountChange = (index: number, newAmount: number) => {
-    const original = meal.ingredients[index];
-    if (!original || original.amount === 0) return;
-    const ratio = newAmount / original.amount;
+  const handleNutritionResult = (index: number, data: { calories: number; protein: number; carbs: number; fat: number }) => {
+    setEditedIngredients(prev => prev.map((ing, i) =>
+      i === index ? { ...ing, ...data } : ing
+    ));
+  };
 
-    const updated = editedIngredients.map((ing, i) => {
-      if (i !== index) return ing;
-      return {
-        ...ing,
-        amount: newAmount,
-        calories: Math.round(original.calories * ratio * 10) / 10,
-        protein: Math.round(original.protein * ratio * 10) / 10,
-        carbs: Math.round(original.carbs * ratio * 10) / 10,
-        fat: Math.round(original.fat * ratio * 10) / 10,
-      };
-    });
-    setEditedIngredients(updated);
+  const handleAmountChange = (index: number, newAmount: number) => {
+    const ing = editedIngredients[index];
+    if (!ing || newAmount <= 0) return;
+
+    // Update amount immediately
+    setEditedIngredients(prev => prev.map((item, i) =>
+      i === index ? { ...item, amount: newAmount } : item
+    ));
+
+    // If not manually overridden, lookup/recalc macros
+    if (!manualOverride.has(index) && onNutritionLookup) {
+      onNutritionLookup(index, ing.name, newAmount, ing.unit, handleNutritionResult);
+    } else {
+      // Fallback: proportional recalc from original
+      const original = meal.ingredients[index];
+      if (original && original.amount > 0) {
+        const ratio = newAmount / original.amount;
+        setEditedIngredients(prev => prev.map((item, i) =>
+          i !== index ? item : {
+            ...item,
+            amount: newAmount,
+            calories: Math.round(original.calories * ratio * 10) / 10,
+            protein: Math.round(original.protein * ratio * 10) / 10,
+            carbs: Math.round(original.carbs * ratio * 10) / 10,
+            fat: Math.round(original.fat * ratio * 10) / 10,
+          }
+        ));
+      }
+    }
   };
 
   const updateIngredientField = (index: number, field: keyof MealIngredient, value: string | number) => {
     setEditedIngredients(prev => prev.map((ing, i) =>
       i === index ? { ...ing, [field]: value } : ing
     ));
+
+    // If user manually edits a macro field, mark as override
+    if (['calories', 'protein', 'carbs', 'fat'].includes(field as string)) {
+      setManualOverride(prev => new Set(prev).add(index));
+      return;
+    }
+
+    // Trigger nutrition lookup on name or unit change (if not manually overridden)
+    if ((field === 'name' || field === 'unit') && !manualOverride.has(index) && onNutritionLookup) {
+      const ing = { ...editedIngredients[index], [field]: value };
+      if (ing.name.trim() && ing.amount > 0) {
+        onNutritionLookup(index, ing.name, ing.amount, ing.unit, handleNutritionResult);
+      }
+    }
   };
 
   const addIngredient = () => {
@@ -115,8 +151,13 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
           <span className="text-blue-400">B: {Math.round(meal.protein)}g</span>
           <span className="text-amber-400">W: {Math.round(meal.carbs)}g</span>
           <span className="text-red-400">T: {Math.round(meal.fat)}g</span>
-          {totalCost > 0 && (
-            <span className="text-[var(--muted)] ml-auto">{totalCost.toFixed(2)} zł</span>
+          {(totalCost > 0 || Object.keys(costs).length > 0) && (
+            <span className="text-[var(--muted)] ml-auto">
+              {totalCost.toFixed(2)} zł
+              {Object.values(costs).some(c => c === null) && (
+                <span className="text-[var(--muted)]/50 text-[10px] ml-1">(częściowy)</span>
+              )}
+            </span>
           )}
         </div>
 
@@ -217,9 +258,14 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
 
                 {editedIngredients.map((ing, i) => (
                   <div key={i} className="grid grid-cols-[1fr_55px_40px_50px_40px_40px_40px_20px] gap-1 items-center">
-                    <input value={ing.name} onChange={e => updateIngredientField(i, 'name', e.target.value)}
-                      placeholder="Składnik"
-                      className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1.5 py-1 text-white text-xs" />
+                    <div className="relative">
+                      <input value={ing.name} onChange={e => updateIngredientField(i, 'name', e.target.value)}
+                        placeholder="Składnik"
+                        className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1.5 py-1 text-white text-xs w-full" />
+                      {nutritionLoading?.has(i) && (
+                        <Loader2 className="w-3 h-3 animate-spin text-violet-400 absolute right-1 top-1.5" />
+                      )}
+                    </div>
                     <input type="number" value={ing.amount || ''} onChange={e => handleAmountChange(i, parseFloat(e.target.value) || 0)}
                       className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1 text-white text-xs text-center" />
                     <select value={ing.unit} onChange={e => updateIngredientField(i, 'unit', e.target.value)}
@@ -271,11 +317,11 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
                     <span>{ing.name} — {ing.amount} {ing.unit}</span>
                     <span className="flex items-center gap-3">
                       <span>{Math.round(ing.calories)} kcal</span>
-                      <span className="w-16 text-right">
+                      <span className="w-20 text-right">
                         {costs[ing.name] !== undefined
                           ? costs[ing.name] !== null
                             ? `${(costs[ing.name] as number).toFixed(2)} zł`
-                            : '—'
+                            : <span className="text-[var(--muted)]/50 italic">brak ceny</span>
                           : ''}
                       </span>
                     </span>
