@@ -24,6 +24,11 @@ export function getCachedNutrition(name: string, unit: PantryUnit): NutritionDat
       localStorage.removeItem(cacheKey(name, unit));
       return null;
     }
+    // Reject cached all-zero entries (bad AI response that got cached)
+    if (entry.data.calories === 0 && entry.data.protein === 0 && entry.data.carbs === 0 && entry.data.fat === 0) {
+      localStorage.removeItem(cacheKey(name, unit));
+      return null;
+    }
     return entry.data;
   } catch {
     return null;

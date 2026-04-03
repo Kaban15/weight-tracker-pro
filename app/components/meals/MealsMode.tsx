@@ -126,19 +126,29 @@ export default function MealsMode({ onBack }: MealsModeProps) {
     }
   };
 
-  /** Look up nutrition for each ingredient with 0 macros */
+  /** Look up nutrition for each ingredient with 0 macros (sequential with retry) */
   const enrichIngredientsWithNutrition = async (ingredients: MealIngredient[]): Promise<MealIngredient[]> => {
-    const results = await Promise.all(
-      ingredients.map(async (ing) => {
-        const isZeroCal = ZERO_CALORIE_INGREDIENTS.some(z => ing.name.toLowerCase().includes(z));
-        if (isZeroCal || ing.calories > 0) return ing;
+    const results: MealIngredient[] = [];
+    for (const ing of ingredients) {
+      const isZeroCal = ZERO_CALORIE_INGREDIENTS.some(z => ing.name.toLowerCase().includes(z));
+      if (isZeroCal || ing.calories > 0 || !ing.name.trim() || ing.amount <= 0) {
+        results.push(ing);
+        continue;
+      }
 
-        const nutrition = await lookupNutrition(ing.name, ing.amount, ing.unit);
-        if (!nutrition) return ing;
+      // Retry up to 2 times with delay between requests
+      let nutrition = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 1000));
+        nutrition = await lookupNutrition(ing.name, ing.amount, ing.unit);
+        if (nutrition && nutrition.calories > 0) break;
+        nutrition = null; // treat all-zero response as failure
+      }
 
-        return { ...ing, ...nutrition };
-      })
-    );
+      results.push(nutrition ? { ...ing, ...nutrition } : ing);
+      // Small delay between ingredients to avoid Gemini API rate limits
+      await new Promise(r => setTimeout(r, 300));
+    }
     return results;
   };
 

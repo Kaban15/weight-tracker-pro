@@ -70,11 +70,11 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: 'system',
-          content: 'Jesteś ekspertem od wartości odżywczych. Podaj dokładne wartości odżywcze dla podanego produktu spożywczego. Wartości muszą być realistyczne i niezerowe (chyba że to woda/przyprawy). Odpowiadaj w formacie JSON.',
+          content: 'Jesteś ekspertem od wartości odżywczych. Podaj dokładne wartości odżywcze dla podanego produktu spożywczego. WAŻNE: Wartości MUSZĄ być realistyczne i NIEZEROWE dla produktów spożywczych. Np. pierś z kurczaka 500g to ok. 550 kcal, 104g białka. Ziemniaki 600g to ok. 462 kcal, 72g węglowodanów. NIGDY nie zwracaj samych zer — każdy produkt spożywczy ma jakieś kalorie.',
         },
         {
           role: 'user',
-          content: `Podaj wartości odżywcze dla: ${name} — ${amount} ${unit}. Zwróć: calories (kcal), protein (g), carbs (g), fat (g).`,
+          content: `Podaj wartości odżywcze dla: ${name} — ${amount} ${unit}. Zwróć: calories (kcal), protein (g), carbs (g), fat (g). Wartości muszą być > 0.`,
         },
       ],
       response_format: zodResponseFormat(nutritionSchema, 'nutrition_response'),
@@ -88,6 +88,14 @@ export async function POST(request: NextRequest) {
     }
 
     const parsed = nutritionSchema.parse(JSON.parse(content));
+
+    // Reject all-zero response as AI hallucination
+    if (parsed.calories === 0 && parsed.protein === 0 && parsed.carbs === 0 && parsed.fat === 0) {
+      return NextResponse.json(
+        { error: 'AI zwróciło zerowe wartości — spróbuj ponownie' },
+        { status: 422 }
+      );
+    }
 
     return NextResponse.json({ data: parsed }, {
       headers: Object.fromEntries(rateLimitHeaders.entries()),

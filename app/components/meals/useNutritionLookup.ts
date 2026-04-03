@@ -43,6 +43,11 @@ export function useNutritionLookup() {
       const { data } = await res.json();
       if (!data) return null;
 
+      // Reject all-zero responses (AI error)
+      if (data.calories === 0 && data.protein === 0 && data.carbs === 0 && data.fat === 0) {
+        return null;
+      }
+
       // Normalize and cache: store per 100g/100ml or per 1 szt
       const divisor = unit === 'szt' ? amount : amount / 100;
       const normalized: NutritionData = {
