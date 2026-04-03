@@ -1,7 +1,7 @@
 // app/components/meals/MealsMode.tsx
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Settings, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useNavigation } from '@/lib/NavigationContext';
@@ -68,6 +68,41 @@ export default function MealsMode({ onBack }: MealsModeProps) {
     }
     fetchProfile();
   }, [user?.id]);
+
+  // One-time auto-repair: re-enrich meals that have 0 kcal on ingredients
+  const repairRan = useRef(false);
+  useEffect(() => {
+    if (isLoading || repairRan.current || mealPlans.length === 0) return;
+    repairRan.current = true;
+
+    const mealsToRepair = mealPlans.filter(m => {
+      const ings = m.ingredients as MealIngredient[];
+      if (!ings?.length) return false;
+      return ings.some(ing => {
+        const isZeroCal = ZERO_CALORIE_INGREDIENTS.some(z => ing.name.toLowerCase().includes(z));
+        return !isZeroCal && ing.name.trim() && ing.amount > 0 && ing.calories === 0;
+      });
+    });
+
+    if (mealsToRepair.length === 0) return;
+
+    (async () => {
+      for (const meal of mealsToRepair) {
+        const enriched = await enrichIngredientsWithNutrition(meal.ingredients as MealIngredient[]);
+        const totalCal = enriched.reduce((s, i) => s + i.calories, 0);
+        if (totalCal > 0) {
+          await updateMealPlan(meal.id, {
+            ingredients: enriched,
+            calories: totalCal,
+            protein: enriched.reduce((s, i) => s + i.protein, 0),
+            carbs: enriched.reduce((s, i) => s + i.carbs, 0),
+            fat: enriched.reduce((s, i) => s + i.fat, 0),
+          });
+        }
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, mealPlans.length]);
 
   // Derive initial view from loading state
   const resolvedView = view === 'loading' && !isLoading
