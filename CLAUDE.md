@@ -59,7 +59,7 @@ PostHogProvider > ThemeProvider > ErrorBoundary > AuthProvider > OnboardingProvi
 - **Challenges/Habits** (`app/components/challenge/useChallenges.ts`): Supabase `challenges` table with offline sync support.
 - **Tasks** (`app/components/todo/useTasks.ts`): Supabase `tasks` table with localStorage fallback/migration.
 - **Schedule** (`app/components/schedule/useSchedule.ts`): Aggregates data from tasks + challenges modules. Has its own `schedule_items` Supabase table for custom items.
-- **Meals** (`app/components/meals/useMeals.ts`): Supabase `meal_plans` + `meal_preferences` tables. AI-generated meals via Gemini. Nutrition lookup (`useNutritionLookup.ts`) calls Gemini per ingredient with 800ms debounce and localStorage cache (30-day TTL, normalized per 100g/ml). Cost estimation (`costUtils.ts`) matches ingredients to pantry items by name+unit without deducting. Pantry deduction happens only on "Zjedzony".
+- **Meals** (`app/components/meals/useMeals.ts`): Supabase `meal_plans` + `meal_preferences` tables. AI-generated meals via Gemini. Nutrition lookup (`useNutritionLookup.ts`) calls Gemini per ingredient with 800ms debounce and localStorage cache (30-day TTL, normalized per 100g/ml). Cost estimation (`costUtils.ts`) matches ingredients to pantry items by name+unit without deducting. Pantry deduction happens only on "Zjedzony". **Auto-enrichment** (`MealsMode.tsx`): when meals are accepted or loaded with 0 kcal ingredients, macros are re-fetched sequentially (300ms delay between ingredients, up to 3 retries each). All-zero AI responses are rejected at API, client, and cache levels.
 - **Onboarding state**: localStorage only (per-user key).
 - **Theme preference**: localStorage only.
 
@@ -72,7 +72,7 @@ IndexedDB-based offline storage (`lib/offlineStorage.ts`) with a sync queue (`li
 - `app/api/feedback/route.ts` - Saves feedback to Supabase + sends email via Resend
 - `app/api/admin/stats/route.ts` - Admin statistics endpoint (uses Supabase service role key to bypass RLS)
 - `app/api/meals/chat/route.ts` - AI meal generation via Gemini 2.0 Flash (or GPT-4o-mini fallback). Rate limited to 30/day.
-- `app/api/meals/nutrition/route.ts` - Gemini-powered nutrition lookup for single ingredients. Returns `{calories, protein, carbs, fat}`. Rate limited to 60/day.
+- `app/api/meals/nutrition/route.ts` - Gemini-powered nutrition lookup for single ingredients. Returns `{calories, protein, carbs, fat}`. Rate limited to 60/day. Rejects all-zero responses with 422.
 
 All use server-side rate limiting from `lib/serverRateLimiter.ts`.
 
