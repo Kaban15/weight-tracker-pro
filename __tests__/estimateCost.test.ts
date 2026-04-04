@@ -46,6 +46,23 @@ describe('estimateCostFromPantry', () => {
     expect(result.costs.get('kurczak')).toBeNull();
   });
 
+  it('skips ingredients with fromPantry === false', () => {
+    const ingredients: MealIngredient[] = [
+      { name: 'Mąka', amount: 200, unit: 'g', calories: 100, protein: 5, carbs: 40, fat: 1, cost: null, fromPantry: true },
+      { name: 'Masło', amount: 50, unit: 'g', calories: 350, protein: 0, carbs: 0, fat: 40, cost: null, fromPantry: false },
+    ];
+    const pantryItems: PantryItem[] = [
+      { id: '1', user_id: 'u', name: 'Mąka pszenna', quantity_total: 1000, quantity_remaining: 800, unit: 'g', price: 5, purchased_at: '', created_at: '', updated_at: '' },
+      { id: '2', user_id: 'u', name: 'Masło', quantity_total: 200, quantity_remaining: 200, unit: 'g', price: 8, purchased_at: '', created_at: '', updated_at: '' },
+    ];
+
+    const { costs, totalCost } = estimateCostFromPantry(ingredients, pantryItems);
+
+    expect(costs.get('Mąka')).toBe(1);
+    expect(costs.get('Masło')).toBeNull();
+    expect(totalCost).toBe(1);
+  });
+
   it('handles multiple ingredients', () => {
     const items = [
       makePantryItem({ name: 'kurczak', price: 30, quantity_total: 1000 }),

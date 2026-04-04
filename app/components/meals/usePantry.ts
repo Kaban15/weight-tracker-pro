@@ -91,6 +91,10 @@ export function usePantry(userId: string | undefined) {
     const costs = new Map<string, number | null>();
 
     for (const ing of ingredients) {
+      if (ing.fromPantry === false) {
+        costs.set(ing.name, null);
+        continue;
+      }
       const pantryItem = items.find(p =>
         p.unit === ing.unit &&
         p.quantity_remaining > 0 &&
