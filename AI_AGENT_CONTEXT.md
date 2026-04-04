@@ -105,7 +105,7 @@ Każdy kontekst ma swój hook (`useAuth`, `useTheme`, `useNavigation`, `useOnboa
 - **Onboarding wizard** (`MealWizard.tsx`): Zbiera dane hard (wiek, waga, wzrost, aktywność, cel) + AI interview (`MealWizardAIInterview.tsx`) dla preferencji kulinarnych
 - **Preferencje** (`meal_preferences`): diet_type, goal_type, target_calories, TDEE, alergie, nie-lubi, lubi, kuchnie, has_thermomix, preferences_text
 - **Plany posiłków** (`meal_plans`): name, meal_slot, ingredients (JSONB), calories/protein/carbs/fat, recipe_steps, estimated_cost, status (planned/accepted/eaten/rejected), rating, is_favorite
-- **Spiżarnia** (`pantry_items`): name, quantity_total/remaining, unit (g/ml/szt), price
+- **Spiżarnia** (`pantry_items`): name, quantity_total/remaining, unit (g/ml/szt), price. Każdy składnik posiłku ma pole `fromPantry?: boolean` (domyślnie `true`) — gdy `false`, składnik jest pomijany przy odliczaniu ze spiżarni i kalkulacji kosztu. Toggle dostępny w trybie edycji składników w MealCard (ikonka Warehouse).
 - **Lista zakupów** (`shopping_lists`): name, amount, unit, bought
 - **AI chat** (`MealChat.tsx` + `useMealAI.ts`): Rozmowa z AI o posiłkach, structured JSON output z Zod schema. System prompt zawiera rolę eksperta (dietetyka, gotowanie, Thermomix), profil użytkownika, ulubione posiłki, ostatnie posiłki, dostępne produkty w spiżarni.
 - **Ulubione** (`FavoriteMeals.tsx`): Lista ulubionych posiłków z akcją "zjedz ponownie"
