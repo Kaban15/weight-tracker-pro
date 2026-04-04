@@ -51,7 +51,7 @@ export default function Modal({
       }}
     >
       <div
-        className={`bg-[var(--card-bg)] rounded-xl border border-[var(--card-border)] p-6 w-full ${size} max-h-[90vh] ${noScroll ? '' : 'overflow-y-auto'} ${className}`}
+        className={`bg-[var(--card-bg)] rounded-xl border border-[var(--card-border)] p-6 w-full ${size} max-h-[90vh] overflow-x-hidden ${noScroll ? '' : 'overflow-y-auto'} ${className}`}
       >
         {(title || showClose) && (
           <div className="flex items-center justify-between mb-4">
