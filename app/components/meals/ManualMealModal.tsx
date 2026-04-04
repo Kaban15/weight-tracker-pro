@@ -93,7 +93,7 @@ export default function ManualMealModal({ isOpen, onClose, onSave, mealSlots }: 
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Dodaj posiłek ręcznie" size="max-w-lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="Dodaj posiłek ręcznie" size="max-w-xl">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Name + slot */}
         <div className="grid grid-cols-2 gap-3">
@@ -124,7 +124,7 @@ export default function ManualMealModal({ isOpen, onClose, onSave, mealSlots }: 
 
           <div className="space-y-2">
             {/* Header */}
-            <div className="grid grid-cols-[1fr_60px_45px_55px_55px_55px_55px_24px] gap-1 text-[10px] text-[var(--muted)]">
+            <div className="grid grid-cols-[1fr_50px_38px_44px_40px_40px_40px_20px] gap-1 text-[10px] text-[var(--muted)]">
               <span>Nazwa</span>
               <span>Ilość</span>
               <span>Jdn.</span>
@@ -136,31 +136,31 @@ export default function ManualMealModal({ isOpen, onClose, onSave, mealSlots }: 
             </div>
 
             {ingredients.map((ing, i) => (
-              <div key={i} className="grid grid-cols-[1fr_60px_45px_55px_55px_55px_55px_24px] gap-1">
+              <div key={i} className="grid grid-cols-[1fr_50px_38px_44px_40px_40px_40px_20px] gap-1">
                 <input value={ing.name} onChange={e => updateIngredient(i, 'name', e.target.value)}
                   placeholder="np. Jajko"
-                  className="bg-[var(--background)] border border-[var(--card-border)] rounded px-2 py-1.5 text-white text-xs" />
+                  className="min-w-0 bg-[var(--background)] border border-[var(--card-border)] rounded px-2 py-1.5 text-white text-xs" />
                 <input type="number" value={ing.amount} onChange={e => updateIngredient(i, 'amount', e.target.value)}
                   placeholder="100"
-                  className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1.5 text-white text-xs text-center" />
+                  className="min-w-0 bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1.5 text-white text-xs text-center" />
                 <select value={ing.unit} onChange={e => updateIngredient(i, 'unit', e.target.value as PantryUnit)}
-                  className="bg-[var(--background)] border border-[var(--card-border)] rounded px-0.5 py-1.5 text-white text-xs">
+                  className="min-w-0 bg-[var(--background)] border border-[var(--card-border)] rounded px-0.5 py-1.5 text-white text-xs">
                   <option value="g">g</option>
                   <option value="ml">ml</option>
                   <option value="szt">szt</option>
                 </select>
                 <input type="number" value={ing.calories} onChange={e => updateIngredient(i, 'calories', e.target.value)}
                   placeholder="0"
-                  className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1.5 text-white text-xs text-center" />
+                  className="min-w-0 bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1.5 text-white text-xs text-center" />
                 <input type="number" value={ing.protein} onChange={e => updateIngredient(i, 'protein', e.target.value)}
                   placeholder="0"
-                  className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1.5 text-blue-300 text-xs text-center" />
+                  className="min-w-0 bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1.5 text-blue-300 text-xs text-center" />
                 <input type="number" value={ing.carbs} onChange={e => updateIngredient(i, 'carbs', e.target.value)}
                   placeholder="0"
-                  className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1.5 text-amber-300 text-xs text-center" />
+                  className="min-w-0 bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1.5 text-amber-300 text-xs text-center" />
                 <input type="number" value={ing.fat} onChange={e => updateIngredient(i, 'fat', e.target.value)}
                   placeholder="0"
-                  className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1.5 text-red-300 text-xs text-center" />
+                  className="min-w-0 bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1.5 text-red-300 text-xs text-center" />
                 <button type="button" onClick={() => removeIngredient(i)}
                   className="text-[var(--muted)] hover:text-red-400 flex items-center justify-center">
                   <Trash2 className="w-3 h-3" />
