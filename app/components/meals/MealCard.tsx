@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Star, RefreshCw, Check, X, Heart, Pencil, Plus, Trash2, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Star, RefreshCw, Check, X, Heart, Pencil, Plus, Trash2, Loader2, Warehouse } from 'lucide-react';
 import { MealPlan, MealIngredient, PantryUnit } from './types';
 
 interface MealCardProps {
@@ -106,6 +106,7 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
     setEditedIngredients(prev => [...prev, {
       name: '', amount: 0, unit: 'g' as PantryUnit,
       calories: 0, protein: 0, carbs: 0, fat: 0, cost: null,
+      fromPantry: true,
     }]);
   };
 
@@ -250,14 +251,29 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
             {editing ? (
               <div className="space-y-2">
                 {/* Header */}
-                <div className="grid grid-cols-[1fr_55px_40px_50px_40px_40px_40px_20px] gap-1 text-[10px] text-[var(--muted)]">
+                <div className="grid grid-cols-[20px_1fr_55px_40px_50px_40px_40px_40px_20px] gap-1 text-[10px] text-[var(--muted)]">
+                  <span title="Ze spiżarni"><Warehouse className="w-3 h-3" /></span>
                   <span>Nazwa</span><span>Ilość</span><span>Jdn.</span>
                   <span>kcal</span><span className="text-blue-400">B</span>
                   <span className="text-amber-400">W</span><span className="text-red-400">T</span><span></span>
                 </div>
 
                 {editedIngredients.map((ing, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_55px_40px_50px_40px_40px_40px_20px] gap-1 items-center">
+                  <div key={i} className="grid grid-cols-[20px_1fr_55px_40px_50px_40px_40px_40px_20px] gap-1 items-center">
+                    <button
+                      type="button"
+                      onClick={() => setEditedIngredients(prev => prev.map((item, idx) =>
+                        idx === i ? { ...item, fromPantry: item.fromPantry === false ? true : false } : item
+                      ))}
+                      title={ing.fromPantry === false ? 'Nie pobieraj ze spiżarni' : 'Pobieraj ze spiżarni'}
+                      className="flex items-center justify-center"
+                    >
+                      <Warehouse className={`w-3.5 h-3.5 transition-colors ${
+                        ing.fromPantry === false
+                          ? 'text-[var(--muted)]/30'
+                          : 'text-violet-400'
+                      }`} />
+                    </button>
                     <div className="relative">
                       <input value={ing.name} onChange={e => updateIngredientField(i, 'name', e.target.value)}
                         placeholder="Składnik"
@@ -314,15 +330,22 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
               <ul className="space-y-1">
                 {meal.ingredients.map((ing, i) => (
                   <li key={i} className="flex justify-between text-xs text-[var(--muted)]">
-                    <span>{ing.name} — {ing.amount} {ing.unit}</span>
+                    <span className="flex items-center gap-1">
+                      {ing.fromPantry === false && (
+                        <span title="Poza spiżarnią"><Warehouse className="w-3 h-3 text-[var(--muted)]/30 shrink-0" /></span>
+                      )}
+                      {ing.name} — {ing.amount} {ing.unit}
+                    </span>
                     <span className="flex items-center gap-3">
                       <span>{Math.round(ing.calories)} kcal</span>
                       <span className="w-20 text-right">
-                        {costs[ing.name] !== undefined
-                          ? costs[ing.name] !== null
-                            ? `${(costs[ing.name] as number).toFixed(2)} zł`
-                            : <span className="text-[var(--muted)]/50 italic">brak ceny</span>
-                          : ''}
+                        {ing.fromPantry === false
+                          ? <span className="text-[var(--muted)]/50 italic">—</span>
+                          : costs[ing.name] !== undefined
+                            ? costs[ing.name] !== null
+                              ? `${(costs[ing.name] as number).toFixed(2)} zł`
+                              : <span className="text-[var(--muted)]/50 italic">brak ceny</span>
+                            : ''}
                       </span>
                     </span>
                   </li>
