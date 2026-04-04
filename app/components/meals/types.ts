@@ -62,6 +62,7 @@ export interface MealIngredient {
   carbs: number;
   fat: number;
   cost: number | null;
+  fromPantry?: boolean; // undefined or true = deduct from pantry; false = skip
 }
 
 // ── Pantry (Supabase: pantry_items) ──
