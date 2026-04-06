@@ -1,7 +1,7 @@
 // app/components/ui/Toast.tsx
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Check, AlertTriangle } from 'lucide-react';
 
 interface ToastProps {
@@ -13,15 +13,19 @@ interface ToastProps {
 
 export default function Toast({ message, type, onClose, duration = 3000 }: ToastProps) {
   const [visible, setVisible] = useState(false);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  const stableClose = useCallback(() => onCloseRef.current(), []);
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
     const timer = setTimeout(() => {
       setVisible(false);
-      setTimeout(onClose, 150);
+      setTimeout(stableClose, 150);
     }, duration);
     return () => clearTimeout(timer);
-  }, [duration, onClose]);
+  }, [duration, stableClose]);
 
   return (
     <div

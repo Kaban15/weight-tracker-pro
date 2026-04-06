@@ -192,15 +192,22 @@ export default function MealsMode({ onBack }: MealsModeProps) {
 
   const handleSendToTracker = async (meal: MealPlan): Promise<{ success: boolean; error?: string }> => {
     if (!user?.id) return { success: false, error: 'no_user' };
-    const result = await pushMealToWeightEntry(user.id, meal.date, meal);
-    if (result.success) {
-      setToast({ message: 'Wysłano do wpisu wagi', type: 'success' });
-    } else if (result.error === 'no_entry') {
-      setToast({ message: 'Najpierw dodaj wpis wagi na ten dzień', type: 'error' });
-    } else if (result.error === 'duplicate') {
-      setToast({ message: 'Ten posiłek już jest we wpisie wagi', type: 'error' });
+    try {
+      const result = await pushMealToWeightEntry(user.id, meal.date, meal);
+      if (result.success) {
+        setToast({ message: 'Wysłano do wpisu wagi', type: 'success' });
+      } else if (result.error === 'no_entry') {
+        setToast({ message: 'Najpierw dodaj wpis wagi na ten dzień', type: 'error' });
+      } else if (result.error === 'duplicate') {
+        setToast({ message: 'Ten posiłek już jest we wpisie wagi', type: 'error' });
+      } else {
+        setToast({ message: 'Błąd zapisu do wpisu wagi', type: 'error' });
+      }
+      return result;
+    } catch {
+      setToast({ message: 'Błąd zapisu do wpisu wagi', type: 'error' });
+      return { success: false, error: 'supabase_error' };
     }
-    return result;
   };
 
   const handleMarkEaten = async (id: string) => {

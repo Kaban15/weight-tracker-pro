@@ -222,11 +222,15 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
               onClick={async () => {
                 if (sendStatus !== 'idle') return;
                 setSendStatus('sending');
-                const result = await onSendToTracker(meal);
-                if (result.success) {
-                  setSendStatus('sent');
-                  setTimeout(() => setSendStatus('idle'), 2000);
-                } else {
+                try {
+                  const result = await onSendToTracker(meal);
+                  if (result.success) {
+                    setSendStatus('sent');
+                    setTimeout(() => setSendStatus('idle'), 2000);
+                  } else {
+                    setSendStatus('idle');
+                  }
+                } catch {
                   setSendStatus('idle');
                 }
               }}
