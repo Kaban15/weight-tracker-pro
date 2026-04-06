@@ -5,6 +5,9 @@ import { Calendar, Target, LogOut, Table, ArrowLeft, Flame, Bell, History, Footp
 import { useAuth } from '@/lib/AuthContext';
 import { initializeNotifications, cancelScheduledReminders } from '@/lib/notifications';
 import { useKeyboardShortcuts, KeyboardShortcut } from '@/lib/useKeyboardShortcuts';
+import { useChallenges } from './challenge';
+import { syncStepsToChallenges } from '@/lib/stepsChallengeSync';
+import Toast from './ui/Toast';
 import ProgressChart from './ProgressChart';
 import ProgressTable from './ProgressTable';
 import NotificationSettings from './shared/NotificationSettings';
@@ -58,6 +61,8 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
   } = useWeightTracker(user?.id);
 
   const { measurements: bodyMeasurements } = useMeasurements(user?.id);
+  const { challenges, updateCompletedDay } = useChallenges(user?.id);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const [view, setView] = useState<'calendar' | 'table' | 'measurements' | 'history'>('calendar');
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -215,6 +220,14 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
     if (success) {
       setShowAddModal(false);
       setEditingEntry(null);
+
+      // Sync steps to matching challenges
+      if (entry.steps && entry.steps > 0) {
+        const synced = await syncStepsToChallenges(entry.steps, entry.date, challenges, updateCompletedDay);
+        if (synced.length > 0) {
+          setToast({ message: `Kroki zsynchronizowane z: ${synced.join(', ')}`, type: 'success' });
+        }
+      }
     }
     return success;
   };
@@ -711,6 +724,8 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
         onContinueWithoutGoal={handleContinueWithoutGoal}
         onClose={handleCloseCompletionModal}
       />
+
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }
