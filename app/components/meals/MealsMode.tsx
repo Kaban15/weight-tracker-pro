@@ -2,6 +2,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import { pushMealToWeightEntry } from '@/lib/mealTrackerBridge';
+import Toast from '@/app/components/ui/Toast';
 import { ArrowLeft, Settings, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useNavigation } from '@/lib/NavigationContext';
@@ -42,6 +44,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
   const { lookupNutrition } = useNutritionLookup();
 
   const [view, setView] = useState<View>('loading');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [wizardData, setWizardData] = useState<Partial<MealPreferences> | null>(null);
   const [profile, setProfile] = useState<{ age?: number; gender?: 'male' | 'female'; height?: number } | null>(null);
   const [latestWeight, setLatestWeight] = useState<number | null>(null);
@@ -187,6 +190,19 @@ export default function MealsMode({ onBack }: MealsModeProps) {
     return results;
   };
 
+  const handleSendToTracker = async (meal: MealPlan): Promise<{ success: boolean; error?: string }> => {
+    if (!user?.id) return { success: false, error: 'no_user' };
+    const result = await pushMealToWeightEntry(user.id, meal.date, meal);
+    if (result.success) {
+      setToast({ message: 'Wysłano do wpisu wagi', type: 'success' });
+    } else if (result.error === 'no_entry') {
+      setToast({ message: 'Najpierw dodaj wpis wagi na ten dzień', type: 'error' });
+    } else if (result.error === 'duplicate') {
+      setToast({ message: 'Ten posiłek już jest we wpisie wagi', type: 'error' });
+    }
+    return result;
+  };
+
   const handleMarkEaten = async (id: string) => {
     const meal = mealPlans.find(m => m.id === id);
     if (!meal) return;
@@ -289,6 +305,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
             onSaveManualMeal={handleSaveManualMeal}
             onNavigate={(v) => setView(v as View)}
             onEstimateCost={pantry.estimateCost}
+            onSendToTracker={handleSendToTracker}
           />
         )}
 
@@ -379,6 +396,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
           </div>
         )}
       </div>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

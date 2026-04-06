@@ -24,6 +24,7 @@ interface MealDashboardProps {
   favoriteMeals: MealPlan[];
   onNavigate: (view: 'pantry' | 'shopping' | 'calendar' | 'settings' | 'favorites' | 'preferences') => void;
   onEstimateCost: (ingredients: MealIngredient[]) => { costs: Map<string, number | null>; totalCost: number };
+  onSendToTracker?: (meal: MealPlan) => Promise<{ success: boolean; error?: string }>;
 }
 
 type GenerateScope = 'today' | 'tomorrow' | '3days' | 'week';
@@ -41,6 +42,7 @@ export default function MealDashboard({
   favoriteMeals,
   onNavigate,
   onEstimateCost,
+  onSendToTracker,
 }: MealDashboardProps) {
   const [selectedDate, setSelectedDate] = useState(formatDate(new Date()));
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -252,6 +254,7 @@ export default function MealDashboard({
             onUpdateIngredients={handleUpdateIngredients}
             onNutritionLookup={debouncedLookup}
             nutritionLoading={loadingIngredients}
+            onSendToTracker={onSendToTracker}
           />
         ))}
       </div>
