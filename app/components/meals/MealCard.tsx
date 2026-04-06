@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Star, RefreshCw, Check, X, Heart, Pencil, Plus, Trash2, Loader2, Warehouse } from 'lucide-react';
+import { ChevronDown, ChevronUp, Star, RefreshCw, Check, X, Heart, Pencil, Plus, Trash2, Loader2, Warehouse, ArrowUpFromLine } from 'lucide-react';
 import { MealPlan, MealIngredient, PantryUnit } from './types';
 
 interface MealCardProps {
@@ -14,17 +14,19 @@ interface MealCardProps {
   onMarkEaten: (id: string) => void;
   onToggleFavorite: (id: string) => void;
   onUpdateIngredients: (id: string, ingredients: MealIngredient[]) => void;
+  onSendToTracker?: (meal: MealPlan) => Promise<{ success: boolean; error?: string }>;
   onNutritionLookup?: (index: number, name: string, amount: number, unit: PantryUnit, onResult: (index: number, data: { calories: number; protein: number; carbs: number; fat: number }) => void) => void;
   nutritionLoading?: Set<number>;
 }
 
-export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, onMarkEaten, onToggleFavorite, onUpdateIngredients, onNutritionLookup, nutritionLoading }: MealCardProps) {
+export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, onMarkEaten, onToggleFavorite, onUpdateIngredients, onSendToTracker, onNutritionLookup, nutritionLoading }: MealCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editedIngredients, setEditedIngredients] = useState<MealIngredient[]>(meal.ingredients);
   const [rating, setRating] = useState(meal.rating || 5);
   const [comment, setComment] = useState(meal.rating_comment || '');
+  const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
 
   const statusColors: Record<string, string> = {
     planned: 'text-blue-400',
@@ -188,11 +190,19 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
               </button>
             </>
           )}
-          {(meal.status === 'eaten' && !meal.rating) && (
-            <button onClick={() => setShowRating(true)}
-              className="flex items-center gap-1 px-3 py-1 text-xs bg-amber-600/20 text-amber-400 rounded-lg hover:bg-amber-600/30">
-              <Star className="w-3 h-3" /> Oceń
-            </button>
+          {meal.status === 'eaten' && (
+            <>
+              <button onClick={() => { setExpanded(true); setEditing(true); }}
+                className="flex items-center gap-1 px-3 py-1 text-xs bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30">
+                <Pencil className="w-3 h-3" /> Edytuj skład
+              </button>
+              {!meal.rating && (
+                <button onClick={() => setShowRating(true)}
+                  className="flex items-center gap-1 px-3 py-1 text-xs bg-amber-600/20 text-amber-400 rounded-lg hover:bg-amber-600/30">
+                  <Star className="w-3 h-3" /> Oceń
+                </button>
+              )}
+            </>
           )}
           <button onClick={() => onToggleFavorite(meal.id)}
             className={`flex items-center gap-1 px-3 py-1 text-xs rounded-lg ${
@@ -207,6 +217,36 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
             className="flex items-center gap-1 px-3 py-1 text-xs bg-[var(--muted)]/20 text-[var(--muted)] rounded-lg hover:bg-[var(--surface)]/30">
             <RefreshCw className="w-3 h-3" /> Zamień
           </button>
+          {onSendToTracker && (meal.status === 'accepted' || meal.status === 'eaten') && (
+            <button
+              onClick={async () => {
+                if (sendStatus !== 'idle') return;
+                setSendStatus('sending');
+                const result = await onSendToTracker(meal);
+                if (result.success) {
+                  setSendStatus('sent');
+                  setTimeout(() => setSendStatus('idle'), 2000);
+                } else {
+                  setSendStatus('idle');
+                }
+              }}
+              disabled={sendStatus === 'sending'}
+              className={`flex items-center gap-1.5 px-3 py-1 text-[13px] font-bold rounded-full transition-all duration-150 active:scale-95 ${
+                sendStatus === 'sent'
+                  ? 'bg-green-500/20 text-green-500'
+                  : 'bg-[#1d9bf0]/10 text-[#1d9bf0] hover:bg-[#1d9bf0]/20'
+              }`}
+            >
+              {sendStatus === 'sent' ? (
+                <Check className="w-[18px] h-[18px] animate-[scaleIn_150ms_ease-out]" strokeWidth={1.5} />
+              ) : sendStatus === 'sending' ? (
+                <Loader2 className="w-[18px] h-[18px] animate-spin" strokeWidth={1.5} />
+              ) : (
+                <ArrowUpFromLine className="w-[18px] h-[18px]" strokeWidth={1.5} />
+              )}
+              {sendStatus === 'sent' ? 'Wysłano' : 'Do wagi'}
+            </button>
+          )}
           <button onClick={() => setExpanded(!expanded)}
             className="ml-auto p-1 text-[var(--muted)] hover:text-white">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
