@@ -81,7 +81,7 @@ Każdy kontekst ma swój hook (`useAuth`, `useTheme`, `useNavigation`, `useOnboa
 - Automatycznie wykrywa ukończenie celu (osiągnięcie wagi docelowej lub przekroczenie daty)
 - Tabele: `entries` (wpisy wagi/kalorii/kroków/treningów/posiłków), `goals`, `profiles`, `goal_history`
 - **Posiłki (Meals):** Kolumna `meals` w tabeli `entries` przechowuje dane jako **JSONB**. Każdy posiłek ma: `id`, `name`, `type` (Śniadanie/II Śniadanie/Obiad/Kolacja/Przekąska), `calories`, `protein`, `carbs`, `fat`. Typy zdefiniowane w `app/components/tracker/types.ts` (`Meal`, `MealType`).
-- **EntryModal** (`app/components/tracker/EntryModal.tsx`): Formularz wpisu wagowego. Zawiera sekcje: data, waga, kalorie (auto-sumowane z posiłków gdy są obecne), posiłki z makroskładnikami (B/W/T), kroki, treningi, notatki. Sticky podsumowanie dzienne ("Suma dnia") przy przewijaniu. Responsywny grid makro: `grid-cols-2 md:grid-cols-4`. Pole kalorii staje się `readOnly` gdy istnieją posiłki.
+- **EntryModal** (`app/components/tracker/EntryModal.tsx`): Formularz wpisu wagowego. Zawiera sekcje: data, waga, kalorie (auto-sumowane z posiłków gdy są obecne), posiłki z makroskładnikami (B/W/T), kroki, treningi, notatki. Sticky podsumowanie dzienne ("Suma dnia") przy przewijaniu. Responsywny grid makro: `grid-cols-2 md:grid-cols-4`. Pole kalorii staje się `readOnly` gdy istnieją posiłki. Przycisk "Importuj z posiłków" (styl X/Twitter, `#1d9bf0` blue pill) pobiera posiłki z modułu Meals na wybraną datę i pozwala wybrać które zaimportować. Wymaga prop `userId`.
 - **Pomiary ciała:** Tabela `body_measurements` z polami: `waist`, `hips`, `chest`, `thigh_left/right`, `arm_left/right`, `calf_left/right`. Typy w `app/components/tracker/types.ts` (`BodyMeasurement`).
 
 **Nawyki (`useChallenges.ts`):**
@@ -105,7 +105,8 @@ Każdy kontekst ma swój hook (`useAuth`, `useTheme`, `useNavigation`, `useOnboa
 - **Onboarding wizard** (`MealWizard.tsx`): Zbiera dane hard (wiek, waga, wzrost, aktywność, cel) + AI interview (`MealWizardAIInterview.tsx`) dla preferencji kulinarnych
 - **Preferencje** (`meal_preferences`): diet_type, goal_type, target_calories, TDEE, alergie, nie-lubi, lubi, kuchnie, has_thermomix, preferences_text
 - **Plany posiłków** (`meal_plans`): name, meal_slot, ingredients (JSONB), calories/protein/carbs/fat, recipe_steps, estimated_cost, status (planned/accepted/eaten/rejected), rating, is_favorite
-- **Spiżarnia** (`pantry_items`): name, quantity_total/remaining, unit (g/ml/szt), price. Każdy składnik posiłku ma pole `fromPantry?: boolean` (domyślnie `true`) — gdy `false`, składnik jest pomijany przy odliczaniu ze spiżarni i kalkulacji kosztu. Toggle dostępny w trybie edycji składników w MealCard (ikonka Warehouse).
+- **Spiżarnia** (`pantry_items`): name, quantity_total/remaining, unit (g/ml/szt), price. Każdy składnik posiłku ma pole `fromPantry?: boolean` (domyślnie `true`) — gdy `false`, składnik jest pomijany przy odliczaniu ze spiżarni i kalkulacji kosztu. Toggle dostępny w trybie edycji składników w MealCard (ikonka Warehouse). Przycisk "Edytuj skład" jest dostępny zarówno dla posiłków zaakceptowanych (`accepted`) jak i zjedzonych (`eaten`).
+- **Most Meals↔Tracker** (`lib/mealTrackerBridge.ts`): Łączy moduł posiłków (`meal_plans`) z wpisami wagi (`entries.meals` JSONB). Dwa kierunki: przycisk "Do wagi" na MealCard wysyła nazwę+makro do wpisu wagi na dany dzień; przycisk "Importuj z posiłków" w EntryModal pobiera zaakceptowane/zjedzone posiłki na wybraną datę i pozwala wybrać które importować. Duplikaty wykrywane po nazwie posiłku. Wymaga istniejącego wpisu wagi. Feedback przez Toast (`app/components/ui/Toast.tsx`).
 - **Lista zakupów** (`shopping_lists`): name, amount, unit, bought
 - **AI chat** (`MealChat.tsx` + `useMealAI.ts`): Rozmowa z AI o posiłkach, structured JSON output z Zod schema. System prompt zawiera rolę eksperta (dietetyka, gotowanie, Thermomix), profil użytkownika, ulubione posiłki, ostatnie posiłki, dostępne produkty w spiżarni.
 - **Ulubione** (`FavoriteMeals.tsx`): Lista ulubionych posiłków z akcją "zjedz ponownie"
@@ -162,10 +163,11 @@ Każdy kontekst ma swój hook (`useAuth`, `useTheme`, `useNavigation`, `useOnboa
 | `healthIntegrations.ts` | Integracje z Google Fit/Apple Health |
 | `useKeyboardShortcuts.ts` | Skróty klawiaturowe |
 | `tdee.ts` | Mifflin-St Jeor TDEE calculation (pure function) |
+| `mealTrackerBridge.ts` | Most Meals↔Tracker: push meal to entry, fetch meals for date |
 
 ### Wspólne komponenty
 
-**UI (`app/components/ui/`):** HeroCard, StatCard, SubtleCard, Badge, ProgressBar, AnimatedCounter, PageTransition
+**UI (`app/components/ui/`):** HeroCard, StatCard, SubtleCard, Badge, ProgressBar, AnimatedCounter, PageTransition, Toast
 
 **Layout (`app/components/layout/`):** AppShell, BottomNav, Sidebar, MoreSheet
 
