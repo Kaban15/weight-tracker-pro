@@ -55,7 +55,6 @@ export async function pushMealToWeightEntry(
     .update({
       meals: updatedMeals,
       calories: totalCalories,
-      updated_at: new Date().toISOString(),
     })
     .eq('id', existing.id);
 
