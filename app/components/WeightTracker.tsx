@@ -683,6 +683,7 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
         entry={editingEntry}
         selectedDate={selectedDate}
         goal={goal}
+        userId={user?.id}
         onSave={handleSaveEntry}
         onDelete={deleteEntry}
         onClose={handleCloseEntryModal}

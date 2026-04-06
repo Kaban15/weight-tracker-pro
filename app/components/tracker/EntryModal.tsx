@@ -1,14 +1,17 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { X, Scale, Flame, Footprints, Dumbbell, UtensilsCrossed, Trash2, AlertTriangle, Plus } from 'lucide-react';
+import { X, Scale, Flame, Footprints, Dumbbell, UtensilsCrossed, Trash2, AlertTriangle, Plus, Download, Check as CheckIcon } from 'lucide-react';
 import { Entry, Goal, Workout, Meal, MealType, formatDate } from './types';
+import { fetchMealPlansForDate, mealPlanToTrackerMeal } from '@/lib/mealTrackerBridge';
+import type { MealPlan } from '@/app/components/meals/types';
 
 interface EntryModalProps {
   isOpen: boolean;
   entry?: Entry | null;
   selectedDate?: string;
   goal?: Goal | null;
+  userId?: string;
   onSave: (entry: Omit<Entry, 'id'>, editingId?: string) => Promise<boolean>;
   onDelete?: (id: string) => Promise<boolean>;
   onClose: () => void;
@@ -19,6 +22,7 @@ export default function EntryModal({
   entry,
   selectedDate,
   goal,
+  userId,
   onSave,
   onDelete,
   onClose
@@ -45,6 +49,10 @@ export default function EntryModal({
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showImportPicker, setShowImportPicker] = useState(false);
+  const [availableMealPlans, setAvailableMealPlans] = useState<MealPlan[]>([]);
+  const [selectedImports, setSelectedImports] = useState<Set<string>>(new Set());
+  const [importLoading, setImportLoading] = useState(false);
 
   const addWorkout = () => {
     setWorkouts([...workouts, { type: '', duration: undefined }]);
@@ -205,6 +213,36 @@ export default function EntryModal({
   };
 
   const targetWeight = getTargetForDate();
+
+  const handleOpenImport = async () => {
+    if (!userId) return;
+    setImportLoading(true);
+    const plans = await fetchMealPlansForDate(userId, date);
+    setAvailableMealPlans(plans);
+    setSelectedImports(new Set());
+    setShowImportPicker(true);
+    setImportLoading(false);
+  };
+
+  const handleImportSelected = () => {
+    const newMeals = availableMealPlans
+      .filter(mp => selectedImports.has(mp.id))
+      .map(mp => mealPlanToTrackerMeal(mp));
+    setMeals(prev => [...prev, ...newMeals]);
+    setShowImportPicker(false);
+  };
+
+  const isMealAlreadyImported = (mealPlan: MealPlan) =>
+    meals.some(m => m.name === mealPlan.name);
+
+  const toggleImportSelection = (id: string) => {
+    setSelectedImports(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   return (
     <div
@@ -369,14 +407,89 @@ export default function EntryModal({
               </div>
             ))}
 
-            <button
-              type="button"
-              onClick={addMeal}
-              className="w-full mt-2 py-2 px-4 bg-[var(--card-bg)] hover:bg-[var(--surface)] text-[var(--foreground)] rounded-xl border-2 border-dashed border-[var(--card-border)] hover:border-amber-500 transition-colors flex items-center justify-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Dodaj posiłek
-            </button>
+            <div className="flex gap-2 mt-2">
+              <button
+                type="button"
+                onClick={addMeal}
+                className="flex-1 py-2 px-4 bg-[var(--card-bg)] hover:bg-[var(--surface)] text-[var(--foreground)] rounded-xl border-2 border-dashed border-[var(--card-border)] hover:border-amber-500 transition-colors flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Dodaj posiłek
+              </button>
+              {userId && (
+                <button
+                  type="button"
+                  onClick={handleOpenImport}
+                  disabled={importLoading}
+                  className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-bold rounded-full bg-[#1d9bf0]/10 text-[#1d9bf0] hover:bg-[#1d9bf0]/20 transition-colors duration-150 active:scale-95 disabled:opacity-50"
+                >
+                  <Download className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                  Importuj
+                </button>
+              )}
+            </div>
+            {showImportPicker && (
+              <div className="mt-2 bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl overflow-hidden">
+                {availableMealPlans.length === 0 ? (
+                  <p className="p-4 text-sm text-[var(--muted)] text-center">Brak posiłków na ten dzień</p>
+                ) : (
+                  <>
+                    {availableMealPlans.map(mp => {
+                      const alreadyImported = isMealAlreadyImported(mp);
+                      const isSelected = selectedImports.has(mp.id);
+                      return (
+                        <button
+                          key={mp.id}
+                          type="button"
+                          disabled={alreadyImported}
+                          onClick={() => toggleImportSelection(mp.id)}
+                          className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/5 ${
+                            alreadyImported ? 'opacity-40 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                            alreadyImported
+                              ? 'border-[var(--muted)]/30 bg-[var(--muted)]/10'
+                              : isSelected
+                                ? 'border-[#1d9bf0] bg-[#1d9bf0]'
+                                : 'border-[var(--card-border)]'
+                          }`}>
+                            {(isSelected || alreadyImported) && (
+                              <CheckIcon className="w-3 h-3 text-white" strokeWidth={2.5} />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-[var(--muted)] uppercase">{mp.meal_slot}</span>
+                              {alreadyImported && <span className="text-[10px] text-green-500">Dodano</span>}
+                            </div>
+                            <p className="text-sm text-white font-medium truncate">{mp.name}</p>
+                          </div>
+                          <span className="text-xs text-[var(--muted)] shrink-0">{Math.round(mp.calories)} kcal</span>
+                        </button>
+                      );
+                    })}
+                    <div className="flex gap-2 p-3 border-t border-[var(--card-border)]">
+                      <button
+                        type="button"
+                        onClick={() => setShowImportPicker(false)}
+                        className="flex-1 py-2 text-sm text-[var(--foreground)] bg-[var(--surface)] rounded-full hover:bg-[var(--card-border)] transition-colors"
+                      >
+                        Anuluj
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleImportSelected}
+                        disabled={selectedImports.size === 0}
+                        className="flex-1 py-2 text-sm font-bold text-white bg-[#1d9bf0] rounded-full hover:bg-[#1a8cd8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Importuj ({selectedImports.size})
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
