@@ -4,15 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { MealPreferences, MealPlan, MealIngredient, DaySummary, AIGeneratedMeal, formatDate } from './types';
-import type { MealType } from '../tracker/types';
-
-const MEAL_TYPE_MAP: Record<string, MealType> = {
-  'Śniadanie': 'Śniadanie',
-  'II Śniadanie': 'II Śniadanie',
-  'Obiad': 'Obiad',
-  'Kolacja': 'Kolacja',
-  'Przekąska': 'Przekąska',
-};
+import { pushMealToWeightEntry, mealPlanToTrackerMeal } from '@/lib/mealTrackerBridge';
 
 export function useMeals(userId: string | undefined) {
   const [preferences, setPreferences] = useState<MealPreferences | null>(null);
@@ -289,41 +281,17 @@ export function useMeals(userId: string | undefined) {
   const syncToTracker = useCallback(async (meal: MealPlan) => {
     if (!userId || !supabase) return;
 
-    const mealType: MealType = MEAL_TYPE_MAP[meal.meal_slot] || 'Przekąska';
-    const trackerMeal = {
-      id: crypto.randomUUID(),
-      name: meal.name,
-      type: mealType,
-      calories: Math.round(meal.calories),
-      protein: Math.round(meal.protein),
-      carbs: Math.round(meal.carbs),
-      fat: Math.round(meal.fat),
-    };
+    const result = await pushMealToWeightEntry(userId, meal.date, meal);
 
-    // Check if entry exists for this date
-    const { data: existing } = await supabase
-      .from('entries')
-      .select('id, meals, calories')
-      .eq('user_id', userId)
-      .eq('date', meal.date)
-      .single();
-
-    if (existing) {
-      const currentMeals = (existing.meals as Array<Record<string, unknown>>) || [];
-      const updatedMeals = [...currentMeals, trackerMeal];
-      const totalCalories = updatedMeals.reduce((s, m) => s + ((m.calories as number) || 0), 0);
-
-      await supabase
-        .from('entries')
-        .update({ meals: updatedMeals, calories: totalCalories, updated_at: new Date().toISOString() })
-        .eq('id', existing.id);
-    } else {
+    // If no entry exists, create one with placeholder weight (existing behavior)
+    if (!result.success && result.error === 'no_entry') {
+      const trackerMeal = mealPlanToTrackerMeal(meal);
       await supabase
         .from('entries')
         .insert({
           user_id: userId,
           date: meal.date,
-          weight: 0, // placeholder — user fills in manually
+          weight: 0,
           calories: Math.round(meal.calories),
           meals: [trackerMeal],
         });
