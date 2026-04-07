@@ -77,6 +77,7 @@ export interface PantryItem {
   purchased_at: string;
   created_at: string;
   updated_at: string;
+  is_free: boolean;
 }
 
 export type WriteOffReason = 'spoiled' | 'taken' | 'discarded' | 'other';

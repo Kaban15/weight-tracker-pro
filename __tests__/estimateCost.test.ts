@@ -5,7 +5,7 @@ import type { MealIngredient, PantryItem } from '../app/components/meals/types';
 const makePantryItem = (overrides: Partial<PantryItem>): PantryItem => ({
   id: '1', user_id: 'u1', name: 'kurczak', quantity_total: 1000,
   quantity_remaining: 800, unit: 'g', price: 30, purchased_at: '2026-04-01',
-  created_at: '2026-04-01', updated_at: '2026-04-01',
+  created_at: '2026-04-01', updated_at: '2026-04-01', is_free: false,
   ...overrides,
 });
 
@@ -52,8 +52,8 @@ describe('estimateCostFromPantry', () => {
       { name: 'Masło', amount: 50, unit: 'g', calories: 350, protein: 0, carbs: 0, fat: 40, cost: null, fromPantry: false },
     ];
     const pantryItems: PantryItem[] = [
-      { id: '1', user_id: 'u', name: 'Mąka pszenna', quantity_total: 1000, quantity_remaining: 800, unit: 'g', price: 5, purchased_at: '', created_at: '', updated_at: '' },
-      { id: '2', user_id: 'u', name: 'Masło', quantity_total: 200, quantity_remaining: 200, unit: 'g', price: 8, purchased_at: '', created_at: '', updated_at: '' },
+      { id: '1', user_id: 'u', name: 'Mąka pszenna', quantity_total: 1000, quantity_remaining: 800, unit: 'g', price: 5, purchased_at: '', created_at: '', updated_at: '', is_free: false },
+      { id: '2', user_id: 'u', name: 'Masło', quantity_total: 200, quantity_remaining: 200, unit: 'g', price: 8, purchased_at: '', created_at: '', updated_at: '', is_free: false },
     ];
 
     const { costs, totalCost } = estimateCostFromPantry(ingredients, pantryItems);
