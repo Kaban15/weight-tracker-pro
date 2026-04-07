@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { X, Scale, Flame, Footprints, Dumbbell, UtensilsCrossed, Trash2, AlertTriangle, Plus, Download, Check as CheckIcon } from 'lucide-react';
-import { Entry, Goal, Workout, Meal, MealType, formatDate } from './types';
+import { X, Scale, Flame, Footprints, Trash2, AlertTriangle } from 'lucide-react';
+import { Entry, Goal, Workout, Meal, formatDate } from './types';
 import { fetchMealPlansForDate, mealPlanToTrackerMeal } from '@/lib/mealTrackerBridge';
 import type { MealPlan } from '@/app/components/meals/types';
+import { MealsSection } from './MealsSection';
+import { WorkoutsSection } from './WorkoutsSection';
 
 interface EntryModalProps {
   isOpen: boolean;
@@ -73,8 +75,6 @@ export default function EntryModal({
   const removeWorkout = (index: number) => {
     setWorkouts(workouts.filter((_, i) => i !== index));
   };
-
-  const MEAL_TYPES: MealType[] = ['Śniadanie', 'II Śniadanie', 'Obiad', 'Kolacja', 'Przekąska'];
 
   const addMeal = () => {
     setMeals([...meals, {
@@ -318,181 +318,23 @@ export default function EntryModal({
               className={`w-full bg-[var(--card-bg)] text-[var(--foreground)] rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none ${meals.length > 0 ? 'opacity-60 cursor-not-allowed' : ''}`} />
           </div>
 
-          <div>
-            <label className="flex items-center gap-2 text-[var(--foreground)] mb-2 font-semibold">
-              <UtensilsCrossed className="w-4 h-4 text-amber-400" />
-              Posiłki
-            </label>
-
-            {meals.length > 0 && (
-              <div className="sticky top-0 z-10 mb-3 p-3 bg-[var(--background)] rounded-xl border border-[var(--card-border)] shadow-lg">
-                <div className="text-xs text-[var(--muted)] mb-1">Suma dnia</div>
-                <div className="flex items-center gap-3 text-sm flex-wrap">
-                  <span className="text-orange-400 font-semibold">{macroSummary.calories} kcal</span>
-                  <span className="text-blue-400">B: {macroSummary.protein}g</span>
-                  <span className="text-yellow-400">W: {macroSummary.carbs}g</span>
-                  <span className="text-red-400">T: {macroSummary.fat}g</span>
-                </div>
-              </div>
-            )}
-
-            {meals.map((m) => (
-              <div key={m.id} className="mb-3 p-3 bg-[var(--card-bg)] rounded-xl border border-[var(--card-border)]">
-                <div className="flex flex-wrap gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={m.name}
-                    onChange={(e) => updateMeal(m.id, { name: e.target.value })}
-                    placeholder="Nazwa posiłku"
-                    className="flex-1 min-w-0 bg-[var(--card-bg)] text-[var(--foreground)] rounded-lg px-3 py-2 border border-[var(--card-border)] focus:border-[var(--accent)] outline-none text-base"
-                  />
-                  <select
-                    value={m.type}
-                    onChange={(e) => updateMeal(m.id, { type: e.target.value as MealType })}
-                    className="bg-[var(--card-bg)] text-[var(--foreground)] rounded-lg px-2 py-2 border border-[var(--card-border)] focus:border-[var(--accent)] outline-none text-base shrink-0"
-                  >
-                    {MEAL_TYPES.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => removeMeal(m.id)}
-                    className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center bg-[var(--surface)] hover:bg-red-600/50 text-[var(--muted)] hover:text-red-400 rounded-lg transition-colors shrink-0"
-                    aria-label="Usuń posiłek"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <div>
-                    <label className="text-xs text-[var(--muted)] mb-1 block">kcal</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={m.calories || ''}
-                      onChange={(e) => updateMeal(m.id, { calories: Number(e.target.value) || 0 })}
-                      className="w-full bg-[var(--card-bg)] text-[var(--foreground)] rounded-lg px-2 py-2 border border-[var(--card-border)] focus:border-[var(--accent)] outline-none text-base"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-blue-400 mb-1 block">Białko (g)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={m.protein || ''}
-                      onChange={(e) => updateMeal(m.id, { protein: Number(e.target.value) || 0 })}
-                      className="w-full bg-[var(--card-bg)] text-[var(--foreground)] rounded-lg px-2 py-2 border border-[var(--card-border)] focus:border-[var(--accent)] outline-none text-base"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-yellow-400 mb-1 block">Węgle (g)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={m.carbs || ''}
-                      onChange={(e) => updateMeal(m.id, { carbs: Number(e.target.value) || 0 })}
-                      className="w-full bg-[var(--card-bg)] text-[var(--foreground)] rounded-lg px-2 py-2 border border-[var(--card-border)] focus:border-[var(--accent)] outline-none text-base"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-red-400 mb-1 block">Tłuszcz (g)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={m.fat || ''}
-                      onChange={(e) => updateMeal(m.id, { fat: Number(e.target.value) || 0 })}
-                      className="w-full bg-[var(--card-bg)] text-[var(--foreground)] rounded-lg px-2 py-2 border border-[var(--card-border)] focus:border-[var(--accent)] outline-none text-base"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            <div className="flex gap-2 mt-2">
-              <button
-                type="button"
-                onClick={addMeal}
-                className="flex-1 py-2 px-4 bg-[var(--card-bg)] hover:bg-[var(--surface)] text-[var(--foreground)] rounded-xl border-2 border-dashed border-[var(--card-border)] hover:border-amber-500 transition-colors flex items-center justify-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Dodaj posiłek
-              </button>
-              {userId && (
-                <button
-                  type="button"
-                  onClick={handleOpenImport}
-                  disabled={importLoading}
-                  className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-bold rounded-full bg-[#1d9bf0]/10 text-[#1d9bf0] hover:bg-[#1d9bf0]/20 transition-colors duration-150 active:scale-95 disabled:opacity-50"
-                >
-                  <Download className="w-[18px] h-[18px]" strokeWidth={1.5} />
-                  Importuj
-                </button>
-              )}
-            </div>
-            {showImportPicker && (
-              <div className="mt-2 bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl overflow-hidden">
-                {availableMealPlans.length === 0 ? (
-                  <p className="p-4 text-sm text-[var(--muted)] text-center">Brak posiłków na ten dzień</p>
-                ) : (
-                  <>
-                    {availableMealPlans.map(mp => {
-                      const alreadyImported = isMealAlreadyImported(mp);
-                      const isSelected = selectedImports.has(mp.id);
-                      return (
-                        <button
-                          key={mp.id}
-                          type="button"
-                          disabled={alreadyImported}
-                          onClick={() => toggleImportSelection(mp.id)}
-                          className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/5 ${
-                            alreadyImported ? 'opacity-40 cursor-not-allowed' : ''
-                          }`}
-                        >
-                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                            alreadyImported
-                              ? 'border-[var(--muted)]/30 bg-[var(--muted)]/10'
-                              : isSelected
-                                ? 'border-[#1d9bf0] bg-[#1d9bf0]'
-                                : 'border-[var(--card-border)]'
-                          }`}>
-                            {(isSelected || alreadyImported) && (
-                              <CheckIcon className="w-3 h-3 text-white" strokeWidth={2.5} />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] text-[var(--muted)] uppercase">{mp.meal_slot}</span>
-                              {alreadyImported && <span className="text-[10px] text-green-500">Dodano</span>}
-                            </div>
-                            <p className="text-sm text-white font-medium truncate">{mp.name}</p>
-                          </div>
-                          <span className="text-xs text-[var(--muted)] shrink-0">{Math.round(mp.calories)} kcal</span>
-                        </button>
-                      );
-                    })}
-                    <div className="flex gap-2 p-3 border-t border-[var(--card-border)]">
-                      <button
-                        type="button"
-                        onClick={() => setShowImportPicker(false)}
-                        className="flex-1 py-2 text-sm text-[var(--foreground)] bg-[var(--surface)] rounded-full hover:bg-[var(--card-border)] transition-colors"
-                      >
-                        Anuluj
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleImportSelected}
-                        disabled={selectedImports.size === 0}
-                        className="flex-1 py-2 text-sm font-bold text-white bg-[#1d9bf0] rounded-full hover:bg-[#1a8cd8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        Importuj ({selectedImports.size})
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+          <MealsSection
+            meals={meals}
+            macroSummary={macroSummary}
+            onAddMeal={addMeal}
+            onRemoveMeal={removeMeal}
+            onUpdateMeal={updateMeal}
+            showImportButton={!!userId}
+            importLoading={importLoading}
+            onOpenImport={handleOpenImport}
+            showImportPicker={showImportPicker}
+            availableMealPlans={availableMealPlans}
+            selectedImports={selectedImports}
+            onToggleImport={toggleImportSelection}
+            onImportSelected={handleImportSelected}
+            onCancelImport={() => setShowImportPicker(false)}
+            isMealAlreadyImported={isMealAlreadyImported}
+          />
 
           <div>
             <label className="flex items-center gap-2 text-[var(--foreground)] mb-2 font-semibold">
@@ -503,56 +345,12 @@ export default function EntryModal({
               className="w-full bg-[var(--card-bg)] text-[var(--foreground)] rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none" />
           </div>
 
-          <div>
-            <label className="flex items-center gap-2 text-[var(--foreground)] mb-2 font-semibold">
-              <Dumbbell className="w-4 h-4 text-purple-400" />
-              Treningi
-            </label>
-
-            {workouts.map((w, index) => (
-              <div key={index} className="flex gap-2 mb-2">
-                <select
-                  value={w.type}
-                  onChange={(e) => updateWorkout(index, 'type', e.target.value)}
-                  className="flex-1 bg-[var(--card-bg)] text-[var(--foreground)] rounded-xl px-4 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none"
-                >
-                  <option value="">Wybierz typ</option>
-                  <option value="Cardio">Cardio</option>
-                  <option value="Siłowy">Siłowy</option>
-                  <option value="Yoga">Yoga</option>
-                  <option value="Bieganie">Bieganie</option>
-                  <option value="Pływanie">Pływanie</option>
-                  <option value="Rower">Rower</option>
-                  <option value="HIIT">HIIT</option>
-                  <option value="Inny">Inny</option>
-                </select>
-                <input
-                  type="number"
-                  value={w.duration || ''}
-                  onChange={(e) => updateWorkout(index, 'duration', e.target.value)}
-                  placeholder="min"
-                  className="w-20 bg-[var(--card-bg)] text-[var(--foreground)] rounded-xl px-3 py-3 border-2 border-[var(--card-border)] focus:border-[var(--accent)] outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeWorkout(index)}
-                  className="p-3 bg-[var(--surface)] hover:bg-red-600/50 text-[var(--muted)] hover:text-red-400 rounded-xl transition-colors"
-                  aria-label="Usuń trening"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-
-            <button
-              type="button"
-              onClick={addWorkout}
-              className="w-full mt-2 py-2 px-4 bg-[var(--card-bg)] hover:bg-[var(--surface)] text-[var(--foreground)] rounded-xl border-2 border-dashed border-[var(--card-border)] hover:border-purple-500 transition-colors flex items-center justify-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Dodaj trening
-            </button>
-          </div>
+          <WorkoutsSection
+            workouts={workouts}
+            onAddWorkout={addWorkout}
+            onRemoveWorkout={removeWorkout}
+            onUpdateWorkout={updateWorkout}
+          />
 
           <div>
             <label className="block text-[var(--foreground)] mb-2 font-semibold">Notatki</label>
