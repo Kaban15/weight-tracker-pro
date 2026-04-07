@@ -8,7 +8,7 @@
 Three related improvements to the meals module:
 1. Auto-sync meal macros to weight tracker when they change after initial push
 2. Expandable cost summary showing weekly/monthly/yearly totals
-3. "Free item" flag on pantry items that auto-propagates `fromPantry: false` to ingredients
+3. "Free item" flag on pantry items that auto-skips deduction and cost
 
 ---
 
@@ -27,30 +27,33 @@ When a meal is pushed to the weight tracker via "Do wagi", its macros are stored
 ### New Functions in `mealTrackerBridge.ts`
 
 ```typescript
-// Check if a meal is already in a weight entry
 isMealInTracker(userId: string, date: string, mealName: string): Promise<boolean>
 
-// Update existing meal macros in weight entry
 updateMealInWeightEntry(userId: string, date: string, meal: MealPlan): Promise<{ success: boolean; error?: string }>
 ```
 
-`updateMealInWeightEntry` finds the meal by name in `entries.meals`, replaces its macros, and recalculates `entries.calories`.
+**Calorie update strategy (delta-based):** `updateMealInWeightEntry` finds the meal by `name + meal_slot` in `entries.meals`, computes `delta = newCalories - oldCalories`, replaces the meal's macros, and applies `entries.calories += delta`. This preserves any manually-entered calories not tracked as meals.
+
+**Matching by name + slot:** To handle the edge case of two meals with the same name on different slots (e.g., "Jajecznica" for breakfast and dinner), matching uses both `name` and `type` (meal slot).
 
 ### Detection of "already in tracker"
 
-`MealCard` needs to know if a meal is already pushed. Approach:
-- `MealsMode` fetches tracker status for all meals on the selected date (single query to `entries` table)
+- `MealsMode` fetches the `entries.meals` JSONB for the selected date (single query)
+- Builds a Set of `name+slot` keys from the returned meals array
 - Passes `isInTracker` boolean to each `MealCard` via props
-- Cached per date — refreshed when date changes or after push/update
+- If no weight entry exists for that date, all meals show "Do wagi" (which will fail with `no_entry` — existing behavior)
+- Cache refreshed when date changes or after push/update
 
 ### Auto-sync Trigger Points
 
 1. After `enrichIngredientsWithNutrition()` completes in `MealsMode.tsx`
 2. After `updateIngredients()` in `useMeals.ts` (ingredient edit + save)
 
+Auto-sync is fire-and-forget with toast feedback on success/failure.
+
 ### Files Changed
 
-- `lib/mealTrackerBridge.ts` — add `updateMealInWeightEntry()`, `isMealInTracker()`
+- `lib/mealTrackerBridge.ts` — add `updateMealInWeightEntry()`, `getMealsInTracker()`
 - `app/components/meals/MealCard.tsx` — toggle button text/icon based on `isInTracker` prop
 - `app/components/meals/MealsMode.tsx` — fetch tracker status, auto-sync after enrichment/edit
 
@@ -75,20 +78,15 @@ Make the daily cost amount (`9.62 zl`) clickable. On click, expand a panel below
 Three Supabase queries to `meal_plans`, filtered by `date` ranges, aggregating `estimated_cost`. Queries run in parallel on panel open. Results cached until date changes or meals are modified.
 
 ```typescript
-// In useMeals.ts or new utility
-getPeriodCosts(userId: string): Promise<{
-  week: number;
-  month: number;
-  year: number;
-}>
+getPeriodCosts(userId: string): Promise<{ week: number; month: number; year: number }>
 ```
 
-Uses `supabase.from('meal_plans').select('estimated_cost').eq('user_id', userId).gte('date', startDate).lte('date', endDate)` and sums client-side.
+**Date calculation:** All date ranges computed using `formatLocalDate()` to avoid UTC date shift. Week starts on Monday (ISO). Null `estimated_cost` values coalesced to 0 during summation.
 
 ### UI
 
 - Daily cost text gets `cursor-pointer` and subtle hover effect
-- Panel slides down with transition, shows 3 rows: `Tydzien: X zl | Miesiac: Y zl | Rok: Z zl`
+- Panel slides down with transition, shows 3 rows with labels and amounts
 - Close on re-click or click outside
 
 ### Files Changed
@@ -104,9 +102,13 @@ Uses `supabase.from('meal_plans').select('estimated_cost').eq('user_id', userId)
 
 User receives some items for free (e.g., eggs from family). These should not be deducted from pantry or counted in cost calculations when used in meals.
 
+### Design Decision
+
+`fromPantry: false` skips BOTH quantity deduction AND cost. This is the intended behavior — free items are conceptually "outside" the pantry tracking system. Their `quantity_remaining` stays unchanged. Users can manually adjust or write off free items if needed.
+
 ### Solution
 
-Add `is_free` boolean to `pantry_items` table. When all matching pantry items for an ingredient are `is_free`, automatically set `fromPantry: false` on that ingredient (skip deduction and cost). If mixed (some free, some purchased), deduction uses only purchased items (FIFO).
+Add `is_free` boolean to `pantry_items` table. When all matching pantry items for an ingredient are `is_free`, the ingredient is treated as `fromPantry: false` (skip deduction and cost). If mixed (some free, some purchased), deduction uses only purchased items (FIFO), free items skipped.
 
 ### Database Migration
 
@@ -126,16 +128,25 @@ export interface PantryItem {
 ### UI in PantryManager
 
 - Toggle "Nie kupowane (prezent)" when adding/editing a pantry item
-- When `is_free` is toggled on, `price` is set to 0
+- When `is_free` toggled on: `price` set to 0
+- When `is_free` toggled off: `price` field becomes editable again (user must enter a price)
 - Visual indicator: `Gift` icon from lucide-react next to item name
-- Filter/display: free items shown with a subtle badge in the product list
 
 ### Deduction Logic Changes
 
 In `pantryUtils.ts` / `usePantry.ts` / `costUtils.ts`:
 - `findMatchingPantryItems()` filters out `is_free` items from deduction candidates
-- If no non-free items match, `fromPantry` is effectively `false` for that ingredient (cost = null, no deduction)
+- If no non-free items match, cost = null, no deduction (same as `fromPantry: false`)
 - Free items' `quantity_remaining` is NOT decremented
+- FIFO ordering preserved among non-free items only
+
+### Write-offs for free items
+
+Free items can still be written off. Cost of write-off for a free item is 0 zl (since `costPerUnit` = 0). This allows tracking waste even for free items.
+
+### Offline support
+
+Out of scope for all three features. They degrade gracefully — if Supabase is unreachable, operations fail silently or queue via existing sync mechanism.
 
 ### Files Changed
 
@@ -150,7 +161,16 @@ In `pantryUtils.ts` / `usePantry.ts` / `costUtils.ts`:
 
 ## Testing
 
-- Unit test for `updateMealInWeightEntry()` — verifies macros updated in JSONB and calories recalculated
-- Unit test for `getPeriodCosts()` — verifies date range filtering and sum calculation
+- Unit test for `updateMealInWeightEntry()` — verifies delta-based calorie update and name+slot matching
+- Unit test for `getPeriodCosts()` — verifies date range filtering, null coalescing, and sum calculation
 - Unit test for `findMatchingPantryItems()` — verifies free items excluded
 - Existing `estimateCost` tests extended for `is_free` items
+
+---
+
+## Post-implementation
+
+Update CLAUDE.md data layer documentation to reflect:
+- Auto-sync behavior for meal-to-tracker bridge
+- Cost summary feature in MealDashboard
+- `is_free` flag on PantryItem and its effect on deduction
