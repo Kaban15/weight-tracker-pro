@@ -18,6 +18,9 @@ vi.mock('@/lib/supabase', () => ({
 }));
 
 import { getMealsInTracker, updateMealInWeightEntry } from '@/lib/mealTrackerBridge';
+import type { MealPlan } from '@/app/components/meals/types';
+
+type MealStub = Pick<MealPlan, 'name' | 'meal_slot' | 'calories' | 'protein' | 'carbs' | 'fat'>;
 
 describe('getMealsInTracker', () => {
   beforeEach(() => { vi.clearAllMocks(); });
@@ -59,11 +62,11 @@ describe('updateMealInWeightEntry', () => {
     });
     mockEq.mockReturnValue({ error: null });
 
-    const meal = {
+    const meal: MealStub = {
       name: 'Kurczak',
       meal_slot: 'Obiad',
       calories: 450, protein: 45, carbs: 20, fat: 25,
-    } as any;
+    };
 
     const result = await updateMealInWeightEntry('user1', '2026-04-07', meal);
     expect(result.success).toBe(true);
@@ -80,7 +83,7 @@ describe('updateMealInWeightEntry', () => {
       error: null,
     });
 
-    const meal = { name: 'Pizza', meal_slot: 'Obiad', calories: 800 } as any;
+    const meal: MealStub = { name: 'Pizza', meal_slot: 'Obiad', calories: 800, protein: 0, carbs: 0, fat: 0 };
     const result = await updateMealInWeightEntry('user1', '2026-04-07', meal);
     expect(result).toEqual({ success: false, error: 'not_found' });
   });
