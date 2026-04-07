@@ -95,21 +95,35 @@ export function usePantry(userId: string | undefined) {
         costs.set(ing.name, null);
         continue;
       }
-      const pantryItem = items.find(p =>
-        p.unit === ing.unit &&
-        p.quantity_remaining > 0 &&
-        p.name.toLowerCase().includes(ing.name.toLowerCase())
-      );
+      const ingNameLower = ing.name.toLowerCase();
+      // FIFO: find ALL matching pantry items, sorted by oldest first
+      const matchingItems = items
+        .filter(p =>
+          p.unit === ing.unit &&
+          p.quantity_remaining > 0 &&
+          (p.name.toLowerCase().includes(ingNameLower) ||
+            ingNameLower.includes(p.name.toLowerCase()))
+        )
+        .sort((a, b) => a.purchased_at.localeCompare(b.purchased_at));
 
-      if (pantryItem) {
-        const deductAmount = Math.min(ing.amount, pantryItem.quantity_remaining);
-        const costPerUnit = pantryItem.price / pantryItem.quantity_total;
-        const ingredientCost = Math.round(deductAmount * costPerUnit * 100) / 100;
+      if (matchingItems.length > 0) {
+        let remaining = ing.amount;
+        let ingredientCost = 0;
+
+        for (const pantryItem of matchingItems) {
+          if (remaining <= 0) break;
+          const deductAmount = Math.min(remaining, pantryItem.quantity_remaining);
+          const costPerUnit = pantryItem.price / pantryItem.quantity_total;
+          ingredientCost += deductAmount * costPerUnit;
+          remaining -= deductAmount;
+
+          const newRemaining = pantryItem.quantity_remaining - deductAmount;
+          await updateItem(pantryItem.id, { quantity_remaining: newRemaining });
+        }
+
+        ingredientCost = Math.round(ingredientCost * 100) / 100;
         totalCost += ingredientCost;
         costs.set(ing.name, ingredientCost);
-
-        const newRemaining = pantryItem.quantity_remaining - deductAmount;
-        await updateItem(pantryItem.id, { quantity_remaining: newRemaining });
       } else {
         costs.set(ing.name, null);
       }
