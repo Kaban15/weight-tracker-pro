@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
-import { Scale, Plus, Target, CheckSquare } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Scale, Plus, Target, CheckSquare, PackageX } from "lucide-react";
 import { HeroCard, StatCard, SubtleCard } from "./ui";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigation } from "@/lib/NavigationContext";
 import { useWeightTracker } from "./tracker";
 import { useChallenges } from "./challenge";
 import { useTasks } from "./todo";
+import { usePantryWriteOffs } from "./meals/usePantryWriteOffs";
 import { initializeNotifications } from "@/lib/notifications";
 import { formatDate } from "./shared/dateUtils";
 
@@ -17,6 +18,17 @@ export default function Dashboard() {
   const { sortedEntries, goal } = useWeightTracker(user?.id);
   const { challenges } = useChallenges(user?.id);
   const { tasks } = useTasks(user?.id);
+  const pantryWriteOffs = usePantryWriteOffs(user?.id);
+  const [wasteSummary, setWasteSummary] = useState({ monthlyTotal: 0, monthlyCount: 0 });
+
+  const { loadMonthlySummary } = pantryWriteOffs;
+  useEffect(() => {
+    if (user?.id) {
+      const now = new Date();
+      const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      loadMonthlySummary(month).then(setWasteSummary);
+    }
+  }, [user?.id, loadMonthlySummary]);
 
   useEffect(() => {
     initializeNotifications();
@@ -99,6 +111,33 @@ export default function Dashboard() {
           <Plus className="w-4 h-4" /> Dodaj zadanie
         </button>
       </div>
+
+      {wasteSummary.monthlyTotal > 0 && (
+        <div
+          onClick={() => {
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('pantry-show-write-offs', 'true');
+            }
+            navigateTo('meals');
+          }}
+          className="cursor-pointer mb-6"
+          role="button"
+          tabIndex={0}
+        >
+          <SubtleCard>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-violet-500/20 rounded-lg">
+                <PackageX className="w-5 h-5 text-violet-400" />
+              </div>
+              <div>
+                <p className="text-xs text-[var(--muted)]">Straty w tym miesiącu</p>
+                <p className="text-lg font-semibold text-red-400">{wasteSummary.monthlyTotal.toFixed(2)} zł</p>
+                <p className="text-xs text-[var(--muted)]">{wasteSummary.monthlyCount} produktów</p>
+              </div>
+            </div>
+          </SubtleCard>
+        </div>
+      )}
 
       <div>
         <h2 className="text-lg font-semibold text-[var(--foreground)] mb-3">Nadchodzące</h2>
