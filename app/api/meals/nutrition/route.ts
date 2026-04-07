@@ -5,6 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 import { checkRateLimit, getRateLimitHeaders } from '@/lib/serverRateLimiter';
 import { nutritionSchema } from '@/app/components/meals/types';
 import { zodResponseFormat } from 'openai/helpers/zod';
+import { nutritionRequestSchema } from '@/lib/validation';
+import { getServerEnv } from '@/lib/env';
 
 const NUTRITION_RATE_LIMIT = { maxRequests: 60, windowMs: 86400000 } as const; // 60/day
 
@@ -49,19 +51,19 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const supabaseAnon = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const env = getServerEnv();
+    const supabaseAnon = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
     const { data: userData, error: authError } = await supabaseAnon.auth.getUser(token);
     if (authError || !userData.user) {
       return NextResponse.json({ error: 'Nieprawidłowy token' }, { status: 401 });
     }
 
-    const { name, amount, unit } = await request.json();
-    if (!name || !amount || !unit) {
-      return NextResponse.json({ error: 'Brak wymaganych pól: name, amount, unit' }, { status: 400 });
+    const rawBody = await request.json();
+    const parsed = nutritionRequestSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Nieprawidłowe dane wejściowe' }, { status: 400 });
     }
+    const { name, amount, unit } = parsed.data;
 
     const { client, model } = getAIClient();
 
@@ -87,17 +89,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Brak odpowiedzi AI' }, { status: 500 });
     }
 
-    const parsed = nutritionSchema.parse(JSON.parse(content));
+    const nutritionResult = nutritionSchema.parse(JSON.parse(content));
 
     // Reject all-zero response as AI hallucination
-    if (parsed.calories === 0 && parsed.protein === 0 && parsed.carbs === 0 && parsed.fat === 0) {
+    if (nutritionResult.calories === 0 && nutritionResult.protein === 0 && nutritionResult.carbs === 0 && nutritionResult.fat === 0) {
       return NextResponse.json(
         { error: 'AI zwróciło zerowe wartości — spróbuj ponownie' },
         { status: 422 }
       );
     }
 
-    return NextResponse.json({ data: parsed }, {
+    return NextResponse.json({ data: nutritionResult }, {
       headers: Object.fromEntries(rateLimitHeaders.entries()),
     });
   } catch (error) {
