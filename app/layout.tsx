@@ -6,6 +6,7 @@ import { PostHogProvider } from "@/lib/PostHogProvider";
 import { ThemeProvider } from "@/lib/ThemeContext";
 import { OnboardingProvider } from "@/lib/OnboardingContext";
 import { NavigationProvider } from "@/lib/NavigationContext";
+import Script from "next/script";
 import ErrorBoundary from "./components/shared/ErrorBoundary";
 import OfflineIndicator from "./components/shared/OfflineIndicator";
 
@@ -72,17 +73,13 @@ export default function RootLayout({
             </ErrorBoundary>
           </ThemeProvider>
         </PostHogProvider>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').catch(function() {});
-                });
-              }
-            `,
-          }}
-        />
+        <Script id="sw-register" strategy="afterInteractive">
+          {`if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+              navigator.serviceWorker.register('/sw.js').catch(function() {});
+            });
+          }`}
+        </Script>
       </body>
     </html>
   );
