@@ -76,4 +76,32 @@ describe('estimateCostFromPantry', () => {
     // kurczak: 30/1000*500=15, ryż: 5/1000*100=0.50
     expect(result.totalCost).toBe(15.5);
   });
+
+  it('excludes is_free pantry items from cost estimation', () => {
+    const ingredients: MealIngredient[] = [
+      { name: 'jajka', amount: 3, unit: 'szt', calories: 234, protein: 18, carbs: 2, fat: 15, cost: null },
+    ];
+    const pantryItems: PantryItem[] = [
+      { id: '1', user_id: 'u', name: 'jajka', quantity_total: 30, quantity_remaining: 27, unit: 'szt', price: 0, purchased_at: '2026-04-01', created_at: '', updated_at: '', is_free: true },
+    ];
+
+    const result = estimateCostFromPantry(ingredients, pantryItems);
+    expect(result.costs.get('jajka')).toBeNull();
+    expect(result.totalCost).toBe(0);
+  });
+
+  it('uses only non-free items when mixed free and purchased exist', () => {
+    const ingredients: MealIngredient[] = [
+      { name: 'jajka', amount: 5, unit: 'szt', calories: 390, protein: 30, carbs: 3, fat: 25, cost: null },
+    ];
+    const pantryItems: PantryItem[] = [
+      { id: '1', user_id: 'u', name: 'jajka', quantity_total: 30, quantity_remaining: 27, unit: 'szt', price: 0, purchased_at: '2026-04-01', created_at: '', updated_at: '', is_free: true },
+      { id: '2', user_id: 'u', name: 'jajka', quantity_total: 10, quantity_remaining: 10, unit: 'szt', price: 15, purchased_at: '2026-04-02', created_at: '', updated_at: '', is_free: false },
+    ];
+
+    const result = estimateCostFromPantry(ingredients, pantryItems);
+    // Should use only the purchased eggs: 5 * (15/10) = 7.50
+    expect(result.costs.get('jajka')).toBe(7.5);
+    expect(result.totalCost).toBe(7.5);
+  });
 });

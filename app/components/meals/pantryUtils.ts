@@ -31,6 +31,7 @@ export function findMatchingPantryItems(
       return (
         p.unit === ing.unit &&
         remaining > 0 &&
+        !p.is_free &&
         (p.name.toLowerCase().includes(ingNameLower) ||
           ingNameLower.includes(p.name.toLowerCase()))
       );
