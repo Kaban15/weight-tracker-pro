@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import { Plus, Trash2, ArrowLeft, Package, PackageX, Gift } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, Package, PackageX, Gift, Pencil, Check, X } from 'lucide-react';
 import { PantryItem, PantryWriteOff, WriteOffReason, WRITE_OFF_REASON_LABELS } from './types';
 import PantryItemModal from './PantryItemModal';
 import WriteOffModal from './WriteOffModal';
@@ -10,6 +10,7 @@ interface PantryManagerProps {
   items: PantryItem[];
   onAdd: (item: { name: string; quantity: number; inputUnit: string; price: number; is_free: boolean }) => void;
   onDelete: (id: string) => void;
+  onUpdate: (id: string, updates: Partial<PantryItem>) => void;
   onBack: () => void;
   writeOffs: PantryWriteOff[];
   writeOffMonthlyTotal: number;
@@ -48,6 +49,7 @@ export default function PantryManager({
   items,
   onAdd,
   onDelete,
+  onUpdate,
   onBack,
   writeOffs,
   writeOffMonthlyTotal,
@@ -61,6 +63,35 @@ export default function PantryManager({
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'pantry' | 'history' | 'archive'>(initialTab || 'pantry');
   const [writeOffItem, setWriteOffItem] = useState<PantryItem | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editQty, setEditQty] = useState('');
+  const [editFree, setEditFree] = useState(false);
+
+  const startEditing = (item: PantryItem) => {
+    setEditingId(item.id);
+    setEditName(item.name);
+    setEditPrice(item.price.toString());
+    setEditQty(item.quantity_remaining.toString());
+    setEditFree(item.is_free);
+  };
+
+  const saveEdit = (item: PantryItem) => {
+    const updates: Partial<PantryItem> = {};
+    const newName = editName.trim();
+    if (newName && newName !== item.name) updates.name = newName;
+    const newPrice = editFree ? 0 : parseFloat(editPrice);
+    if (!isNaN(newPrice) && newPrice !== item.price) updates.price = newPrice;
+    const newQty = parseFloat(editQty);
+    if (!isNaN(newQty) && newQty !== item.quantity_remaining) updates.quantity_remaining = newQty;
+    if (editFree !== item.is_free) {
+      updates.is_free = editFree;
+      if (editFree) updates.price = 0;
+    }
+    if (Object.keys(updates).length > 0) onUpdate(item.id, updates);
+    setEditingId(null);
+  };
 
   const activeItems = useMemo(() => items.filter(i => i.quantity_remaining > 0), [items]);
   const archivedItems = useMemo(() => items.filter(i => i.quantity_remaining === 0), [items]);
@@ -139,36 +170,85 @@ export default function PantryManager({
                 const percentRemaining = item.quantity_total > 0
                   ? (item.quantity_remaining / item.quantity_total) * 100
                   : 0;
+                const isEditing = editingId === item.id;
                 return (
                   <div key={item.id} className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[var(--foreground)] font-medium">{item.name}</span>
-                        {item.is_free && <span title="Nie kupowane (prezent)"><Gift className="w-3.5 h-3.5 text-emerald-400" /></span>}
-                        <span className="text-[var(--muted)] text-sm">
-                          {Math.round(item.quantity_remaining)} / {Math.round(item.quantity_total)} {item.unit}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[var(--muted)] text-sm">{item.price.toFixed(2)} zł</span>
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-[1fr_auto] gap-2">
+                          <input value={editName} onChange={e => setEditName(e.target.value)}
+                            className="bg-[var(--surface)] border border-[var(--card-border)] rounded-lg px-2 py-1 text-white text-sm" />
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => saveEdit(item)} className="p-1 text-emerald-400 hover:text-emerald-300"><Check className="w-4 h-4" /></button>
+                            <button onClick={() => setEditingId(null)} className="p-1 text-[var(--muted)] hover:text-red-400"><X className="w-4 h-4" /></button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-xs text-[var(--muted)]">Pozostało ({item.unit})</label>
+                            <input type="number" step="any" value={editQty} onChange={e => setEditQty(e.target.value)}
+                              className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-lg px-2 py-1 text-white text-sm" />
+                          </div>
+                          {!editFree && (
+                            <div>
+                              <label className="text-xs text-[var(--muted)]">Cena (zł)</label>
+                              <input type="number" step="0.01" value={editPrice} onChange={e => setEditPrice(e.target.value)}
+                                className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-lg px-2 py-1 text-white text-sm" />
+                            </div>
+                          )}
+                        </div>
                         <button
-                          onClick={() => setWriteOffItem(item)}
-                          className="p-1 text-[var(--muted)] hover:text-amber-400 transition-colors"
-                          title="Odpisz stratę"
+                          type="button"
+                          onClick={() => { setEditFree(!editFree); }}
+                          className={`flex items-center gap-2 px-2 py-1 rounded-lg text-xs transition-colors ${
+                            editFree
+                              ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/30'
+                              : 'bg-[var(--surface)] text-[var(--muted)] border border-[var(--card-border)]'
+                          }`}
                         >
-                          <PackageX className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => onDelete(item.id)}
-                          className="p-1 text-[var(--muted)] hover:text-red-400 transition-colors">
-                          <Trash2 className="w-4 h-4" />
+                          <Gift className="w-3 h-3" />
+                          Nie kupowane (prezent)
                         </button>
                       </div>
-                    </div>
-                    <div className="w-full bg-[var(--surface)] rounded-full h-1.5">
-                      <div className={`h-1.5 rounded-full transition-all ${
-                        percentRemaining > 30 ? 'bg-emerald-500' : percentRemaining > 10 ? 'bg-amber-500' : 'bg-red-500'
-                      }`} style={{ width: `${percentRemaining}%` }} />
-                    </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[var(--foreground)] font-medium">{item.name}</span>
+                            {item.is_free && <span title="Nie kupowane (prezent)"><Gift className="w-3.5 h-3.5 text-emerald-400" /></span>}
+                            <span className="text-[var(--muted)] text-sm">
+                              {Math.round(item.quantity_remaining)} / {Math.round(item.quantity_total)} {item.unit}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[var(--muted)] text-sm">{item.price.toFixed(2)} zł</span>
+                            <button
+                              onClick={() => startEditing(item)}
+                              className="p-1 text-[var(--muted)] hover:text-violet-400 transition-colors"
+                              title="Edytuj"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setWriteOffItem(item)}
+                              className="p-1 text-[var(--muted)] hover:text-amber-400 transition-colors"
+                              title="Odpisz stratę"
+                            >
+                              <PackageX className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => onDelete(item.id)}
+                              className="p-1 text-[var(--muted)] hover:text-red-400 transition-colors">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="w-full bg-[var(--surface)] rounded-full h-1.5">
+                          <div className={`h-1.5 rounded-full transition-all ${
+                            percentRemaining > 30 ? 'bg-emerald-500' : percentRemaining > 10 ? 'bg-amber-500' : 'bg-red-500'
+                          }`} style={{ width: `${percentRemaining}%` }} />
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })}

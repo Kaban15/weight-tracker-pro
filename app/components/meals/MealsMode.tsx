@@ -415,6 +415,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
             items={pantry.items}
             onAdd={pantry.addItem}
             onDelete={pantry.deleteItem}
+            onUpdate={pantry.updateItem}
             onBack={() => setView('dashboard')}
             writeOffs={pantryWriteOffs.writeOffs}
             writeOffMonthlyTotal={pantryWriteOffs.monthlyTotal}
