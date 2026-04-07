@@ -50,7 +50,7 @@ export default function WelcomeModal({ onComplete }: WelcomeModalProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const isLastSlide = currentSlide === slides.length - 1;
-  const slide = slides[currentSlide];
+  const slide = slides[currentSlide]!;
   const Icon = slide.icon;
 
   const handleNext = () => {

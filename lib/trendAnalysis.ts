@@ -57,7 +57,7 @@ function getAverageForPeriod(entries: Entry[], days: number): { avg: number; cou
 
   const avg = sorted.reduce((sum, e) => sum + e.weight, 0) / sorted.length;
   const change = sorted.length > 1
-    ? sorted[sorted.length - 1].weight - sorted[0].weight
+    ? sorted[sorted.length - 1]!.weight - sorted[0]!.weight
     : 0;
 
   return { avg, count: sorted.length, change };
@@ -117,7 +117,7 @@ export function calculateWeeklyTrends(entries: Entry[], weeks: number = 12): Wee
     if (weekEntries.length > 0) {
       const weights = weekEntries.map(e => e.weight);
       result.unshift({
-        weekStart: weekStart.toISOString().split('T')[0],
+        weekStart: weekStart.toISOString().split('T')[0]!,
         avgWeight: weights.reduce((a, b) => a + b, 0) / weights.length,
         minWeight: Math.min(...weights),
         maxWeight: Math.max(...weights),
@@ -193,7 +193,7 @@ export function predictGoalDate(
   }
 
   return {
-    targetDate: predictedDate.toISOString().split('T')[0],
+    targetDate: predictedDate.toISOString().split('T')[0] ?? null,
     daysRemaining: Math.round(daysToTarget),
     weeklyRate,
     isOnTrack,
@@ -224,7 +224,7 @@ export function calculateMovingAverage(entries: Entry[], windowSize: number = 7)
     const window = sorted.slice(i - windowSize + 1, i + 1);
     const avg = window.reduce((sum, e) => sum + e.weight, 0) / window.length;
     result.push({
-      date: sorted[i].date,
+      date: sorted[i]!.date,
       value: avg,
     });
   }

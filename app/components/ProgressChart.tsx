@@ -103,7 +103,7 @@ export default function ProgressChart({ entries, goal, startDate, endDate, measu
 
     const gStart = goal.start_date
       ? new Date(goal.start_date)
-      : (sortedEntries.length > 0 ? new Date(sortedEntries[0].date) : null);
+      : (sortedEntries.length > 0 ? new Date(sortedEntries[0]!.date) : null);
     const gEnd = new Date(goal.target_date);
     let dwl = 0;
 
@@ -152,7 +152,7 @@ export default function ProgressChart({ entries, goal, startDate, endDate, measu
 
     // Add future target point
     if (showGoalLine && goal && goalEndDate) {
-      const lastEntryDate = new Date(sortedEntries[sortedEntries.length - 1].date);
+      const lastEntryDate = new Date(sortedEntries[sortedEntries.length - 1]!.date);
       if (!startDate && !endDate && lastEntryDate < goalEndDate) {
         data.push({
           date: formatChartDate(goal.target_date),

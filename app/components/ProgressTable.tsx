@@ -233,7 +233,7 @@ export default function ProgressTable({ entries, goal }: ProgressTableProps) {
             </div>
             <div>
               <span className="text-slate-400">Obecna waga:</span>
-              <span className="text-white font-bold ml-2">{sortedEntries[0].weight} kg</span>
+              <span className="text-white font-bold ml-2">{sortedEntries[0]!.weight} kg</span>
             </div>
             <div>
               <span className="text-slate-400">Cel:</span>
@@ -242,11 +242,11 @@ export default function ProgressTable({ entries, goal }: ProgressTableProps) {
             <div>
               <span className="text-slate-400">Zmiana:</span>
               <span className={`font-bold ml-2 ${
-                sortedEntries[0].weight < goal.current_weight
+                sortedEntries[0]!.weight < goal.current_weight
                   ? 'text-emerald-400'
                   : 'text-red-400'
               }`}>
-                {(sortedEntries[0].weight - goal.current_weight).toFixed(1)} kg
+                {(sortedEntries[0]!.weight - goal.current_weight).toFixed(1)} kg
               </span>
             </div>
           </div>

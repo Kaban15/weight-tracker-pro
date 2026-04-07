@@ -223,7 +223,7 @@ export default function ScheduleModeWeekly({ onBack }: ScheduleModeWeeklyProps) 
                   Backlog
                 </h2>
                 <button
-                  onClick={() => handleAddTask(new Date().toISOString().split("T")[0])}
+                  onClick={() => handleAddTask(new Date().toISOString().split("T")[0]!)}
                   className="p-1.5 text-cyan-400 hover:bg-cyan-500/20 rounded transition-colors"
                 >
                   <Plus className="w-4 h-4" />
@@ -262,7 +262,7 @@ export default function ScheduleModeWeekly({ onBack }: ScheduleModeWeeklyProps) 
             {/* Quick add section */}
             <div className="p-3 mt-auto">
               <button
-                onClick={() => handleAddTask(new Date().toISOString().split("T")[0])}
+                onClick={() => handleAddTask(new Date().toISOString().split("T")[0]!)}
                 className="w-full flex items-center justify-center gap-2 bg-[var(--card-bg)] hover:bg-[var(--surface)] border border-[var(--card-border)] text-[var(--muted)] hover:text-cyan-400 py-2.5 rounded-lg transition-all"
               >
                 <Plus className="w-4 h-4" />

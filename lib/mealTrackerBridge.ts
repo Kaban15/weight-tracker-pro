@@ -109,10 +109,11 @@ export async function updateMealInWeightEntry(
 
   if (idx === -1) return { success: false, error: 'not_found' };
 
-  const oldCalories = currentMeals[idx].calories || 0;
+  const existingMeal = currentMeals[idx]!;
+  const oldCalories = existingMeal.calories || 0;
   const newMeal = mealPlanToTrackerMeal(meal);
   // Preserve the original id
-  newMeal.id = currentMeals[idx].id;
+  newMeal.id = existingMeal.id;
 
   const updatedMeals = [...currentMeals];
   updatedMeals[idx] = newMeal;

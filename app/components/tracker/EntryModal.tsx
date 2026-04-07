@@ -60,10 +60,12 @@ export default function EntryModal({
 
   const updateWorkout = (index: number, field: 'type' | 'duration', value: string | number | undefined) => {
     const updated = [...workouts];
+    const workout = updated[index];
+    if (!workout) return;
     if (field === 'type') {
-      updated[index].type = value as string;
+      workout.type = value as string;
     } else {
-      updated[index].duration = value ? Number(value) : undefined;
+      workout.duration = value ? Number(value) : undefined;
     }
     setWorkouts(updated);
   };

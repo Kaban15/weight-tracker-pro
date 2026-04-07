@@ -403,7 +403,7 @@ export default function WeeklyScheduleView({
             <DayColumn
               key={dateStr}
               date={dateStr}
-              dayName={DAY_NAMES[index]}
+              dayName={DAY_NAMES[index] ?? ""}
               dayNumber={date.getDate()}
               isToday={dateStr === today}
               tasks={tasksByDate[dateStr] || []}

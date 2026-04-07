@@ -3,7 +3,7 @@ import type { MealIngredient, PantryItem } from './types';
 /** Get start/end date strings for a month in "YYYY-MM" format */
 export function getMonthDateRange(month: string): { startDate: string; endDate: string } {
   const startDate = `${month}-01`;
-  const [year, m] = month.split('-').map(Number);
+  const [year, m] = month.split('-').map(Number) as [number, number];
   const endDate = m === 12
     ? `${year + 1}-01-01`
     : `${year}-${String(m + 1).padStart(2, '0')}-01`;

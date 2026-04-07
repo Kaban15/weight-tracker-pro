@@ -260,7 +260,7 @@ export default function TrendAnalysis({ entries, goal, currentWeight }: TrendAna
       )}
 
       {/* Weekly Summary */}
-      {trends[0].entries > 0 && (
+      {trends[0] && trends[0].entries > 0 && (
         <div className="bg-[var(--card-bg)] rounded-xl p-5 border border-[var(--card-border)]">
           <h4 className="text-white font-semibold mb-3">Podsumowanie tygodnia</h4>
           <div className="grid grid-cols-3 gap-4 text-center">

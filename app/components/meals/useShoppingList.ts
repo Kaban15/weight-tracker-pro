@@ -84,7 +84,7 @@ export function useShoppingList(userId: string | undefined) {
 
     const toBuy: { name: string; amount: number; unit: string }[] = [];
     for (const [key, need] of needed) {
-      const name = key.split('_')[0];
+      const name = key.split('_')[0] ?? key;
       const pantryItem = pantryItems.find(p =>
         p.name.toLowerCase().includes(name) && p.unit === need.unit
       );

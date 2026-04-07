@@ -12,7 +12,7 @@ interface GoalHistoryDetailProps {
 
 export default function GoalHistoryDetail({ goal, entries, onBack }: GoalHistoryDetailProps) {
   // Filter entries within goal date range
-  const completedDate = goal.completed_at.split('T')[0];
+  const completedDate = goal.completed_at.split('T')[0]!;
   const relevantEntries = entries.filter(entry => {
     return entry.date >= goal.start_date && entry.date <= completedDate;
   });

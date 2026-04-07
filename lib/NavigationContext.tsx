@@ -26,7 +26,7 @@ const NavigationContext = createContext<NavigationContextType | undefined>(undef
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const [history, setHistory] = useState<NavigationState[]>([{ mode: null, subView: null }]);
 
-  const currentState = history[history.length - 1];
+  const currentState = history[history.length - 1]!;
   const currentMode = currentState.mode;
   const currentSubView = currentState.subView;
   const canGoBack = history.length > 1;
@@ -43,7 +43,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
 
   const navigateToSubView = useCallback((subView: SubView) => {
     setHistory(prev => {
-      const current = prev[prev.length - 1];
+      const current = prev[prev.length - 1]!;
       return [...prev, { mode: current.mode, subView }];
     });
     if (typeof window !== "undefined") {

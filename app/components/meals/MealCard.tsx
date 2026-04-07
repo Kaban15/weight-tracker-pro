@@ -98,7 +98,9 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
 
     // Trigger nutrition lookup on name or unit change (if not manually overridden)
     if ((field === 'name' || field === 'unit') && !manualOverride.has(index) && onNutritionLookup) {
-      const ing = { ...editedIngredients[index], [field]: value };
+      const current = editedIngredients[index];
+      if (!current) return;
+      const ing = { ...current, [field]: value };
       if (ing.name.trim() && ing.amount > 0) {
         onNutritionLookup(index, ing.name, ing.amount, ing.unit, handleNutritionResult);
       }

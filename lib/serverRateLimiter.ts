@@ -46,7 +46,7 @@ function getClientId(request: NextRequest): string {
   // Try to get real IP from headers (for proxied requests)
   const forwardedFor = request.headers.get("x-forwarded-for");
   if (forwardedFor) {
-    return forwardedFor.split(",")[0].trim();
+    return forwardedFor.split(",")[0]?.trim() ?? forwardedFor;
   }
 
   const realIp = request.headers.get("x-real-ip");

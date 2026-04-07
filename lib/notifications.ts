@@ -158,8 +158,8 @@ function scheduleReminder(
     const timeParts = time.split(":");
     if (timeParts.length !== 2) return;
 
-    const hours = parseInt(timeParts[0], 10);
-    const minutes = parseInt(timeParts[1], 10);
+    const hours = parseInt(timeParts[0] ?? "", 10);
+    const minutes = parseInt(timeParts[1] ?? "", 10);
 
     if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
       return;

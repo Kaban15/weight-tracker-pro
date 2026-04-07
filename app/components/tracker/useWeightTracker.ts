@@ -27,12 +27,12 @@ export function useWeightTracker(userId: string | undefined) {
 
   // Memoize derived weights (before useGoals, which needs them)
   const currentWeight = useMemo(
-    () => (sortedEntries.length > 0 ? sortedEntries[sortedEntries.length - 1].weight : 0),
+    () => (sortedEntries.length > 0 ? sortedEntries[sortedEntries.length - 1]!.weight : 0),
     [sortedEntries],
   );
 
   const startWeight = useMemo(
-    () => (sortedEntries.length > 0 ? sortedEntries[0].weight : 0),
+    () => (sortedEntries.length > 0 ? sortedEntries[0]!.weight : 0),
     [sortedEntries],
   );
 
@@ -104,12 +104,12 @@ export function useWeightTracker(userId: string | undefined) {
 
   // currentWeight / startWeight with goal fallback (for display when no entries)
   const currentWeightFinal = useMemo(
-    () => (sortedEntries.length > 0 ? sortedEntries[sortedEntries.length - 1].weight : goal?.current_weight || 0),
+    () => (sortedEntries.length > 0 ? sortedEntries[sortedEntries.length - 1]!.weight : goal?.current_weight || 0),
     [sortedEntries, goal?.current_weight],
   );
 
   const startWeightFinal = useMemo(
-    () => (sortedEntries.length > 0 ? sortedEntries[0].weight : goal?.current_weight || 0),
+    () => (sortedEntries.length > 0 ? sortedEntries[0]!.weight : goal?.current_weight || 0),
     [sortedEntries, goal?.current_weight],
   );
 

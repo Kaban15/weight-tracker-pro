@@ -152,7 +152,7 @@ export async function fetchGoogleFitWeight(
 
         if (weight) {
           weights.push({
-            date: date.toISOString().split("T")[0],
+            date: date.toISOString().split("T")[0]!,
             weight: Math.round(weight * 10) / 10, // Round to 1 decimal
           });
         }
@@ -209,7 +209,7 @@ export async function fetchGoogleFitSteps(
 
         if (stepCount) {
           steps.push({
-            date: date.toISOString().split("T")[0],
+            date: date.toISOString().split("T")[0]!,
             steps: stepCount,
           });
         }

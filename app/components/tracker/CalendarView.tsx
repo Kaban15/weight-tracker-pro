@@ -37,7 +37,7 @@ function getWeekDays(date: Date): Date[] {
 
 function getWeekRange(date: Date): { start: Date; end: Date } {
   const days = getWeekDays(date);
-  return { start: days[0], end: days[6] };
+  return { start: days[0]!, end: days[6]! };
 }
 
 function formatWeekRange(start: Date, end: Date): string {

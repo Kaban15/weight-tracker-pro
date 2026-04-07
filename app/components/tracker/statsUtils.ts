@@ -10,8 +10,8 @@ export function calculateStatsForEntries(entries: Entry[], goalTargetWeight?: nu
   }
 
   const sortedEntries = [...entries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const currentWeight = sortedEntries[sortedEntries.length - 1].weight;
-  const startWeight = sortedEntries[0].weight;
+  const currentWeight = sortedEntries[sortedEntries.length - 1]!.weight;
+  const startWeight = sortedEntries[0]!.weight;
   const entriesWithCalories = sortedEntries.filter(e => e.calories);
   const entriesWithSteps = sortedEntries.filter(e => e.steps);
   const entriesWithWorkout = sortedEntries.filter(e => e.workout);

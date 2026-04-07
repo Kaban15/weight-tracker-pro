@@ -74,9 +74,9 @@ export async function GET(request: NextRequest) {
 
     // Now fetch statistics using admin client (bypasses RLS)
     const now = new Date();
-    const today = now.toISOString().split("T")[0];
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    const today = now.toISOString().split("T")[0]!;
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]!;
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]!;
 
     // Helper to check if error is "table doesn't exist"
     const isTableNotExistError = (error: { code?: string; message?: string } | null) =>

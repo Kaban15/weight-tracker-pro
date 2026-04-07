@@ -82,7 +82,7 @@ export default function MonthlyMatrix({
             <tr className="bg-[var(--surface)] border-b border-[var(--card-border)]">
               <th className="sticky left-0 bg-[var(--surface)] z-10"></th>
               {monthData.weeks.map((week, weekIdx) => {
-                const weekOffset = monthData.weekDayOffsets[weekIdx];
+                const weekOffset = monthData.weekDayOffsets[weekIdx] ?? 0;
                 return week.map((day, dayIdx) => {
                   const dayNameIdx = (weekOffset + dayIdx) % 7;
                   const isCurrentDay = isToday(day.getDate(), day.getMonth(), day.getFullYear());
@@ -208,8 +208,8 @@ export default function MonthlyMatrix({
                       dayIdx === 0 ? 'border-l border-[var(--card-border)]' : ''
                     }`}>
                       <span className={`text-[10px] font-medium ${
-                        stats?.progress >= 70 ? 'text-[var(--accent)]' :
-                        stats?.progress >= 40 ? 'text-amber-400' :
+                        (stats?.progress ?? 0) >= 70 ? 'text-[var(--accent)]' :
+                        (stats?.progress ?? 0) >= 40 ? 'text-amber-400' :
                         'text-[var(--muted)]'
                       }`}>
                         {stats?.progress || 0}%

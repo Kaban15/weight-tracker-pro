@@ -124,7 +124,7 @@ export default function ChallengeMode({ onBack }: ChallengeModeProps) {
     if (!inChallenge) return;
 
     const dateParts = dateStr.split('-');
-    const clickedMonth = parseInt(dateParts[1]) - 1;
+    const clickedMonth = parseInt(dateParts[1] ?? "0") - 1;
 
     if (activeChallenge.trackReps) {
       const currentReps = activeChallenge.completedDays[dateStr] || 0;

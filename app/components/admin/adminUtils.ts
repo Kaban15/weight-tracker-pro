@@ -9,7 +9,7 @@ export function getEffectiveActivity(
   if (!lastSignIn) return lastActivityAt;
   if (!lastActivityAt) return lastSignIn;
   // Compare: lastSignIn is ISO datetime, lastActivityAt is YYYY-MM-DD
-  const signInDate = lastSignIn.split("T")[0];
+  const signInDate = lastSignIn.split("T")[0] ?? "";
   return signInDate > lastActivityAt ? lastSignIn : lastActivityAt;
 }
 
