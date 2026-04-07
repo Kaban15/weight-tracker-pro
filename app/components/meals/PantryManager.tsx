@@ -6,20 +6,24 @@ import { PantryItem, PantryWriteOff, WriteOffReason, WRITE_OFF_REASON_LABELS } f
 import PantryItemModal from './PantryItemModal';
 import WriteOffModal from './WriteOffModal';
 
+interface WriteOffsProps {
+  readonly items: PantryWriteOff[];
+  readonly monthlyTotal: number;
+  readonly monthlyCount: number;
+  readonly loading: boolean;
+  readonly onWriteOff: (item: PantryItem, data: { quantity: number; reason: WriteOffReason; note?: string }) => Promise<void>;
+  readonly onDelete: (writeOff: PantryWriteOff) => Promise<void>;
+  readonly onLoad: (month: string) => void;
+}
+
 interface PantryManagerProps {
-  items: PantryItem[];
-  onAdd: (item: { name: string; quantity: number; inputUnit: string; price: number; is_free: boolean }) => void;
-  onDelete: (id: string) => void;
-  onUpdate: (id: string, updates: Partial<PantryItem>) => void;
-  onBack: () => void;
-  writeOffs: PantryWriteOff[];
-  writeOffMonthlyTotal: number;
-  writeOffMonthlyCount: number;
-  writeOffLoading: boolean;
-  onWriteOff: (item: PantryItem, data: { quantity: number; reason: WriteOffReason; note?: string }) => Promise<void>;
-  onDeleteWriteOff: (writeOff: PantryWriteOff) => Promise<void>;
-  onLoadWriteOffs: (month: string) => void;
-  initialTab?: 'pantry' | 'history' | 'archive';
+  readonly items: PantryItem[];
+  readonly onAdd: (item: { name: string; quantity: number; inputUnit: string; price: number; is_free: boolean }) => void;
+  readonly onDelete: (id: string) => void;
+  readonly onUpdate: (id: string, updates: Partial<PantryItem>) => void;
+  readonly onBack: () => void;
+  readonly writeOffs: WriteOffsProps;
+  readonly initialTab?: 'pantry' | 'history' | 'archive';
 }
 
 const tabClass = (isActive: boolean) =>
@@ -52,12 +56,6 @@ export default function PantryManager({
   onUpdate,
   onBack,
   writeOffs,
-  writeOffMonthlyTotal,
-  writeOffMonthlyCount,
-  writeOffLoading,
-  onWriteOff,
-  onDeleteWriteOff,
-  onLoadWriteOffs,
   initialTab,
 }: PantryManagerProps) {
   const [modalOpen, setModalOpen] = useState(false);
@@ -100,12 +98,12 @@ export default function PantryManager({
 
   const handleMonthChange = (month: string) => {
     setSelectedMonth(month);
-    onLoadWriteOffs(month);
+    writeOffs.onLoad(month);
   };
 
   const handleDeleteWriteOff = async (writeOff: PantryWriteOff) => {
     if (confirm(`Czy na pewno chcesz usunąć odpis "${writeOff.name}"?`)) {
-      await onDeleteWriteOff(writeOff);
+      await writeOffs.onDelete(writeOff);
     }
   };
 
@@ -147,7 +145,7 @@ export default function PantryManager({
         <button
           onClick={() => {
             setActiveTab('history');
-            onLoadWriteOffs(selectedMonth);
+            writeOffs.onLoad(selectedMonth);
           }}
           className={tabClass(activeTab === 'history')}
         >
@@ -303,25 +301,25 @@ export default function PantryManager({
           {/* Summary */}
           <div className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-3 text-sm">
             <span className="text-[var(--muted)]">Łącznie: </span>
-            <span className="text-[var(--foreground)] font-medium">{writeOffMonthlyTotal.toFixed(2)} zł</span>
+            <span className="text-[var(--foreground)] font-medium">{writeOffs.monthlyTotal.toFixed(2)} zł</span>
             <span className="text-[var(--muted)]"> z </span>
-            <span className="text-[var(--foreground)] font-medium">{writeOffMonthlyCount}</span>
+            <span className="text-[var(--foreground)] font-medium">{writeOffs.monthlyCount}</span>
             <span className="text-[var(--muted)]"> produktów</span>
           </div>
 
           {/* Write-off list */}
-          {writeOffLoading ? (
+          {writeOffs.loading ? (
             <div className="text-center py-8 text-[var(--muted)]">
               <p>Ładowanie...</p>
             </div>
-          ) : writeOffs.length === 0 ? (
+          ) : writeOffs.items.length === 0 ? (
             <div className="text-center py-8 text-[var(--muted)]">
               <PackageX className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p>Brak strat w tym miesiącu.</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {writeOffs.map(wo => (
+              {writeOffs.items.map(wo => (
                 <div key={wo.id} className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-3">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[var(--foreground)] font-medium">{wo.name}</span>
@@ -359,7 +357,7 @@ export default function PantryManager({
           item={writeOffItem}
           onClose={() => setWriteOffItem(null)}
           onConfirm={async (data) => {
-            await onWriteOff(writeOffItem, data);
+            await writeOffs.onWriteOff(writeOffItem, data);
             setWriteOffItem(null);
           }}
         />
