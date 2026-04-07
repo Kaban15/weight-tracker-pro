@@ -30,6 +30,11 @@ export interface FailedSyncItem extends SyncQueueItem {
 
 let db: IDBDatabase | null = null;
 
+function getDb(): IDBDatabase {
+  if (!db) throw new Error("IndexedDB not initialized — call initDB() first");
+  return db;
+}
+
 // Initialize IndexedDB
 export async function initOfflineDB(): Promise<boolean> {
   if (typeof window === "undefined" || !window.indexedDB) {
@@ -93,7 +98,7 @@ async function getAllFromStore<T>(storeName: string, userId?: string): Promise<T
 
   return new Promise((resolve) => {
     try {
-      const transaction = db!.transaction(storeName, "readonly");
+      const transaction = getDb().transaction(storeName, "readonly");
       const store = transaction.objectStore(storeName);
 
       if (userId) {
@@ -118,7 +123,7 @@ async function putToStore<T extends { id: string }>(storeName: string, data: T):
 
   return new Promise((resolve) => {
     try {
-      const transaction = db!.transaction(storeName, "readwrite");
+      const transaction = getDb().transaction(storeName, "readwrite");
       const store = transaction.objectStore(storeName);
       const request = store.put(data);
       request.onsuccess = () => resolve(true);
@@ -135,7 +140,7 @@ async function deleteFromStore(storeName: string, id: string): Promise<boolean> 
 
   return new Promise((resolve) => {
     try {
-      const transaction = db!.transaction(storeName, "readwrite");
+      const transaction = getDb().transaction(storeName, "readwrite");
       const store = transaction.objectStore(storeName);
       const request = store.delete(id);
       request.onsuccess = () => resolve(true);
@@ -152,7 +157,7 @@ async function clearStore(storeName: string): Promise<boolean> {
 
   return new Promise((resolve) => {
     try {
-      const transaction = db!.transaction(storeName, "readwrite");
+      const transaction = getDb().transaction(storeName, "readwrite");
       const store = transaction.objectStore(storeName);
       const request = store.clear();
       request.onsuccess = () => resolve(true);
@@ -176,7 +181,7 @@ export const entriesStorage = {
 
     return new Promise((resolve) => {
       try {
-        const transaction = db!.transaction(STORES.ENTRIES, "readwrite");
+        const transaction = getDb().transaction(STORES.ENTRIES, "readwrite");
         const store = transaction.objectStore(STORES.ENTRIES);
 
         entries.forEach(entry => store.put(entry));
@@ -212,7 +217,7 @@ export const measurementsStorage = {
 
     return new Promise((resolve) => {
       try {
-        const transaction = db!.transaction(STORES.MEASUREMENTS, "readwrite");
+        const transaction = getDb().transaction(STORES.MEASUREMENTS, "readwrite");
         const store = transaction.objectStore(STORES.MEASUREMENTS);
 
         measurements.forEach(m => store.put(m));
@@ -247,7 +252,7 @@ export const syncQueue = {
 
     return new Promise((resolve) => {
       try {
-        const transaction = db!.transaction(STORES.SYNC_QUEUE, "readwrite");
+        const transaction = getDb().transaction(STORES.SYNC_QUEUE, "readwrite");
         const store = transaction.objectStore(STORES.SYNC_QUEUE);
         const getRequest = store.get(id);
 
@@ -292,7 +297,7 @@ export const failedSyncStorage = {
 
     return new Promise((resolve) => {
       try {
-        const transaction = db!.transaction([STORES.FAILED_SYNC, STORES.SYNC_QUEUE], "readwrite");
+        const transaction = getDb().transaction([STORES.FAILED_SYNC, STORES.SYNC_QUEUE], "readwrite");
         const failedStore = transaction.objectStore(STORES.FAILED_SYNC);
         const syncStore = transaction.objectStore(STORES.SYNC_QUEUE);
 
