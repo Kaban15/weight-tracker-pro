@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { PantryItem, MealIngredient, formatDate } from './types';
 import { UNIT_CONVERSIONS } from './constants';
 import { estimateCostFromPantry } from './costUtils';
+import { findMatchingPantryItems, costPerUnit } from './pantryUtils';
 
 export function usePantry(userId: string | undefined) {
   const [items, setItems] = useState<PantryItem[]>([]);
@@ -95,16 +96,7 @@ export function usePantry(userId: string | undefined) {
         costs.set(ing.name, null);
         continue;
       }
-      const ingNameLower = ing.name.toLowerCase();
-      // FIFO: find ALL matching pantry items, sorted by oldest first
-      const matchingItems = items
-        .filter(p =>
-          p.unit === ing.unit &&
-          p.quantity_remaining > 0 &&
-          (p.name.toLowerCase().includes(ingNameLower) ||
-            ingNameLower.includes(p.name.toLowerCase()))
-        )
-        .sort((a, b) => a.purchased_at.localeCompare(b.purchased_at));
+      const matchingItems = findMatchingPantryItems(ing, items);
 
       if (matchingItems.length > 0) {
         let remaining = ing.amount;
@@ -113,8 +105,7 @@ export function usePantry(userId: string | undefined) {
         for (const pantryItem of matchingItems) {
           if (remaining <= 0) break;
           const deductAmount = Math.min(remaining, pantryItem.quantity_remaining);
-          const costPerUnit = pantryItem.price / pantryItem.quantity_total;
-          ingredientCost += deductAmount * costPerUnit;
+          ingredientCost += deductAmount * costPerUnit(pantryItem);
           remaining -= deductAmount;
 
           const newRemaining = pantryItem.quantity_remaining - deductAmount;

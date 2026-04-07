@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { X, Trash2, User, PackageX, FileText } from 'lucide-react';
 import { PantryItem, WriteOffReason, WRITE_OFF_REASON_LABELS } from './types';
+import { costPerUnit } from './pantryUtils';
 
 interface WriteOffModalProps {
   isOpen: boolean;
@@ -23,11 +24,8 @@ export default function WriteOffModal({ isOpen, item, onClose, onConfirm }: Writ
   const [reason, setReason] = useState<WriteOffReason | null>(null);
   const [note, setNote] = useState('');
 
-  const costPerUnit = item.quantity_total > 0 ? item.price / item.quantity_total : 0;
-  const estimatedCost = useMemo(
-    () => Math.round(quantity * costPerUnit * 100) / 100,
-    [quantity, costPerUnit]
-  );
+  const cpu = costPerUnit(item);
+  const estimatedCost = Math.round(quantity * cpu * 100) / 100;
 
   // Reset state when item changes
   const itemId = item.id;

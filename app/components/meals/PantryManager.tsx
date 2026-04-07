@@ -21,6 +21,13 @@ interface PantryManagerProps {
   initialTab?: 'pantry' | 'history' | 'archive';
 }
 
+const tabClass = (isActive: boolean) =>
+  `flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
+    isActive
+      ? 'bg-[var(--card-bg)] text-[var(--foreground)] shadow-sm'
+      : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+  }`;
+
 function generateLastSixMonths(): { value: string; label: string }[] {
   const months: { value: string; label: string }[] = [];
   const now = new Date();
@@ -94,22 +101,14 @@ export default function PantryManager({
       <div className="flex gap-1 bg-[var(--surface)] rounded-lg p-1">
         <button
           onClick={() => setActiveTab('pantry')}
-          className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
-            activeTab === 'pantry'
-              ? 'bg-[var(--card-bg)] text-[var(--foreground)] shadow-sm'
-              : 'text-[var(--muted)] hover:text-[var(--foreground)]'
-          }`}
+          className={tabClass(activeTab === 'pantry')}
         >
           Produkty ({activeItems.length})
         </button>
         {archivedItems.length > 0 && (
           <button
             onClick={() => setActiveTab('archive')}
-            className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
-              activeTab === 'archive'
-                ? 'bg-[var(--card-bg)] text-[var(--foreground)] shadow-sm'
-                : 'text-[var(--muted)] hover:text-[var(--foreground)]'
-            }`}
+            className={tabClass(activeTab === 'archive')}
           >
             Archiwum ({archivedItems.length})
           </button>
@@ -119,11 +118,7 @@ export default function PantryManager({
             setActiveTab('history');
             onLoadWriteOffs(selectedMonth);
           }}
-          className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
-            activeTab === 'history'
-              ? 'bg-[var(--card-bg)] text-[var(--foreground)] shadow-sm'
-              : 'text-[var(--muted)] hover:text-[var(--foreground)]'
-          }`}
+          className={tabClass(activeTab === 'history')}
         >
           Straty
         </button>

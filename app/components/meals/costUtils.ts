@@ -1,5 +1,6 @@
 // app/components/meals/costUtils.ts
 import type { MealIngredient, PantryItem } from './types';
+import { findMatchingPantryItems, costPerUnit } from './pantryUtils';
 
 export function estimateCostFromPantry(
   ingredients: MealIngredient[],
@@ -19,16 +20,10 @@ export function estimateCostFromPantry(
       costs.set(ing.name, null);
       continue;
     }
-    const ingNameLower = ing.name.toLowerCase();
-    // FIFO: find ALL matching pantry items, sorted by oldest first
-    const matchingItems = pantryItems
-      .filter(p =>
-        p.unit === ing.unit &&
-        (simulatedRemaining.get(p.id) || 0) > 0 &&
-        (p.name.toLowerCase().includes(ingNameLower) ||
-          ingNameLower.includes(p.name.toLowerCase()))
-      )
-      .sort((a, b) => a.purchased_at.localeCompare(b.purchased_at));
+    const matchingItems = findMatchingPantryItems(
+      ing, pantryItems,
+      (id) => simulatedRemaining.get(id) || 0,
+    );
 
     if (matchingItems.length > 0) {
       let remaining = ing.amount;
@@ -38,8 +33,7 @@ export function estimateCostFromPantry(
         if (remaining <= 0) break;
         const simRemaining = simulatedRemaining.get(pantryItem.id) || 0;
         const deductAmount = Math.min(remaining, simRemaining);
-        const costPerUnit = pantryItem.price / pantryItem.quantity_total;
-        ingredientCost += deductAmount * costPerUnit;
+        ingredientCost += deductAmount * costPerUnit(pantryItem);
         remaining -= deductAmount;
         simulatedRemaining.set(pantryItem.id, simRemaining - deductAmount);
       }

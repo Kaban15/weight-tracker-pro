@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { PantryItem, PantryWriteOff, WriteOffReason } from './types';
 import { formatDate } from '../shared/dateUtils';
+import { getMonthDateRange, costPerUnit as calcCostPerUnit } from './pantryUtils';
 
 interface WriteOffSummary {
   monthlyTotal: number;
@@ -19,11 +20,7 @@ export function usePantryWriteOffs(userId: string | undefined) {
     if (!userId || !supabase) return;
     setLoading(true);
     try {
-      const startDate = `${month}-01`;
-      const [year, m] = month.split('-').map(Number);
-      const endDate = m === 12
-        ? `${year + 1}-01-01`
-        : `${year}-${String(m + 1).padStart(2, '0')}-01`;
+      const { startDate, endDate } = getMonthDateRange(month);
 
       const { data, error } = await supabase
         .from('pantry_write_offs')
@@ -47,11 +44,7 @@ export function usePantryWriteOffs(userId: string | undefined) {
 
   const loadMonthlySummary = useCallback(async (month: string) => {
     if (!userId || !supabase) return { monthlyTotal: 0, monthlyCount: 0 };
-    const startDate = `${month}-01`;
-    const [year, m] = month.split('-').map(Number);
-    const endDate = m === 12
-      ? `${year + 1}-01-01`
-      : `${year}-${String(m + 1).padStart(2, '0')}-01`;
+    const { startDate, endDate } = getMonthDateRange(month);
 
     const { data, error } = await supabase
       .from('pantry_write_offs')
@@ -73,13 +66,11 @@ export function usePantryWriteOffs(userId: string | undefined) {
     quantity: number;
     reason: WriteOffReason;
     note?: string;
-  }) => {
+  }): Promise<{ totalCost: number } | undefined> => {
     if (!userId || !supabase) return;
 
-    const costPerUnit = data.pantryItem.quantity_total > 0
-      ? data.pantryItem.price / data.pantryItem.quantity_total
-      : 0;
-    const totalCost = Math.round(data.quantity * costPerUnit * 100) / 100;
+    const cpu = calcCostPerUnit(data.pantryItem);
+    const totalCost = Math.round(data.quantity * cpu * 100) / 100;
 
     const writeOff: Omit<PantryWriteOff, 'id' | 'created_at'> = {
       user_id: userId,
@@ -87,7 +78,7 @@ export function usePantryWriteOffs(userId: string | undefined) {
       name: data.pantryItem.name,
       unit: data.pantryItem.unit,
       quantity: data.quantity,
-      cost_per_unit: Math.round(costPerUnit * 10000) / 10000,
+      cost_per_unit: Math.round(cpu * 10000) / 10000,
       total_cost: totalCost,
       reason: data.reason,
       note: data.note || null,
@@ -105,6 +96,8 @@ export function usePantryWriteOffs(userId: string | undefined) {
       .update({ quantity_remaining: Math.max(0, newRemaining) })
       .eq('id', data.pantryItem.id);
     if (updateError) throw updateError;
+
+    return { totalCost };
   }, [userId]);
 
   const deleteWriteOff = useCallback(async (writeOff: PantryWriteOff) => {

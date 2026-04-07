@@ -227,10 +227,9 @@ export default function MealsMode({ onBack }: MealsModeProps) {
 
   const handleWriteOff = async (item: PantryItem, data: { quantity: number; reason: WriteOffReason; note?: string }) => {
     try {
-      await pantryWriteOffs.createWriteOff({ pantryItem: item, ...data });
+      const result = await pantryWriteOffs.createWriteOff({ pantryItem: item, ...data });
       await pantry.loadItems();
-      const costPerUnit = item.quantity_total > 0 ? item.price / item.quantity_total : 0;
-      const cost = Math.round(data.quantity * costPerUnit * 100) / 100;
+      const cost = result?.totalCost ?? 0;
       setToast({ message: `Spisano ${Math.round(data.quantity)}${item.unit} ${item.name} (${cost.toFixed(2)} zł)`, type: 'success' });
     } catch {
       setToast({ message: 'Błąd zapisywania straty', type: 'error' });
