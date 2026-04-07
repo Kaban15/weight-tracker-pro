@@ -333,8 +333,9 @@ export function useMeals(userId: string | undefined) {
       supabase.from('meal_plans').select('estimated_cost').eq('user_id', userId).gte('date', yearStart).lte('date', today),
     ]);
 
-    const sum = (data: any[] | null) =>
-      (data || []).reduce((s: number, r: { estimated_cost: number | null }) => s + (r.estimated_cost || 0), 0);
+    interface CostRow { estimated_cost: number | null }
+    const sum = (data: CostRow[] | null) =>
+      (data || []).reduce((s: number, r: CostRow) => s + (r.estimated_cost || 0), 0);
 
     return {
       week: Math.round(sum(weekRes.data) * 100) / 100,
