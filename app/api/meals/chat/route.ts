@@ -92,10 +92,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Brak odpowiedzi AI' }, { status: 500 });
     }
 
-    const parsed = JSON.parse(content);
+    const aiResult = JSON.parse(content);
 
     return NextResponse.json({
-      data: parsed,
+      data: aiResult,
       usage: response.usage,
     }, {
       headers: Object.fromEntries(rateLimitHeaders.entries()),
