@@ -240,7 +240,7 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
                 sendStatus === 'sent'
                   ? 'bg-green-500/20 text-green-500'
                   : isInTracker
-                    ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20'
+                    ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
                     : 'bg-[#1d9bf0]/10 text-[#1d9bf0] hover:bg-[#1d9bf0]/20'
               }`}
             >

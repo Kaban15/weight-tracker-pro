@@ -123,8 +123,14 @@ export default function MealsMode({ onBack }: MealsModeProps) {
             carbs: enriched.reduce((s, i) => s + i.carbs, 0),
             fat: enriched.reduce((s, i) => s + i.fat, 0),
           });
-          const repairedMeal = { ...meal, ingredients: enriched, calories: totalCal, protein: enriched.reduce((s, i) => s + i.protein, 0), carbs: enriched.reduce((s, i) => s + i.carbs, 0), fat: enriched.reduce((s, i) => s + i.fat, 0) };
-          await autoSyncToTracker(repairedMeal);
+          // Auto-sync to tracker if already pushed (direct call to avoid stale closure)
+          if (user?.id) {
+            const repairedMeal = { ...meal, ingredients: enriched, calories: totalCal, protein: enriched.reduce((s, i) => s + i.protein, 0), carbs: enriched.reduce((s, i) => s + i.carbs, 0), fat: enriched.reduce((s, i) => s + i.fat, 0) };
+            const liveKeys = await getMealsInTracker(user.id, repairedMeal.date);
+            if (liveKeys.has(`${repairedMeal.name}::${repairedMeal.meal_slot}`)) {
+              await updateMealInWeightEntry(user.id, repairedMeal.date, repairedMeal);
+            }
+          }
         }
       }
     })();
@@ -255,6 +261,10 @@ export default function MealsMode({ onBack }: MealsModeProps) {
         if (pushResult.success) {
           setToast({ message: 'Wysłano do wpisu wagi', type: 'success' });
           await refreshTrackerStatus(meal.date);
+        } else if (pushResult.error === 'no_entry') {
+          setToast({ message: 'Najpierw dodaj wpis wagi na ten dzień', type: 'error' });
+        } else {
+          setToast({ message: 'Błąd zapisu do wpisu wagi', type: 'error' });
         }
         return pushResult;
       } else {
