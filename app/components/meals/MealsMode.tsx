@@ -8,9 +8,10 @@ import { ArrowLeft, Settings, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useNavigation } from '@/lib/NavigationContext';
 import { supabase } from '@/lib/supabase';
-import { MealPlan, MealPreferences, AIGeneratedMeal, MealIngredient, formatDate } from './types';
+import { MealPlan, MealPreferences, AIGeneratedMeal, MealIngredient, PantryItem, PantryWriteOff, WriteOffReason, formatDate } from './types';
 import { useMeals } from './useMeals';
 import { usePantry } from './usePantry';
+import { usePantryWriteOffs } from './usePantryWriteOffs';
 import { useShoppingList } from './useShoppingList';
 import { useNutritionLookup } from './useNutritionLookup';
 import { ZERO_CALORIE_INGREDIENTS } from './constants';
@@ -40,10 +41,12 @@ export default function MealsMode({ onBack }: MealsModeProps) {
   } = useMeals(user?.id);
 
   const pantry = usePantry(user?.id);
+  const pantryWriteOffs = usePantryWriteOffs(user?.id);
   const shopping = useShoppingList(user?.id);
   const { lookupNutrition } = useNutritionLookup();
 
   const [view, setView] = useState<View>('loading');
+  const [pantryInitialTab, setPantryInitialTab] = useState<'pantry' | 'history'>('pantry');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [wizardData, setWizardData] = useState<Partial<MealPreferences> | null>(null);
   const [profile, setProfile] = useState<{ age?: number; gender?: 'male' | 'female'; height?: number } | null>(null);
@@ -71,6 +74,18 @@ export default function MealsMode({ onBack }: MealsModeProps) {
     }
     fetchProfile();
   }, [user?.id]);
+
+  // Check if navigated from Dashboard with write-offs flag
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const showWriteOffs = localStorage.getItem('pantry-show-write-offs');
+      if (showWriteOffs === 'true') {
+        localStorage.removeItem('pantry-show-write-offs');
+        setView('pantry');
+        setPantryInitialTab('history');
+      }
+    }
+  }, []);
 
   // One-time auto-repair: re-enrich meals that have 0 kcal on ingredients
   const repairRan = useRef(false);
@@ -210,6 +225,32 @@ export default function MealsMode({ onBack }: MealsModeProps) {
     }
   };
 
+  const handleWriteOff = async (item: PantryItem, data: { quantity: number; reason: WriteOffReason; note?: string }) => {
+    try {
+      await pantryWriteOffs.createWriteOff({ pantryItem: item, ...data });
+      await pantry.loadItems();
+      const costPerUnit = item.quantity_total > 0 ? item.price / item.quantity_total : 0;
+      const cost = Math.round(data.quantity * costPerUnit * 100) / 100;
+      setToast({ message: `Spisano ${Math.round(data.quantity)}${item.unit} ${item.name} (${cost.toFixed(2)} zł)`, type: 'success' });
+    } catch {
+      setToast({ message: 'Błąd zapisywania straty', type: 'error' });
+    }
+  };
+
+  const handleDeleteWriteOff = async (writeOff: PantryWriteOff) => {
+    try {
+      await pantryWriteOffs.deleteWriteOff(writeOff);
+      await pantry.loadItems();
+      if (!writeOff.pantry_item_id) {
+        setToast({ message: 'Wpis usunięty. Produkt już nie istnieje w spiżarni.', type: 'success' });
+      } else {
+        setToast({ message: 'Wpis usunięty, ilość przywrócona.', type: 'success' });
+      }
+    } catch {
+      setToast({ message: 'Błąd usuwania wpisu', type: 'error' });
+    }
+  };
+
   const handleMarkEaten = async (id: string) => {
     const meal = mealPlans.find(m => m.id === id);
     if (!meal) return;
@@ -322,6 +363,14 @@ export default function MealsMode({ onBack }: MealsModeProps) {
             onAdd={pantry.addItem}
             onDelete={pantry.deleteItem}
             onBack={() => setView('dashboard')}
+            writeOffs={pantryWriteOffs.writeOffs}
+            writeOffMonthlyTotal={pantryWriteOffs.monthlyTotal}
+            writeOffMonthlyCount={pantryWriteOffs.monthlyCount}
+            writeOffLoading={pantryWriteOffs.loading}
+            onWriteOff={handleWriteOff}
+            onDeleteWriteOff={handleDeleteWriteOff}
+            onLoadWriteOffs={pantryWriteOffs.loadWriteOffs}
+            initialTab={pantryInitialTab}
           />
         )}
 
