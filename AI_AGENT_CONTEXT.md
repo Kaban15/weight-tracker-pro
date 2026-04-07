@@ -64,7 +64,7 @@ Każdy kontekst ma swój hook (`useAuth`, `useTheme`, `useNavigation`, `useOnboa
 | **Nawyki** (challenge) | `ChallengeMode.tsx` | `useChallenges.ts` | `challenges` | `app/components/challenge/` |
 | **Zadania** (todo) | `TodoModeWeekly.tsx` | `useTasks.ts` | `tasks` (+ localStorage fallback) | `app/components/todo/` |
 | **Harmonogram** (schedule) | `ScheduleModeWeekly.tsx` | `useSchedule.ts` | `schedule_items` (+ agreguje tasks i challenges) | `app/components/schedule/` |
-| **Posiłki** (meals) | `MealsMode.tsx` | `useMeals.ts`, `usePantry.ts`, `useShoppingList.ts`, `useMealAI.ts` | `meal_preferences`, `meal_plans`, `pantry_items`, `shopping_lists`, `ai_conversations` | `app/components/meals/` |
+| **Posiłki** (meals) | `MealsMode.tsx` | `useMeals.ts`, `usePantry.ts`, `usePantryWriteOffs.ts`, `useShoppingList.ts`, `useMealAI.ts` | `meal_preferences`, `meal_plans`, `pantry_items`, `pantry_write_offs`, `shopping_lists`, `ai_conversations` | `app/components/meals/` |
 | **Admin** | `AdminMode.tsx` | `useAdmin.ts` | Odczyt ze wszystkich tabel (service role key) | `app/components/admin/` |
 
 ### Warstwa danych — szczegóły
@@ -101,11 +101,12 @@ Każdy kontekst ma swój hook (`useAuth`, `useTheme`, `useNavigation`, `useOnboa
 - Agreguje dane z `useTasks` + `useChallenges` + własne custom items
 - Widok dzienny — łączy wszystko w jeden timeline
 
-**Posiłki ("Co zjem?" — `useMeals.ts`, `useMealAI.ts`, `usePantry.ts`, `useShoppingList.ts`):**
+**Posiłki ("Co zjem?" — `useMeals.ts`, `useMealAI.ts`, `usePantry.ts`, `usePantryWriteOffs.ts`, `useShoppingList.ts`):**
 - **Onboarding wizard** (`MealWizard.tsx`): Zbiera dane hard (wiek, waga, wzrost, aktywność, cel) + AI interview (`MealWizardAIInterview.tsx`) dla preferencji kulinarnych
 - **Preferencje** (`meal_preferences`): diet_type, goal_type, target_calories, TDEE, alergie, nie-lubi, lubi, kuchnie, has_thermomix, preferences_text
 - **Plany posiłków** (`meal_plans`): name, meal_slot, ingredients (JSONB), calories/protein/carbs/fat, recipe_steps, estimated_cost, status (planned/accepted/eaten/rejected), rating, is_favorite
-- **Spiżarnia** (`pantry_items`): name, quantity_total/remaining, unit (g/ml/szt), price. Każdy składnik posiłku ma pole `fromPantry?: boolean` (domyślnie `true`) — gdy `false`, składnik jest pomijany przy odliczaniu ze spiżarni i kalkulacji kosztu. Toggle dostępny w trybie edycji składników w MealCard (ikonka Warehouse). Przycisk "Edytuj skład" jest dostępny zarówno dla posiłków zaakceptowanych (`accepted`) jak i zjedzonych (`eaten`).
+- **Spiżarnia** (`pantry_items`): name, quantity_total/remaining, unit (g/ml/szt), price, purchased_at. Każdy składnik posiłku ma pole `fromPantry?: boolean` (domyślnie `true`) — gdy `false`, składnik jest pomijany przy odliczaniu ze spiżarni i kalkulacji kosztu. Toggle dostępny w trybie edycji składników w MealCard (ikonka Warehouse). Przycisk "Edytuj skład" jest dostępny zarówno dla posiłków zaakceptowanych (`accepted`) jak i zjedzonych (`eaten`). **Odliczanie FIFO**: przy wielu produktach o tej samej nazwie (np. mąka z różnych zakupów), system zużywa najstarszy (`purchased_at` ASC) z przeniesieniem reszty na kolejny. Logika w `pantryUtils.ts` (`findMatchingPantryItems`, `costPerUnit`). **PantryManager** ma 3 zakładki: "Produkty" (aktywne, `quantity_remaining > 0`), "Archiwum" (zużyte, `quantity_remaining === 0`), "Straty" (historia spisań).
+- **Spisywanie strat** (`pantry_write_offs`, `usePantryWriteOffs.ts`): Ręczne spisywanie resztek produktów z powodami (zepsute/ktoś wziął/wyrzucone/inne). Snapshot danych (name, unit, cost_per_unit) + opcjonalny FK do `pantry_items` (ON DELETE SET NULL). Częściowe spisanie (domyślnie cała reszta). Usunięcie wpisu przywraca `quantity_remaining`. Widget na Dashboard ("Straty w tym miesiącu") nawiguje do spiżarni via localStorage flag `pantry-show-write-offs`.
 - **Most Meals↔Tracker** (`lib/mealTrackerBridge.ts`): Łączy moduł posiłków (`meal_plans`) z wpisami wagi (`entries.meals` JSONB). Dwa kierunki: przycisk "Do wagi" na MealCard wysyła nazwę+makro do wpisu wagi na dany dzień; przycisk "Importuj z posiłków" w EntryModal pobiera zaakceptowane/zjedzone posiłki na wybraną datę i pozwala wybrać które importować. Duplikaty wykrywane po nazwie posiłku. Wymaga istniejącego wpisu wagi. Feedback przez Toast (`app/components/ui/Toast.tsx`).
 - **Most Kroki↔Nawyki** (`lib/stepsChallengeSync.ts`): Automatyczna synchronizacja kroków z wpisu wagi do aktywnych wyzwań. Dopasowanie po nazwie lub `goalUnit` zawierającym "krok" (wymaga `trackReps=true`). Po zapisie wpisu z krokami > 0, wywoływane jest `updateCompletedDay` z liczbą kroków. Jeśli wyzwanie ma `dailyGoals` na dany dzień, cel jest automatycznie oznaczany jako osiągnięty. Obsługuje wiele pasujących wyzwań jednocześnie. Toast w WeightTracker po synchronizacji.
 - **Lista zakupów** (`shopping_lists`): name, amount, unit, bought
@@ -198,7 +199,7 @@ Wszystkie formularze powinny korzystać ze schematów Zod z `lib/validation.ts`.
 
 ### Supabase RLS
 
-Wszystkie tabele używają Row Level Security z politykami `auth.uid() = user_id`. Dotyczy tabel: `entries`, `goals`, `profiles`, `goal_history`, `body_measurements`, `challenges`, `tasks`, `schedule_items`, `meal_preferences`, `meal_plans`, `pantry_items`, `shopping_lists`, `ai_conversations`, `feedback`.
+Wszystkie tabele używają Row Level Security z politykami `auth.uid() = user_id`. Dotyczy tabel: `entries`, `goals`, `profiles`, `goal_history`, `body_measurements`, `challenges`, `tasks`, `schedule_items`, `meal_preferences`, `meal_plans`, `pantry_items`, `pantry_write_offs`, `shopping_lists`, `ai_conversations`, `feedback`.
 
 ### Migracje SQL
 
