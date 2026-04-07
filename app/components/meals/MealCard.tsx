@@ -17,9 +17,10 @@ interface MealCardProps {
   onSendToTracker?: (meal: MealPlan) => Promise<{ success: boolean; error?: string }>;
   onNutritionLookup?: (index: number, name: string, amount: number, unit: PantryUnit, onResult: (index: number, data: { calories: number; protein: number; carbs: number; fat: number }) => void) => void;
   nutritionLoading?: Set<number>;
+  isInTracker?: boolean;
 }
 
-export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, onMarkEaten, onToggleFavorite, onUpdateIngredients, onSendToTracker, onNutritionLookup, nutritionLoading }: MealCardProps) {
+export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, onMarkEaten, onToggleFavorite, onUpdateIngredients, onSendToTracker, onNutritionLookup, nutritionLoading, isInTracker }: MealCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -238,17 +239,21 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
               className={`flex items-center gap-1.5 px-3 py-1 text-[13px] font-bold rounded-full transition-all duration-150 active:scale-95 ${
                 sendStatus === 'sent'
                   ? 'bg-green-500/20 text-green-500'
-                  : 'bg-[#1d9bf0]/10 text-[#1d9bf0] hover:bg-[#1d9bf0]/20'
+                  : isInTracker
+                    ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20'
+                    : 'bg-[#1d9bf0]/10 text-[#1d9bf0] hover:bg-[#1d9bf0]/20'
               }`}
             >
               {sendStatus === 'sent' ? (
                 <Check className="w-[18px] h-[18px] animate-[scaleIn_150ms_ease-out]" strokeWidth={1.5} />
               ) : sendStatus === 'sending' ? (
                 <Loader2 className="w-[18px] h-[18px] animate-spin" strokeWidth={1.5} />
+              ) : isInTracker ? (
+                <RefreshCw className="w-[18px] h-[18px]" strokeWidth={1.5} />
               ) : (
                 <ArrowUpFromLine className="w-[18px] h-[18px]" strokeWidth={1.5} />
               )}
-              {sendStatus === 'sent' ? 'Wysłano' : 'Do wagi'}
+              {sendStatus === 'sent' ? (isInTracker ? 'Zaktualizowano' : 'Wysłano') : isInTracker ? 'Odśwież w wadze' : 'Do wagi'}
             </button>
           )}
           <button onClick={() => setExpanded(!expanded)}

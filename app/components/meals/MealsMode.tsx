@@ -1,8 +1,8 @@
 // app/components/meals/MealsMode.tsx
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { pushMealToWeightEntry } from '@/lib/mealTrackerBridge';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { pushMealToWeightEntry, getMealsInTracker, updateMealInWeightEntry } from '@/lib/mealTrackerBridge';
 import Toast from '@/app/components/ui/Toast';
 import { ArrowLeft, Settings, Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
@@ -51,6 +51,13 @@ export default function MealsMode({ onBack }: MealsModeProps) {
   const [wizardData, setWizardData] = useState<Partial<MealPreferences> | null>(null);
   const [profile, setProfile] = useState<{ age?: number; gender?: 'male' | 'female'; height?: number } | null>(null);
   const [latestWeight, setLatestWeight] = useState<number | null>(null);
+  const [trackerMealKeys, setTrackerMealKeys] = useState<Set<string>>(new Set());
+
+  const refreshTrackerStatus = useCallback(async (date: string) => {
+    if (!user?.id) return;
+    const keys = await getMealsInTracker(user.id, date);
+    setTrackerMealKeys(keys);
+  }, [user?.id]);
 
   // Fetch profile data from tracker module
   useEffect(() => {
@@ -116,11 +123,30 @@ export default function MealsMode({ onBack }: MealsModeProps) {
             carbs: enriched.reduce((s, i) => s + i.carbs, 0),
             fat: enriched.reduce((s, i) => s + i.fat, 0),
           });
+          const repairedMeal = { ...meal, ingredients: enriched, calories: totalCal, protein: enriched.reduce((s, i) => s + i.protein, 0), carbs: enriched.reduce((s, i) => s + i.carbs, 0), fat: enriched.reduce((s, i) => s + i.fat, 0) };
+          await autoSyncToTracker(repairedMeal);
         }
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, mealPlans.length]);
+
+  // Fetch tracker status for current date
+  const currentDate = formatDate(new Date());
+  useEffect(() => {
+    refreshTrackerStatus(currentDate);
+  }, [currentDate, mealPlans.length, refreshTrackerStatus]);
+
+  // Auto-sync helper: update tracker entry if meal is already there
+  const autoSyncToTracker = useCallback(async (meal: MealPlan) => {
+    if (!user?.id) return;
+    const key = `${meal.name}::${meal.meal_slot}`;
+    if (!trackerMealKeys.has(key)) return;
+    const result = await updateMealInWeightEntry(user.id, meal.date, meal);
+    if (result.success) {
+      setToast({ message: 'Zaktualizowano makra we wpisie wagi', type: 'success' });
+    }
+  }, [user?.id, trackerMealKeys]);
 
   // Derive initial view from loading state
   const resolvedView = view === 'loading' && !isLoading
@@ -163,6 +189,8 @@ export default function MealsMode({ onBack }: MealsModeProps) {
             carbs: totalCarb,
             fat: totalFat,
           });
+          const enrichedMeal = { ...savedMeal, ingredients: enriched, calories: totalCal, protein: totalPro, carbs: totalCarb, fat: totalFat };
+          await autoSyncToTracker(enrichedMeal);
         }
 
         // Estimate cost from pantry
@@ -208,13 +236,27 @@ export default function MealsMode({ onBack }: MealsModeProps) {
   const handleSendToTracker = async (meal: MealPlan): Promise<{ success: boolean; error?: string }> => {
     if (!user?.id) return { success: false, error: 'no_user' };
     try {
-      const result = await pushMealToWeightEntry(user.id, meal.date, meal);
+      const key = `${meal.name}::${meal.meal_slot}`;
+      const isUpdate = trackerMealKeys.has(key);
+
+      const result = isUpdate
+        ? await updateMealInWeightEntry(user.id, meal.date, meal)
+        : await pushMealToWeightEntry(user.id, meal.date, meal);
+
       if (result.success) {
-        setToast({ message: 'Wysłano do wpisu wagi', type: 'success' });
+        setToast({ message: isUpdate ? 'Zaktualizowano we wpisie wagi' : 'Wysłano do wpisu wagi', type: 'success' });
+        await refreshTrackerStatus(meal.date);
       } else if (result.error === 'no_entry') {
         setToast({ message: 'Najpierw dodaj wpis wagi na ten dzień', type: 'error' });
       } else if (result.error === 'duplicate') {
         setToast({ message: 'Ten posiłek już jest we wpisie wagi', type: 'error' });
+      } else if (result.error === 'not_found') {
+        const pushResult = await pushMealToWeightEntry(user.id, meal.date, meal);
+        if (pushResult.success) {
+          setToast({ message: 'Wysłano do wpisu wagi', type: 'success' });
+          await refreshTrackerStatus(meal.date);
+        }
+        return pushResult;
       } else {
         setToast({ message: 'Błąd zapisu do wpisu wagi', type: 'error' });
       }
@@ -353,6 +395,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
             onNavigate={(v) => setView(v as View)}
             onEstimateCost={pantry.estimateCost}
             onSendToTracker={handleSendToTracker}
+            trackerMealKeys={trackerMealKeys}
           />
         )}
 
