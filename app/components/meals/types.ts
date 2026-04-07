@@ -79,6 +79,30 @@ export interface PantryItem {
   updated_at: string;
 }
 
+export type WriteOffReason = 'spoiled' | 'taken' | 'discarded' | 'other';
+
+export const WRITE_OFF_REASON_LABELS: Record<WriteOffReason, string> = {
+  spoiled: 'Zepsute',
+  taken: 'Ktoś wziął',
+  discarded: 'Wyrzucone',
+  other: 'Inne',
+};
+
+export interface PantryWriteOff {
+  id: string;
+  user_id: string;
+  pantry_item_id: string | null;
+  name: string;
+  unit: PantryUnit;
+  quantity: number;
+  cost_per_unit: number;
+  total_cost: number;
+  reason: WriteOffReason;
+  note: string | null;
+  written_off_at: string;
+  created_at: string;
+}
+
 // ── Shopping List (Supabase: shopping_lists) ──
 export interface ShoppingListItem {
   id: string;
