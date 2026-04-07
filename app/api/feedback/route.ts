@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 import { checkRateLimit, getRateLimitHeaders, RATE_LIMIT_CONFIGS } from '@/lib/serverRateLimiter';
+import { feedbackRequestSchema } from '@/lib/validation';
+import { getServerEnv } from '@/lib/env';
 
 const CATEGORY_LABELS: Record<string, string> = {
   bug: 'Bug / Błąd',
@@ -9,6 +11,15 @@ const CATEGORY_LABELS: Record<string, string> = {
   improvement: 'Ulepszenie',
   other: 'Inne',
 };
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 export async function POST(request: NextRequest) {
   // Rate limiting
@@ -28,64 +39,53 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const debug = {
-    supabaseConfigured: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    resendConfigured: !!process.env.RESEND_API_KEY,
-    feedbackEmailConfigured: !!process.env.FEEDBACK_EMAIL,
-    feedbackEmail: process.env.FEEDBACK_EMAIL ? process.env.FEEDBACK_EMAIL.substring(0, 5) + '***' : null,
-    supabaseSaved: false,
-    emailSent: false,
-    emailError: null as string | null,
-  };
-
   try {
-    const { userId, userEmail, category, message } = await request.json();
-
-    if (!category || !message) {
+    const rawBody = await request.json();
+    const parsed = feedbackRequestSchema.safeParse(rawBody);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Kategoria i wiadomość są wymagane', debug },
+        { error: 'Nieprawidłowe dane wejściowe' },
         { status: 400 }
       );
     }
+    const { userId, userEmail, category, message } = parsed.data;
+
+    const env = getServerEnv();
 
     // Zapisz do Supabase (jeśli skonfigurowane)
-    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (env.SUPABASE_SERVICE_ROLE_KEY) {
       const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY
+        env.NEXT_PUBLIC_SUPABASE_URL,
+        env.SUPABASE_SERVICE_ROLE_KEY
       );
 
-      const { error: dbError } = await supabase.from('feedback').insert({
+      await supabase.from('feedback').insert({
         user_id: userId || null,
         user_email: userEmail || 'Anonim',
         category,
         message,
       });
-
-      if (!dbError) {
-        debug.supabaseSaved = true;
-      }
     }
 
     // Wyślij email przez Resend (jeśli skonfigurowane)
-    if (process.env.RESEND_API_KEY && process.env.FEEDBACK_EMAIL) {
-      const resend = new Resend(process.env.RESEND_API_KEY);
+    if (env.RESEND_API_KEY && env.FEEDBACK_EMAIL) {
+      const resend = new Resend(env.RESEND_API_KEY);
 
-      const { error: emailError } = await resend.emails.send({
+      await resend.emails.send({
         from: 'Weight Tracker Pro <onboarding@resend.dev>',
-        to: process.env.FEEDBACK_EMAIL,
+        to: env.FEEDBACK_EMAIL,
         subject: `[Feedback] ${CATEGORY_LABELS[category] || category}`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #10b981;">Nowy feedback z Weight Tracker Pro</h2>
             <div style="background: #f1f5f9; padding: 16px; border-radius: 8px; margin: 16px 0;">
-              <p><strong>Kategoria:</strong> ${CATEGORY_LABELS[category] || category}</p>
-              <p><strong>Od:</strong> ${userEmail || 'Anonim'}</p>
-              <p><strong>User ID:</strong> ${userId || 'Brak'}</p>
+              <p><strong>Kategoria:</strong> ${escapeHtml(CATEGORY_LABELS[category] || category)}</p>
+              <p><strong>Od:</strong> ${escapeHtml(userEmail || 'Anonim')}</p>
+              <p><strong>User ID:</strong> ${escapeHtml(userId || 'Brak')}</p>
             </div>
             <div style="background: #ffffff; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px;">
               <h3 style="margin-top: 0;">Wiadomość:</h3>
-              <p style="white-space: pre-wrap;">${message}</p>
+              <p style="white-space: pre-wrap;">${escapeHtml(message)}</p>
             </div>
             <p style="color: #64748b; font-size: 12px; margin-top: 24px;">
               Wysłano: ${new Date().toLocaleString('pl-PL')}
@@ -93,18 +93,12 @@ export async function POST(request: NextRequest) {
           </div>
         `,
       });
-
-      if (emailError) {
-        debug.emailError = emailError.message;
-      } else {
-        debug.emailSent = true;
-      }
     }
 
-    return NextResponse.json({ success: true, debug });
-  } catch (error) {
+    return NextResponse.json({ success: true });
+  } catch {
     return NextResponse.json(
-      { error: 'Wystąpił błąd podczas wysyłania feedbacku', debug, details: String(error) },
+      { error: 'Wystąpił błąd podczas wysyłania feedbacku' },
       { status: 500 }
     );
   }

@@ -178,6 +178,17 @@ export function validateForm<T>(
   return { success: false, errors };
 }
 
+// Server-side feedback request schema (extends client validation)
+// Uses .strip() to silently remove unexpected fields (safer than .strict() which rejects)
+export const feedbackRequestSchema = z.object({
+  userId: z.string().nullable().optional(),
+  userEmail: z.string().email().nullable().optional(),
+  category: z.enum(["bug", "feature", "improvement", "other"]),
+  message: z.string().min(10).max(2000),
+}).strip();
+
+export type FeedbackRequest = z.infer<typeof feedbackRequestSchema>;
+
 // Helper to get first error message
 export function getFirstError<T>(
   schema: z.ZodSchema<T>,
