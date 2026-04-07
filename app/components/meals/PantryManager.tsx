@@ -18,7 +18,7 @@ interface PantryManagerProps {
   onWriteOff: (item: PantryItem, data: { quantity: number; reason: WriteOffReason; note?: string }) => Promise<void>;
   onDeleteWriteOff: (writeOff: PantryWriteOff) => Promise<void>;
   onLoadWriteOffs: (month: string) => void;
-  initialTab?: 'pantry' | 'history';
+  initialTab?: 'pantry' | 'history' | 'archive';
 }
 
 function generateLastSixMonths(): { value: string; label: string }[] {
@@ -52,9 +52,11 @@ export default function PantryManager({
   initialTab,
 }: PantryManagerProps) {
   const [modalOpen, setModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'pantry' | 'history'>(initialTab || 'pantry');
+  const [activeTab, setActiveTab] = useState<'pantry' | 'history' | 'archive'>(initialTab || 'pantry');
   const [writeOffItem, setWriteOffItem] = useState<PantryItem | null>(null);
 
+  const activeItems = useMemo(() => items.filter(i => i.quantity_remaining > 0), [items]);
+  const archivedItems = useMemo(() => items.filter(i => i.quantity_remaining === 0), [items]);
   const monthOptions = useMemo(() => generateLastSixMonths(), []);
   const [selectedMonth, setSelectedMonth] = useState(monthOptions[0]?.value || '');
 
@@ -98,8 +100,20 @@ export default function PantryManager({
               : 'text-[var(--muted)] hover:text-[var(--foreground)]'
           }`}
         >
-          Produkty ({items.length})
+          Produkty ({activeItems.length})
         </button>
+        {archivedItems.length > 0 && (
+          <button
+            onClick={() => setActiveTab('archive')}
+            className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
+              activeTab === 'archive'
+                ? 'bg-[var(--card-bg)] text-[var(--foreground)] shadow-sm'
+                : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+            }`}
+          >
+            Archiwum ({archivedItems.length})
+          </button>
+        )}
         <button
           onClick={() => {
             setActiveTab('history');
@@ -111,14 +125,14 @@ export default function PantryManager({
               : 'text-[var(--muted)] hover:text-[var(--foreground)]'
           }`}
         >
-          Historia strat
+          Straty
         </button>
       </div>
 
       {/* Pantry tab */}
       {activeTab === 'pantry' && (
         <>
-          {items.length === 0 ? (
+          {activeItems.length === 0 ? (
             <div className="text-center py-8 text-[var(--muted)]">
               <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p>Spiżarnia jest pusta.</p>
@@ -126,56 +140,74 @@ export default function PantryManager({
             </div>
           ) : (
             <div className="space-y-2">
-              {items.map(item => {
+              {activeItems.map(item => {
                 const percentRemaining = item.quantity_total > 0
                   ? (item.quantity_remaining / item.quantity_total) * 100
                   : 0;
-                const isUsedUp = item.quantity_remaining === 0;
                 return (
                   <div key={item.id} className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-3">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="text-[var(--foreground)] font-medium">{item.name}</span>
-                        {isUsedUp ? (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-medium">
-                            Zużyty
-                          </span>
-                        ) : (
-                          <span className="text-[var(--muted)] text-sm">
-                            {Math.round(item.quantity_remaining)} / {Math.round(item.quantity_total)} {item.unit}
-                          </span>
-                        )}
+                        <span className="text-[var(--muted)] text-sm">
+                          {Math.round(item.quantity_remaining)} / {Math.round(item.quantity_total)} {item.unit}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-[var(--muted)] text-sm">{item.price.toFixed(2)} zł</span>
-                        {!isUsedUp && (
-                          <button
-                            onClick={() => setWriteOffItem(item)}
-                            className="p-1 text-[var(--muted)] hover:text-amber-400 transition-colors"
-                            title="Odpisz stratę"
-                          >
-                            <PackageX className="w-4 h-4" />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => setWriteOffItem(item)}
+                          className="p-1 text-[var(--muted)] hover:text-amber-400 transition-colors"
+                          title="Odpisz stratę"
+                        >
+                          <PackageX className="w-4 h-4" />
+                        </button>
                         <button onClick={() => onDelete(item.id)}
                           className="p-1 text-[var(--muted)] hover:text-red-400 transition-colors">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
-                    {!isUsedUp && (
-                      <div className="w-full bg-[var(--surface)] rounded-full h-1.5">
-                        <div className={`h-1.5 rounded-full transition-all ${
-                          percentRemaining > 30 ? 'bg-emerald-500' : percentRemaining > 10 ? 'bg-amber-500' : 'bg-red-500'
-                        }`} style={{ width: `${percentRemaining}%` }} />
-                      </div>
-                    )}
+                    <div className="w-full bg-[var(--surface)] rounded-full h-1.5">
+                      <div className={`h-1.5 rounded-full transition-all ${
+                        percentRemaining > 30 ? 'bg-emerald-500' : percentRemaining > 10 ? 'bg-amber-500' : 'bg-red-500'
+                      }`} style={{ width: `${percentRemaining}%` }} />
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
         </>
+      )}
+
+      {/* Archive tab */}
+      {activeTab === 'archive' && (
+        <div className="space-y-2">
+          {archivedItems.map(item => (
+            <div key={item.id} className="bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-3 opacity-70">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-[var(--foreground)] font-medium">{item.name}</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-medium">
+                    Zużyty
+                  </span>
+                  <span className="text-[var(--muted)] text-xs">
+                    {Math.round(item.quantity_total)} {item.unit}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[var(--muted)] text-sm">{item.price.toFixed(2)} zł</span>
+                  <button onClick={() => onDelete(item.id)}
+                    className="p-1 text-[var(--muted)] hover:text-red-400 transition-colors"
+                    title="Usuń z archiwum">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* History tab */}
