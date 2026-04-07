@@ -27,6 +27,7 @@ export function usePantry(userId: string | undefined) {
     quantity: number;
     inputUnit: string;
     price: number;
+    is_free?: boolean;
   }) => {
     if (!userId || !supabase) return;
 
@@ -41,6 +42,7 @@ export function usePantry(userId: string | undefined) {
       unit: conversion.unit,
       price: item.price,
       purchased_at: formatDate(new Date()),
+      is_free: item.is_free || false,
     };
 
     const { data, error } = await supabase

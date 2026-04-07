@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import { Plus, Trash2, ArrowLeft, Package, PackageX } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, Package, PackageX, Gift } from 'lucide-react';
 import { PantryItem, PantryWriteOff, WriteOffReason, WRITE_OFF_REASON_LABELS } from './types';
 import PantryItemModal from './PantryItemModal';
 import WriteOffModal from './WriteOffModal';
 
 interface PantryManagerProps {
   items: PantryItem[];
-  onAdd: (item: { name: string; quantity: number; inputUnit: string; price: number }) => void;
+  onAdd: (item: { name: string; quantity: number; inputUnit: string; price: number; is_free: boolean }) => void;
   onDelete: (id: string) => void;
   onBack: () => void;
   writeOffs: PantryWriteOff[];
@@ -144,6 +144,7 @@ export default function PantryManager({
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="text-[var(--foreground)] font-medium">{item.name}</span>
+                        {item.is_free && <span title="Nie kupowane (prezent)"><Gift className="w-3.5 h-3.5 text-emerald-400" /></span>}
                         <span className="text-[var(--muted)] text-sm">
                           {Math.round(item.quantity_remaining)} / {Math.round(item.quantity_total)} {item.unit}
                         </span>
