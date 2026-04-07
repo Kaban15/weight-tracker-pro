@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, Target, LogOut, Table, ArrowLeft, Flame, Bell, History, Footprints, Dumbbell, Award, LineChart, Trophy, ChevronRight, Ruler, CalendarDays, Settings2 } from 'lucide-react';
+import { Calendar, Target, LogOut, Table, ArrowLeft, Bell, History, Ruler } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { initializeNotifications, cancelScheduledReminders } from '@/lib/notifications';
 import { useKeyboardShortcuts, KeyboardShortcut } from '@/lib/useKeyboardShortcuts';
@@ -29,6 +29,9 @@ import type { ChartRange } from './tracker/types';
 import TrendAnalysis from './tracker/TrendAnalysis';
 import ExportActions from './tracker/ExportActions';
 import DashboardSummary from './tracker/DashboardSummary';
+import { ChartControls } from './tracker/ChartControls';
+import { StatsGrid } from './tracker/StatsGrid';
+import { GoalProgressSection } from './tracker/GoalProgressSection';
 
 interface WeightTrackerProps {
   onBack?: () => void;
@@ -405,77 +408,17 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
       {view === 'calendar' && (
         <>
           {/* Chart Controls - above chart */}
-          <div className="max-w-6xl mx-auto mb-4 space-y-3">
-            {/* Row: Range selector (left) + Data filter (right), stacked on mobile */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              {/* Chart time range selector */}
-              <div className="flex bg-[var(--card-bg)] rounded-lg p-1 border border-[var(--card-border)] self-center sm:self-auto">
-                {([
-                  { id: 'week' as ChartRange, icon: Calendar, label: 'Tydzień' },
-                  { id: 'month' as ChartRange, icon: Calendar, label: 'Miesiąc' },
-                  { id: 'year' as ChartRange, icon: CalendarDays, label: 'Rok' },
-                  { id: 'custom' as ChartRange, icon: Settings2, label: 'Zakres' },
-                ]).map(({ id, icon: Icon, label }) => (
-                  <button
-                    key={id}
-                    onClick={() => setChartRange(id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                      chartRange === id
-                        ? 'bg-[var(--accent)] text-white'
-                        : 'text-[var(--muted)] hover:text-[var(--foreground)]'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="hidden sm:inline">{label}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Data filter (all / current-goal) */}
-              <div className="flex bg-[var(--card-bg)] rounded-lg p-1 border border-[var(--card-border)] self-center sm:self-auto">
-                <button
-                  onClick={() => setChartMode('all')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    chartMode === 'all'
-                      ? 'bg-[var(--accent)] text-white'
-                      : 'text-[var(--muted)] hover:text-[var(--foreground)]'
-                  }`}
-                >
-                  Wszystkie wpisy
-                </button>
-                <button
-                  onClick={() => setChartMode('current-goal')}
-                  disabled={!goal?.start_date}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    chartMode === 'current-goal'
-                      ? 'bg-[var(--accent)] text-white'
-                      : 'text-[var(--muted)] hover:text-[var(--foreground)]'
-                  } ${!goal?.start_date ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  Biezacy cel
-                </button>
-              </div>
-            </div>
-
-            {/* Custom date range inputs - own row below */}
-            {chartRange === 'custom' && (
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <input
-                  type="date"
-                  value={customStartDate}
-                  onChange={(e) => setCustomStartDate(e.target.value)}
-                  className="bg-[var(--card-bg)] border border-[var(--card-border)] text-white rounded-lg px-3 py-1.5 text-sm focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] outline-none [color-scheme:dark]"
-                />
-                <span className="text-[var(--muted)] text-sm">—</span>
-                <input
-                  type="date"
-                  value={customEndDate}
-                  onChange={(e) => setCustomEndDate(e.target.value)}
-                  className="bg-[var(--card-bg)] border border-[var(--card-border)] text-white rounded-lg px-3 py-1.5 text-sm focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] outline-none [color-scheme:dark]"
-                />
-              </div>
-            )}
-          </div>
+          <ChartControls
+            chartRange={chartRange}
+            onChartRangeChange={setChartRange}
+            chartMode={chartMode}
+            onChartModeChange={setChartMode}
+            hasGoalStartDate={!!goal?.start_date}
+            customStartDate={customStartDate}
+            customEndDate={customEndDate}
+            onCustomStartDateChange={setCustomStartDate}
+            onCustomEndDateChange={setCustomEndDate}
+          />
           <div className="max-w-6xl mx-auto mb-6">
             <ProgressChart
               entries={filteredEntries}
@@ -500,161 +443,21 @@ export default function WeightTracker({ onBack }: WeightTrackerProps) {
           {/* Stats Section - below chart */}
           {filteredEntries.length > 0 && (
             <div className="max-w-6xl mx-auto mt-6 space-y-6">
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-[var(--foreground)]">
-                  Statystyki {chartMode === 'current-goal' ? 'bieżącego celu' : 'ogólne'}
-                </h3>
-                <span className="text-[var(--muted)] text-sm">
-                  {filteredStats.totalEntries} {filteredStats.totalEntries === 1 ? 'wpis' : filteredStats.totalEntries < 5 ? 'wpisy' : 'wpisów'}
-                </span>
-              </div>
+              <StatsGrid
+                filteredStats={filteredStats}
+                chartMode={chartMode}
+                goal={goal}
+              />
 
-              {/* Main Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-[var(--accent)]/10 rounded-xl p-6 border-2 border-[var(--accent)]/20">
-                  <div className="text-[var(--accent)] text-sm mb-2 font-semibold">Aktualna waga</div>
-                  <div className="text-3xl font-bold text-[var(--foreground)]">{filteredStats.currentWeight.toFixed(1)} kg</div>
-                  <div className="text-[var(--muted)] text-xs mt-1">
-                    {filteredStats.totalWeightChange > 0 ? '+' : ''}{filteredStats.totalWeightChange.toFixed(1)}kg od startu
-                  </div>
-                </div>
-                <div className="bg-gradient-to-br from-orange-600/20 to-orange-600/10 rounded-xl p-6 border-2 border-orange-500/20">
-                  <div className="flex items-center gap-2 text-orange-400 text-sm mb-2 font-semibold">
-                    <Flame className="w-4 h-4" />Śr. kalorie
-                  </div>
-                  <div className="text-3xl font-bold text-[var(--foreground)]">
-                    {filteredStats.avgCalories > 0 ? Math.round(filteredStats.avgCalories) : '—'}
-                  </div>
-                  {goal?.daily_calories_limit && (
-                    <div className="text-[var(--muted)] text-xs mt-1">Cel: {goal.daily_calories_limit}/dzień</div>
-                  )}
-                </div>
-                <div className="bg-gradient-to-br from-blue-600/20 to-blue-600/10 rounded-xl p-6 border-2 border-blue-500/20">
-                  <div className="flex items-center gap-2 text-blue-400 text-sm mb-2 font-semibold">
-                    <Footprints className="w-4 h-4" />Śr. kroki
-                  </div>
-                  <div className="text-3xl font-bold text-[var(--foreground)]">
-                    {filteredStats.avgSteps > 0 ? Math.round(filteredStats.avgSteps).toLocaleString() : '—'}
-                  </div>
-                  {goal?.daily_steps_goal && (
-                    <div className="text-[var(--muted)] text-xs mt-1">Cel: {goal.daily_steps_goal.toLocaleString()}/dzień</div>
-                  )}
-                </div>
-                <div className="bg-gradient-to-br from-purple-600/20 to-purple-600/10 rounded-xl p-6 border-2 border-purple-500/20">
-                  <div className="flex items-center gap-2 text-purple-400 text-sm mb-2 font-semibold">
-                    <Dumbbell className="w-4 h-4" />Treningi
-                  </div>
-                  <div className="text-3xl font-bold text-[var(--foreground)]">{filteredStats.totalWorkouts}</div>
-                  {goal?.weekly_training_hours && (
-                    <div className="text-[var(--muted)] text-xs mt-1">Cel: {goal.weekly_training_hours}h/tydz.</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Streak and Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-[var(--card-bg)] rounded-xl p-6 border-2 border-[var(--card-border)]">
-                  <div className="flex items-center gap-2 text-[var(--accent)] text-sm mb-2 font-semibold">
-                    <Award className="w-5 h-5" />Seria
-                  </div>
-                  <div className="text-5xl font-bold text-[var(--foreground)] mb-2">{filteredStats.currentStreak}</div>
-                  <div className="text-[var(--muted)]">dni z rzędu!</div>
-                </div>
-                <div className="bg-[var(--card-bg)] rounded-xl p-6 border-2 border-[var(--card-border)]">
-                  <div className="flex items-center gap-2 text-[var(--accent)] text-sm mb-2 font-semibold">
-                    <LineChart className="w-5 h-5" />Podsumowanie
-                  </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-[var(--muted)]">Wszystkie wpisy:</span>
-                      <span className="text-white font-semibold">{filteredStats.totalEntries}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[var(--muted)]">Najlepsza waga:</span>
-                      <span className="text-white font-semibold">{filteredStats.bestWeight.toFixed(1)}kg</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[var(--muted)]">Średnia waga:</span>
-                      <span className="text-white font-semibold">{filteredStats.avgWeight.toFixed(1)}kg</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Goal Progress - only in current-goal mode */}
-              {chartMode === 'current-goal' && goal && (
-                <div className="bg-[var(--card-bg)] rounded-xl p-6 border-2 border-[var(--card-border)]">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-[var(--foreground)]">Postęp celu</h3>
-                    <button onClick={() => setShowGoalModal(true)} className="text-[var(--accent)] hover:text-[var(--accent-dark)] text-sm">
-                      Edytuj
-                    </button>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[var(--muted)]">
-                        Cel: {goal.target_weight}kg do {new Date(goal.target_date).toLocaleDateString('pl-PL')}
-                      </span>
-                      <span className="text-[var(--accent)] font-semibold">
-                        {Math.max(0, Math.min(100, progress)).toFixed(0)}%
-                      </span>
-                    </div>
-                    <div className="h-4 bg-[var(--surface)] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent-dark)] transition-all duration-500"
-                        style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-sm text-[var(--muted)]">
-                      <span>Start: {goal.current_weight}kg</span>
-                      <span>Teraz: {filteredStats.currentWeight.toFixed(1)}kg</span>
-                      <span>Cel: {goal.target_weight}kg</span>
-                    </div>
-                  </div>
-                  {goal.monitoring_method && (
-                    <div className="mt-4 pt-4 border-t border-[var(--card-border)]">
-                      <p className="text-[var(--muted)] text-sm">
-                        <strong>Metoda monitorowania:</strong> {goal.monitoring_method}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Goal History Button - only in 'all' mode */}
-              {chartMode === 'all' && goalHistory.length > 0 && (
-                <button
-                  onClick={() => setView('history')}
-                  className="w-full bg-[var(--card-bg)] hover:bg-[var(--surface)] rounded-xl p-6 border-2 border-[var(--card-border)] hover:border-[var(--accent)]/50 transition-all text-left group"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-[var(--surface)] rounded-xl flex items-center justify-center group-hover:bg-[var(--accent)]/20 transition-colors">
-                        <History className="w-6 h-6 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-[var(--foreground)]">Historia celów</h3>
-                        <p className="text-[var(--muted)] text-sm">
-                          {goalHistory.length} {goalHistory.length === 1 ? 'zakończony cel' :
-                            goalHistory.length < 5 ? 'zakończone cele' : 'zakończonych celów'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {goalHistory.filter(g => g.completion_type === 'target_reached').length > 0 && (
-                        <div className="flex items-center gap-1 bg-[var(--accent)]/20 px-3 py-1 rounded-full">
-                          <Trophy className="w-4 h-4 text-[var(--accent)]" />
-                          <span className="text-[var(--accent)] text-sm font-medium">
-                            {goalHistory.filter(g => g.completion_type === 'target_reached').length}
-                          </span>
-                        </div>
-                      )}
-                      <ChevronRight className="w-5 h-5 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors" />
-                    </div>
-                  </div>
-                </button>
-              )}
+              <GoalProgressSection
+                chartMode={chartMode}
+                goal={goal}
+                progress={progress}
+                filteredStats={filteredStats}
+                goalHistory={goalHistory}
+                onEditGoal={() => setShowGoalModal(true)}
+                onViewHistory={() => setView('history')}
+              />
 
               {/* Trend Analysis */}
               <TrendAnalysis
