@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { checkRateLimit, getRateLimitHeaders, RATE_LIMIT_CONFIGS } from "@/lib/serverRateLimiter";
+import { getServerEnv } from "@/lib/env";
 
-// Admin emails - same as in useAdmin.ts
-const ADMIN_EMAILS = process.env.NEXT_PUBLIC_ADMIN_EMAILS
-  ? process.env.NEXT_PUBLIC_ADMIN_EMAILS.split(",").map((e) => e.trim().toLowerCase())
-  : ["piotrtokeny@gmail.com"];
+function getAdminEmails(): string[] {
+  const adminEmailsStr = getServerEnv().NEXT_PUBLIC_ADMIN_EMAILS;
+  return adminEmailsStr
+    ? adminEmailsStr.split(",").map((e) => e.trim().toLowerCase())
+    : ["piotrtokeny@gmail.com"];
+}
 
 function isAdmin(email: string | undefined): boolean {
   if (!email) return false;
-  return ADMIN_EMAILS.includes(email.toLowerCase());
+  return getAdminEmails().includes(email.toLowerCase());
 }
 
 export async function GET(request: NextRequest) {
@@ -31,10 +34,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const env = getServerEnv();
+    const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!supabaseServiceKey) {
       return NextResponse.json(
         { error: "Server configuration error" },
         { status: 500 }
@@ -55,7 +59,7 @@ export async function GET(request: NextRequest) {
     // Verify the user's token using anon key client
     const supabaseAnon = createClient(
       supabaseUrl,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+      env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     );
     const { data: userData, error: userError } = await supabaseAnon.auth.getUser(token);
 
@@ -399,7 +403,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Admin stats error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error loading statistics" },
+      { error: "Error loading statistics" },
       { status: 500 }
     );
   }
