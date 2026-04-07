@@ -189,6 +189,28 @@ export const feedbackRequestSchema = z.object({
 
 export type FeedbackRequest = z.infer<typeof feedbackRequestSchema>;
 
+// Meals chat request validation
+// .strip() removes unexpected fields silently (safe for evolving clients)
+export const mealsChatRequestSchema = z.object({
+  messages: z.array(z.object({
+    role: z.enum(["user", "assistant"]),
+    content: z.string(),
+  })).min(1),
+  systemPrompt: z.string().optional(),
+  mode: z.enum(["chat", "interview"]).optional(),
+}).strip();
+
+export type MealsChatRequest = z.infer<typeof mealsChatRequestSchema>;
+
+// Nutrition request validation
+export const nutritionRequestSchema = z.object({
+  name: z.string().min(1).max(200),
+  amount: z.number().positive().max(10000),
+  unit: z.enum(["g", "ml", "szt"]),
+}).strip();
+
+export type NutritionRequest = z.infer<typeof nutritionRequestSchema>;
+
 // Helper to get first error message
 export function getFirstError<T>(
   schema: z.ZodSchema<T>,

@@ -5,6 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 import { checkRateLimit, getRateLimitHeaders, MEALS_RATE_LIMIT } from '@/lib/serverRateLimiter';
 import { aiMealSchema, aiInterviewSchema } from '@/app/components/meals/types';
 import { zodResponseFormat } from 'openai/helpers/zod';
+import { mealsChatRequestSchema } from '@/lib/validation';
+import { getServerEnv } from '@/lib/env';
 
 function getAIClient() {
   const geminiKey = process.env.GEMINI_API_KEY;
@@ -55,22 +57,20 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey);
+    const env = getServerEnv();
+    const supabaseAnon = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
     const { data: userData, error: authError } = await supabaseAnon.auth.getUser(token);
 
     if (authError || !userData.user) {
       return NextResponse.json({ error: 'Nieprawidłowy token' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { messages, systemPrompt, mode } = body;
-    // mode: 'chat' (meal suggestions) or 'interview' (onboarding)
-
-    if (!messages || !Array.isArray(messages)) {
-      return NextResponse.json({ error: 'Brak wiadomości' }, { status: 400 });
+    const rawBody = await request.json();
+    const parsed = mealsChatRequestSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Nieprawidłowe dane wejściowe' }, { status: 400 });
     }
+    const { messages, systemPrompt, mode } = parsed.data;
 
     const schema = mode === 'interview' ? aiInterviewSchema : aiMealSchema;
 
