@@ -1,8 +1,8 @@
 // app/components/meals/MealDashboard.tsx
 "use client";
 
-import { useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Sparkles, ShoppingCart, Package, BarChart3, ToggleLeft, ToggleRight, Heart, PlusCircle } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { CalendarDays, ChevronLeft, ChevronRight, Sparkles, ShoppingCart, Package, BarChart3, ToggleLeft, ToggleRight, Heart, PlusCircle, Loader2 } from 'lucide-react';
 import { MealPlan, MealPreferences, MealIngredient, PantryItem, ChatMessage, AIGeneratedMeal, formatDate } from './types';
 import { useMealAI } from './useMealAI';
 import { useNutritionLookup } from './useNutritionLookup';
@@ -26,6 +26,7 @@ interface MealDashboardProps {
   onEstimateCost: (ingredients: MealIngredient[]) => { costs: Map<string, number | null>; totalCost: number };
   onSendToTracker?: (meal: MealPlan) => Promise<{ success: boolean; error?: string }>;
   trackerMealKeys?: Set<string>;
+  onGetPeriodCosts?: () => Promise<{ week: number; month: number; year: number }>;
 }
 
 type GenerateScope = 'today' | 'tomorrow' | '3days' | 'week';
@@ -45,13 +46,47 @@ export default function MealDashboard({
   onEstimateCost,
   onSendToTracker,
   trackerMealKeys,
+  onGetPeriodCosts,
 }: MealDashboardProps) {
   const [selectedDate, setSelectedDate] = useState(formatDate(new Date()));
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [usePantryMode, setUsePantryMode] = useState(false);
   const [showManualMeal, setShowManualMeal] = useState(false);
+  const [costExpanded, setCostExpanded] = useState(false);
+  const [periodCosts, setPeriodCosts] = useState<{ week: number; month: number; year: number } | null>(null);
+  const [costLoading, setCostLoading] = useState(false);
+  const costPanelRef = useRef<HTMLDivElement>(null);
 
   const { debouncedLookup, loadingIngredients } = useNutritionLookup();
+
+  const handleCostClick = async () => {
+    if (costExpanded) {
+      setCostExpanded(false);
+      return;
+    }
+    setCostExpanded(true);
+    if (!periodCosts && onGetPeriodCosts) {
+      setCostLoading(true);
+      const costs = await onGetPeriodCosts();
+      setPeriodCosts(costs);
+      setCostLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!costExpanded) return;
+    const handler = (e: MouseEvent) => {
+      if (costPanelRef.current && !costPanelRef.current.contains(e.target as Node)) {
+        setCostExpanded(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [costExpanded]);
+
+  useEffect(() => {
+    setPeriodCosts(null);
+  }, [mealPlans]);
 
   const recentMeals = mealPlans.filter(m => m.status === 'eaten').slice(-10);
 
@@ -217,7 +252,38 @@ export default function MealDashboard({
           <span className="text-amber-400">W: {Math.round(dayTotals.carbs)}g</span>
           <span className="text-red-400">T: {Math.round(dayTotals.fat)}g</span>
         </div>
-        <span className="text-[var(--muted)]">{dayTotals.cost.toFixed(2)} zł</span>
+        <div ref={costPanelRef} className="relative">
+          <button
+            onClick={handleCostClick}
+            className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors cursor-pointer"
+          >
+            {dayTotals.cost.toFixed(2)} zł {costExpanded ? '▲' : '▼'}
+          </button>
+          {costExpanded && (
+            <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl p-3 text-xs space-y-1 z-10 shadow-lg">
+              {costLoading ? (
+                <div className="flex items-center gap-2 text-[var(--muted)]">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Ładowanie...
+                </div>
+              ) : periodCosts ? (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-[var(--muted)]">Ten tydzień</span>
+                    <span className="text-[var(--foreground)]">{periodCosts.week.toFixed(2)} zł</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[var(--muted)]">Ten miesiąc</span>
+                    <span className="text-[var(--foreground)]">{periodCosts.month.toFixed(2)} zł</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[var(--muted)]">Ten rok</span>
+                    <span className="text-[var(--foreground)]">{periodCosts.year.toFixed(2)} zł</span>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Generate buttons */}

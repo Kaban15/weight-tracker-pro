@@ -308,6 +308,41 @@ export function useMeals(userId: string | undefined) {
     if (userId) init();
   }, [userId, loadPreferences, loadMealPlans]);
 
+  /** Fetch cost totals for week, month, and year */
+  const getPeriodCosts = useCallback(async (): Promise<{ week: number; month: number; year: number }> => {
+    if (!userId || !supabase) return { week: 0, month: 0, year: 0 };
+
+    const now = new Date();
+    // Week: Monday to Sunday
+    const dayOfWeek = now.getDay() || 7; // Sunday = 7
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - dayOfWeek + 1);
+    const weekStart = formatDate(monday);
+
+    // Month: 1st of current month
+    const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+
+    // Year: Jan 1
+    const yearStart = `${now.getFullYear()}-01-01`;
+
+    const today = formatDate(now);
+
+    const [weekRes, monthRes, yearRes] = await Promise.all([
+      supabase.from('meal_plans').select('estimated_cost').eq('user_id', userId).gte('date', weekStart).lte('date', today),
+      supabase.from('meal_plans').select('estimated_cost').eq('user_id', userId).gte('date', monthStart).lte('date', today),
+      supabase.from('meal_plans').select('estimated_cost').eq('user_id', userId).gte('date', yearStart).lte('date', today),
+    ]);
+
+    const sum = (data: any[] | null) =>
+      (data || []).reduce((s: number, r: { estimated_cost: number | null }) => s + (r.estimated_cost || 0), 0);
+
+    return {
+      week: Math.round(sum(weekRes.data) * 100) / 100,
+      month: Math.round(sum(monthRes.data) * 100) / 100,
+      year: Math.round(sum(yearRes.data) * 100) / 100,
+    };
+  }, [userId]);
+
   return {
     preferences,
     mealPlans,
@@ -325,5 +360,6 @@ export function useMeals(userId: string | undefined) {
     clearPendingForDate,
     updateIngredients,
     syncToTracker,
+    getPeriodCosts,
   };
 }

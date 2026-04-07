@@ -37,7 +37,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
   const {
     preferences, mealPlans, isLoading,
     savePreferences, saveMealPlan, acceptMeals, updateMealPlan, getDaySummary,
-    toggleFavorite, reeatFavorite, getFavorites, updateIngredients, syncToTracker,
+    toggleFavorite, reeatFavorite, getFavorites, updateIngredients, syncToTracker, getPeriodCosts,
   } = useMeals(user?.id);
 
   const pantry = usePantry(user?.id);
@@ -406,6 +406,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
             onEstimateCost={pantry.estimateCost}
             onSendToTracker={handleSendToTracker}
             trackerMealKeys={trackerMealKeys}
+            onGetPeriodCosts={getPeriodCosts}
           />
         )}
 
