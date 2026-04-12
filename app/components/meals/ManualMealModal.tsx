@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import Modal from '../shared/Modal';
-import { MealIngredient, PantryUnit } from './types';
+import { MealIngredient, PantryUnit, PantryItem } from './types';
+import PantryIngredientPicker from './PantryIngredientPicker';
 
 interface ManualMealModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface ManualMealModalProps {
     recipe_steps: string[];
   }) => void;
   mealSlots: string[];
+  pantryItems?: PantryItem[];
 }
 
 interface IngredientRow {
@@ -35,7 +37,7 @@ const EMPTY_INGREDIENT: IngredientRow = {
   name: '', amount: '', unit: 'g', calories: '', protein: '', carbs: '', fat: '',
 };
 
-export default function ManualMealModal({ isOpen, onClose, onSave, mealSlots }: ManualMealModalProps) {
+export default function ManualMealModal({ isOpen, onClose, onSave, mealSlots, pantryItems }: ManualMealModalProps) {
   const [name, setName] = useState('');
   const [mealSlot, setMealSlot] = useState(mealSlots[0] || 'Śniadanie');
   const [ingredients, setIngredients] = useState<IngredientRow[]>([{ ...EMPTY_INGREDIENT }]);
@@ -137,9 +139,21 @@ export default function ManualMealModal({ isOpen, onClose, onSave, mealSlots }: 
 
             {ingredients.map((ing, i) => (
               <div key={i} className="grid grid-cols-[1fr_50px_38px_44px_40px_40px_40px_20px] gap-1">
-                <input value={ing.name} onChange={e => updateIngredient(i, 'name', e.target.value)}
-                  placeholder="np. Jajko"
-                  className="min-w-0 bg-[var(--background)] border border-[var(--card-border)] rounded px-2 py-1.5 text-white text-xs" />
+                <div className="flex items-center gap-0.5 min-w-0">
+                  <input value={ing.name} onChange={e => updateIngredient(i, 'name', e.target.value)}
+                    placeholder="np. Jajko"
+                    className="min-w-0 flex-1 bg-[var(--background)] border border-[var(--card-border)] rounded px-2 py-1.5 text-white text-xs" />
+                  {pantryItems && pantryItems.length > 0 && (
+                    <PantryIngredientPicker
+                      pantryItems={pantryItems}
+                      onSelect={(item) => {
+                        setIngredients(prev => prev.map((existing, idx) =>
+                          idx === i ? { ...existing, name: item.name, unit: item.unit } : existing
+                        ));
+                      }}
+                    />
+                  )}
+                </div>
                 <input type="number" value={ing.amount} onChange={e => updateIngredient(i, 'amount', e.target.value)}
                   placeholder="100"
                   className="min-w-0 bg-[var(--background)] border border-[var(--card-border)] rounded px-1 py-1.5 text-white text-xs text-center" />

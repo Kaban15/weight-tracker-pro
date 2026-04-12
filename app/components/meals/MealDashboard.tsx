@@ -324,6 +324,7 @@ export default function MealDashboard({
             nutritionLoading={loadingIngredients}
             onSendToTracker={onSendToTracker}
             isInTracker={trackerMealKeys?.has(`${meal.name}::${meal.meal_slot}`)}
+            pantryItems={pantryItems}
           />
         ))}
       </div>
@@ -342,6 +343,7 @@ export default function MealDashboard({
         onClose={() => setShowManualMeal(false)}
         onSave={(meal) => onSaveManualMeal(meal)}
         mealSlots={preferences.meal_names}
+        pantryItems={pantryItems}
       />
     </div>
   );

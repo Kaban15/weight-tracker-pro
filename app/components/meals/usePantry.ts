@@ -84,6 +84,8 @@ export function usePantry(userId: string | undefined) {
   /**
    * Deduct ingredients from pantry and return cost breakdown.
    * Ingredients not found in pantry get cost: null (user had them already).
+   * Uses local remaining-quantity tracking to avoid stale-state bugs when
+   * multiple ingredients match the same pantry item.
    */
   const deductIngredients = useCallback(async (
     ingredients: MealIngredient[]
@@ -93,12 +95,22 @@ export function usePantry(userId: string | undefined) {
     let totalCost = 0;
     const costs = new Map<string, number | null>();
 
+    // Track remaining quantities locally so multiple ingredients matching the
+    // same pantry item deduct correctly (mirrors costUtils.ts pattern).
+    const localRemaining = new Map<string, number>();
+    for (const p of items) {
+      localRemaining.set(p.id, p.quantity_remaining);
+    }
+
     for (const ing of ingredients) {
       if (ing.fromPantry === false) {
         costs.set(ing.name, null);
         continue;
       }
-      const matchingItems = findMatchingPantryItems(ing, items);
+      const matchingItems = findMatchingPantryItems(
+        ing, items,
+        (id) => localRemaining.get(id) ?? 0,
+      );
 
       if (matchingItems.length > 0) {
         let remaining = ing.amount;
@@ -106,12 +118,11 @@ export function usePantry(userId: string | undefined) {
 
         for (const pantryItem of matchingItems) {
           if (remaining <= 0) break;
-          const deductAmount = Math.min(remaining, pantryItem.quantity_remaining);
+          const currentRemaining = localRemaining.get(pantryItem.id) ?? 0;
+          const deductAmount = Math.min(remaining, currentRemaining);
           ingredientCost += deductAmount * costPerUnit(pantryItem);
           remaining -= deductAmount;
-
-          const newRemaining = pantryItem.quantity_remaining - deductAmount;
-          await updateItem(pantryItem.id, { quantity_remaining: newRemaining });
+          localRemaining.set(pantryItem.id, currentRemaining - deductAmount);
         }
 
         ingredientCost = Math.round(ingredientCost * 100) / 100;
@@ -121,6 +132,16 @@ export function usePantry(userId: string | undefined) {
         costs.set(ing.name, null);
       }
     }
+
+    // Batch-update all changed pantry items in DB
+    const updatePromises: Promise<void>[] = [];
+    for (const p of items) {
+      const newQty = localRemaining.get(p.id);
+      if (newQty !== undefined && newQty !== p.quantity_remaining) {
+        updatePromises.push(updateItem(p.id, { quantity_remaining: newQty }).then(() => {}));
+      }
+    }
+    await Promise.all(updatePromises);
 
     return { costs, totalCost: Math.round(totalCost * 100) / 100 };
   }, [items, updateItem]);

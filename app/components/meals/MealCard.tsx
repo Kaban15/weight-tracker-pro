@@ -3,7 +3,8 @@
 
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Star, RefreshCw, Check, X, Heart, Pencil, Plus, Trash2, Loader2, Warehouse, ArrowUpFromLine } from 'lucide-react';
-import { MealPlan, MealIngredient, PantryUnit } from './types';
+import { MealPlan, MealIngredient, PantryUnit, PantryItem } from './types';
+import PantryIngredientPicker from './PantryIngredientPicker';
 
 interface MealCardProps {
   meal: MealPlan;
@@ -18,9 +19,10 @@ interface MealCardProps {
   onNutritionLookup?: (index: number, name: string, amount: number, unit: PantryUnit, onResult: (index: number, data: { calories: number; protein: number; carbs: number; fat: number }) => void) => void;
   nutritionLoading?: Set<number>;
   isInTracker?: boolean;
+  pantryItems?: PantryItem[];
 }
 
-export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, onMarkEaten, onToggleFavorite, onUpdateIngredients, onSendToTracker, onNutritionLookup, nutritionLoading, isInTracker }: MealCardProps) {
+export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, onMarkEaten, onToggleFavorite, onUpdateIngredients, onSendToTracker, onNutritionLookup, nutritionLoading, isInTracker, pantryItems }: MealCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -325,12 +327,26 @@ export default function MealCard({ meal, onRate, onReplace, onAccept, onReject, 
                           : 'text-violet-400'
                       }`} />
                     </button>
-                    <div className="relative">
+                    <div className="relative flex items-center gap-0.5">
                       <input value={ing.name} onChange={e => updateIngredientField(i, 'name', e.target.value)}
                         placeholder="Składnik"
-                        className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1.5 py-1 text-white text-xs w-full" />
+                        className="bg-[var(--background)] border border-[var(--card-border)] rounded px-1.5 py-1 text-white text-xs w-full min-w-0" />
                       {nutritionLoading?.has(i) && (
-                        <Loader2 className="w-3 h-3 animate-spin text-violet-400 absolute right-1 top-1.5" />
+                        <Loader2 className="w-3 h-3 animate-spin text-violet-400 absolute right-6 top-1.5" />
+                      )}
+                      {pantryItems && pantryItems.length > 0 && (
+                        <PantryIngredientPicker
+                          pantryItems={pantryItems}
+                          onSelect={(item) => {
+                            setEditedIngredients(prev => prev.map((existing, idx) =>
+                              idx === i ? { ...existing, name: item.name, unit: item.unit, fromPantry: true } : existing
+                            ));
+                            if (onNutritionLookup) {
+                              const amount = editedIngredients[i]?.amount || 100;
+                              onNutritionLookup(i, item.name, amount, item.unit, handleNutritionResult);
+                            }
+                          }}
+                        />
                       )}
                     </div>
                     <input type="number" value={ing.amount || ''} onChange={e => handleAmountChange(i, parseFloat(e.target.value) || 0)}
