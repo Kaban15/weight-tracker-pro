@@ -45,6 +45,7 @@ export interface MealPlan {
   recipe_steps: string[];
   estimated_cost: number | null;
   ingredient_costs: Record<string, number | null> | null;
+  pantry_deducted: boolean;
   status: MealPlanStatus;
   rating: number | null;
   rating_comment: string | null;

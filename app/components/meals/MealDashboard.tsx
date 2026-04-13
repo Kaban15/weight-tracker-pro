@@ -6,7 +6,6 @@ import { CalendarDays, ChevronLeft, ChevronRight, Sparkles, ShoppingCart, Packag
 import { MealPlan, MealPreferences, MealIngredient, PantryItem, ChatMessage, AIGeneratedMeal, formatDate } from './types';
 import { useMealAI } from './useMealAI';
 import { useNutritionLookup } from './useNutritionLookup';
-import { estimateCostFromPantry } from './costUtils';
 import MealCard from './MealCard';
 import MealChat from './MealChat';
 import ManualMealModal from './ManualMealModal';
@@ -18,12 +17,11 @@ interface MealDashboardProps {
   onAcceptMeals: (date: string, meals: AIGeneratedMeal[]) => void;
   onUpdateMeal: (id: string, updates: Partial<MealPlan>) => void;
   onToggleFavorite: (id: string) => void;
-  onUpdateIngredients: (id: string, ingredients: MealIngredient[]) => void;
+  onUpdateIngredients: (id: string, ingredients: MealIngredient[]) => void | Promise<void>;
   onMarkEaten: (id: string) => void;
   onSaveManualMeal: (meal: { name: string; meal_slot: string; ingredients: MealIngredient[]; calories: number; protein: number; carbs: number; fat: number; recipe_steps: string[] }) => void;
   favoriteMeals: MealPlan[];
   onNavigate: (view: 'pantry' | 'shopping' | 'calendar' | 'settings' | 'favorites' | 'preferences') => void;
-  onEstimateCost: (ingredients: MealIngredient[]) => { costs: Map<string, number | null>; totalCost: number };
   onSendToTracker?: (meal: MealPlan) => Promise<{ success: boolean; error?: string }>;
   trackerMealKeys?: Set<string>;
   onGetPeriodCosts?: () => Promise<{ week: number; month: number; year: number }>;
@@ -43,7 +41,6 @@ export default function MealDashboard({
   onSaveManualMeal,
   favoriteMeals,
   onNavigate,
-  onEstimateCost,
   onSendToTracker,
   trackerMealKeys,
   onGetPeriodCosts,
@@ -172,13 +169,8 @@ export default function MealDashboard({
   };
 
   const handleUpdateIngredients = (id: string, ingredients: MealIngredient[]) => {
-    // Recalculate cost from pantry
-    const { costs, totalCost } = onEstimateCost(ingredients);
-    const costObj: Record<string, number | null> = {};
-    costs.forEach((v, k) => { costObj[k] = v; });
-
+    // Cost calculation + pantry deduction handled by MealsMode
     onUpdateIngredients(id, ingredients);
-    onUpdateMeal(id, { estimated_cost: totalCost, ingredient_costs: costObj });
   };
 
   const handleRate = (id: string, rating: number, comment: string) => {

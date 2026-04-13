@@ -202,11 +202,61 @@ export default function MealsMode({ onBack }: MealsModeProps) {
       status: 'eaten',
       estimated_cost: totalCost,
       ingredient_costs: costObj,
+      pantry_deducted: true,
     });
 
     // 3. Sync to progress tracker
     const updatedMeal = { ...meal, calories: meal.calories, protein: meal.protein, carbs: meal.carbs, fat: meal.fat };
     await syncToTracker(updatedMeal);
+  };
+
+  const handleUpdateIngredientsWithPantry = async (id: string, newIngredients: MealIngredient[]) => {
+    const meal = mealPlans.find(m => m.id === id);
+    if (!meal) return;
+
+    // For eaten meals, deduct from pantry
+    if (meal.status === 'eaten') {
+      if (!meal.pantry_deducted) {
+        // Pantry was never deducted for this meal — deduct all ingredients
+        const { costs, totalCost } = await pantry.deductIngredients(newIngredients);
+        const costObj: Record<string, number | null> = {};
+        costs.forEach((v, k) => { costObj[k] = v; });
+        await updateIngredients(id, newIngredients);
+        await updateMealPlan(id, {
+          estimated_cost: totalCost,
+          ingredient_costs: costObj,
+          pantry_deducted: true,
+        });
+        return;
+      }
+
+      // Pantry was deducted before — only deduct delta (new/increased)
+      const oldMap = new Map(meal.ingredients.map(i => [i.name, i]));
+      const delta: MealIngredient[] = [];
+
+      for (const ing of newIngredients) {
+        if (ing.fromPantry === false) continue;
+        const old = oldMap.get(ing.name);
+        if (!old || old.fromPantry === false) {
+          delta.push(ing);
+        } else if (ing.amount > old.amount) {
+          delta.push({ ...ing, amount: ing.amount - old.amount });
+        }
+      }
+
+      if (delta.length > 0) {
+        await pantry.deductIngredients(delta);
+      }
+    }
+
+    // Update ingredients (recalculates macros in useMeals)
+    await updateIngredients(id, newIngredients);
+
+    // Recalculate and save costs from current pantry state
+    const { costs, totalCost } = pantry.estimateCost(newIngredients);
+    const costObj: Record<string, number | null> = {};
+    costs.forEach((v, k) => { costObj[k] = v; });
+    await updateMealPlan(id, { estimated_cost: totalCost, ingredient_costs: costObj });
   };
 
   const handleSaveManualMeal = async (meal: {
@@ -234,6 +284,7 @@ export default function MealsMode({ onBack }: MealsModeProps) {
       rating: null,
       rating_comment: null,
       is_favorite: false,
+      pantry_deducted: false,
     });
   };
 
@@ -285,11 +336,10 @@ export default function MealsMode({ onBack }: MealsModeProps) {
             onAcceptMeals={handleAcceptMeals}
             onUpdateMeal={updateMealPlan}
             onToggleFavorite={toggleFavorite}
-            onUpdateIngredients={updateIngredients}
+            onUpdateIngredients={handleUpdateIngredientsWithPantry}
             onMarkEaten={handleMarkEaten}
             onSaveManualMeal={handleSaveManualMeal}
             onNavigate={(v) => setView(v as View)}
-            onEstimateCost={pantry.estimateCost}
             onSendToTracker={handleSendToTracker}
             trackerMealKeys={trackerMealKeys}
             onGetPeriodCosts={getPeriodCosts}
